@@ -1,0 +1,15 @@
+.terminal-stage {
+    background-color: var(--terminal-background);
+    color: var(--terminal-foreground);
+    font-family: Menlo, Consolas, "Courier New", monospace;
+    font-size: 13px;
+    line-height: 1.45;
+    min-height: 400px;
+    padding: 12px;
+}
+.terminal-stage .xterm {
+    height: 100%;
+}
+.terminal-stage ::selection {
+    background-color: var(--brand-blue-light);
+}
