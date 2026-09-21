@@ -1,11 +1,14 @@
 .terminal-stage {
     background-color: var(--terminal-background);
+    box-sizing: border-box;
     color: var(--terminal-foreground);
     font-family: Menlo, Consolas, "Courier New", monospace;
     font-size: 13px;
     line-height: 1.45;
+    margin-left: calc(50% - 47.5vw);
     min-height: 400px;
     padding: 12px;
+    width: 95vw;
 }
 .terminal-stage .xterm {
     height: 100%;
