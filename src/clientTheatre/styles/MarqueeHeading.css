@@ -1,0 +1,17 @@
+.marquee-heading {
+    margin-bottom: 32px;
+    text-align: center;
+}
+.marquee-title {
+    color: var(--brand-blue);
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 28px;
+    letter-spacing: 0.02em;
+    line-height: 1.2;
+    margin: 0 0 8px 0;
+}
+.marquee-subtitle {
+    color: var(--ink-muted);
+    font-size: 13px;
+    margin: 0;
+}
