@@ -17,25 +17,44 @@ interface RubyVmInstance {
     evalAsync(code: string): Promise<unknown>;
 }
 class TerminalStdinFile extends Fd {
-    private fedBytes: Uint8Array = new Uint8Array(0);
-    private readPosition: number = 0;
+    private fedChunks: Array<Uint8Array> = [];
+    private chunkHead: number = 0;
+    private headOffset: number = 0;
+    private fedLength: number = 0;
+    private consumedLength: number = 0;
     feedLine(line: string): void {
         const encoded = new TextEncoder().encode(line + "\n");
-        const merged = new Uint8Array(this.fedBytes.length + encoded.length);
-        merged.set(this.fedBytes, 0);
-        merged.set(encoded, this.fedBytes.length);
-        this.fedBytes = merged;
+        this.fedChunks.push(encoded);
+        this.fedLength += encoded.length;
     }
     override fd_fdstat_get(): { ret: number; fdstat: wasi.Fdstat | null } {
         return { ret: 0, fdstat: new wasi.Fdstat(wasi.FILETYPE_CHARACTER_DEVICE, 0) };
     }
     override fd_read(size: number): { ret: number; data: Uint8Array } {
-        if (this.readPosition >= this.fedBytes.length) {
+        const availableLength = this.fedLength - this.consumedLength;
+        if (availableLength <= 0) {
             return { ret: wasi.ERRNO_BADF, data: new Uint8Array(0) };
         }
-        const slice = this.fedBytes.slice(this.readPosition, this.readPosition + Number(size));
-        this.readPosition += slice.length;
-        return { ret: 0, data: slice };
+        const takeLength = Math.min(Number(size), availableLength);
+        const result = new Uint8Array(takeLength);
+        let filledLength = 0;
+        while (filledLength < takeLength) {
+            const headChunk = this.fedChunks[this.chunkHead] as Uint8Array;
+            const chunkAvailable = headChunk.length - this.headOffset;
+            const copyLength = Math.min(chunkAvailable, takeLength - filledLength);
+            result.set(
+                headChunk.subarray(this.headOffset, this.headOffset + copyLength),
+                filledLength,
+            );
+            filledLength += copyLength;
+            this.headOffset += copyLength;
+            this.consumedLength += copyLength;
+            if (this.headOffset >= headChunk.length) {
+                this.chunkHead++;
+                this.headOffset = 0;
+            }
+        }
+        return { ret: 0, data: result };
     }
 }
 class RubyOutputDeltaTracker {
