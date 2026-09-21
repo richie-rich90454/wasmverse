@@ -12,6 +12,7 @@ class StaticSiteExporter {
     private readonly fileSystemOperations: FileSystemOperations;
     private readonly scopedLogger: ScopedLogger;
     private readonly xtermStylePath: string;
+    private bundlePromise: Promise<Uint8Array> | undefined;
     constructor(
         fileSystemOperations: FileSystemOperations,
         scopedLogger: ScopedLogger,
@@ -26,8 +27,13 @@ class StaticSiteExporter {
         await this.fileSystemOperations.removeRecursively(stagingDirectory);
         await this.fileSystemOperations.ensureDirectoryExists(stagingDirectory);
         try {
-            await this.bundleExportScript(stagingDirectory);
+            const bundleBytes = await this.loadBundleBytes();
+            await this.fileSystemOperations.writeBinaryFile(
+                `${stagingDirectory}/${EXPORT_BUNDLE_NAME}`,
+                bundleBytes,
+            );
             await this.copyExportStyle(stagingDirectory);
+            await this.copyVendorScript(stagingDirectory);
             await this.writeExportDescriptor(stagingDirectory, sessionRecord.convertToDescriptor());
             await this.writeExportPage(stagingDirectory, sessionRecord.convertToDescriptor());
             await this.fileSystemOperations.copyDirectoryInto(
@@ -43,22 +49,31 @@ class StaticSiteExporter {
             await this.fileSystemOperations.removeRecursively(stagingDirectory);
         }
     }
-    private async bundleExportScript(stagingDirectory: string): Promise<void> {
+    private loadBundleBytes(): Promise<Uint8Array> {
+        if (!this.bundlePromise) {
+            this.bundlePromise = this.buildBundleBytes();
+        }
+        return this.bundlePromise;
+    }
+    private async buildBundleBytes(): Promise<Uint8Array> {
         const buildOutcome = await Bun.build({
             entrypoints: [EXPORT_BOOTSTRAP_ENTRY],
-            outdir: stagingDirectory,
             target: "browser",
             format: "esm",
-            naming: EXPORT_BUNDLE_NAME,
             minify: false,
             external: ["wasmoon"],
         });
-        if (!buildOutcome.success) {
+        if (!buildOutcome.success || buildOutcome.outputs.length === 0) {
             for (const buildMessage of buildOutcome.logs) {
                 this.scopedLogger.logError(buildMessage.message);
             }
+            this.bundlePromise = undefined;
             throw new Error("Static export bundling failed. See server logs for details.");
         }
+        const bundledText = await (buildOutcome.outputs[0] as Bun.BuildArtifact).text();
+        return new TextEncoder().encode(bundledText);
+    }
+    private async copyVendorScript(stagingDirectory: string): Promise<void> {
         await this.fileSystemOperations.copyFileInto(
             "./node_modules/wasmoon/dist/index.js",
             `${stagingDirectory}/vendor/wasmoon.mjs`,
