@@ -3,6 +3,7 @@ import { ScopedLogger } from "@serverAtelier/ScopedLogger.ts";
 import { HttpServerHost } from "@serverAtelier/HttpServerHost.ts";
 import { HttpRequestRouter } from "@serverAtelier/HttpRequestRouter.ts";
 import { SessionRegistry } from "@serverAtelier/SessionRegistry.ts";
+import { StaticSiteExporter } from "@serverAtelier/StaticSiteExporter.ts";
 import { BuildOrchestrator } from "@serverAtelier/BuildOrchestrator.ts";
 import { ZipArchiveExtractor } from "@serverAtelier/ZipArchiveExtractor.ts";
 import { LanguageIdentifierResolver } from "@serverAtelier/LanguageIdentifierResolver.ts";
@@ -202,9 +203,14 @@ class ServerApplication {
             this.fileSystemOperations,
             new ScopedLogger("BuildOrchestrator"),
         );
+        const staticSiteExporter = new StaticSiteExporter(
+            this.fileSystemOperations,
+            new ScopedLogger("StaticSiteExporter"),
+        );
         const httpRequestRouter = new HttpRequestRouter(
             buildOrchestrator,
             sessionRegistry,
+            staticSiteExporter,
             languagePluginRegistry,
             this.serverConfiguration,
             new ScopedLogger("HttpRequestRouter"),
