@@ -1,6 +1,7 @@
 import type { ApiErrorResponseRecord } from "@sharedKernel/ApiErrorResponseRecord.ts";
 import { BuildOrchestrator } from "@serverAtelier/BuildOrchestrator.ts";
 import { SessionRegistry } from "@serverAtelier/SessionRegistry.ts";
+import { StaticSiteExporter } from "@serverAtelier/StaticSiteExporter.ts";
 import { LanguagePluginRegistry } from "@serverAtelier/pluginHost/LanguagePluginRegistry.ts";
 import { ServerConfiguration } from "@serverAtelier/ServerConfiguration.ts";
 import { ScopedLogger } from "@serverAtelier/ScopedLogger.ts";
@@ -8,6 +9,7 @@ import { PathGuard } from "@serverAtelier/utilities/PathGuard.ts";
 class HttpRequestRouter {
     private readonly buildOrchestrator: BuildOrchestrator;
     private readonly sessionRegistry: SessionRegistry;
+    private readonly staticSiteExporter: StaticSiteExporter;
     private readonly languagePluginRegistry: LanguagePluginRegistry;
     private readonly serverConfiguration: ServerConfiguration;
     private readonly scopedLogger: ScopedLogger;
@@ -15,6 +17,7 @@ class HttpRequestRouter {
     constructor(
         buildOrchestrator: BuildOrchestrator,
         sessionRegistry: SessionRegistry,
+        staticSiteExporter: StaticSiteExporter,
         languagePluginRegistry: LanguagePluginRegistry,
         serverConfiguration: ServerConfiguration,
         scopedLogger: ScopedLogger,
@@ -22,6 +25,7 @@ class HttpRequestRouter {
     ) {
         this.buildOrchestrator = buildOrchestrator;
         this.sessionRegistry = sessionRegistry;
+        this.staticSiteExporter = staticSiteExporter;
         this.languagePluginRegistry = languagePluginRegistry;
         this.serverConfiguration = serverConfiguration;
         this.scopedLogger = scopedLogger;
@@ -34,6 +38,9 @@ class HttpRequestRouter {
         }
         if (request.method === "GET" && requestUrl.pathname === "/api/health") {
             return this.handleHealthCheck();
+        }
+        if (request.method === "GET" && requestUrl.pathname.startsWith("/api/export/")) {
+            return this.handleStaticExport(requestUrl);
         }
         if (request.method === "GET" && requestUrl.pathname.startsWith("/session/")) {
             return this.handleSessionAssetRequest(requestUrl);
@@ -74,6 +81,29 @@ class HttpRequestRouter {
                 .listAll()
                 .map((pluginInstance) => pluginInstance.languageIdentifier),
         });
+    }
+    private async handleStaticExport(requestUrl: URL): Promise<Response> {
+        const pathSegments = requestUrl.pathname.split("/").filter((segment) => segment.length > 0);
+        const sessionIdentifier = pathSegments[2] as string;
+        const sessionRecord = this.sessionRegistry.findByIdentifier(sessionIdentifier);
+        if (!sessionRecord) {
+            return this.buildErrorResponse(404, "Session not found.");
+        }
+        try {
+            const zipBytes = await this.staticSiteExporter.exportSessionToZip(sessionRecord);
+            const zipBody = zipBytes.slice().buffer as ArrayBuffer;
+            return new Response(zipBody, {
+                headers: {
+                    "content-type": "application/zip",
+                    "content-disposition": `attachment; filename="wasm-session-${sessionIdentifier}.zip"`,
+                },
+            });
+        } catch (exportError) {
+            const errorMessage =
+                exportError instanceof Error ? exportError.message : String(exportError);
+            this.scopedLogger.logError(`Export failed: ${errorMessage}`);
+            return this.buildErrorResponse(500, errorMessage);
+        }
     }
     private async handleSessionAssetRequest(requestUrl: URL): Promise<Response> {
         const pathSegments = requestUrl.pathname.split("/").filter((segment) => segment.length > 0);
