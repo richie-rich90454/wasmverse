@@ -13,3 +13,17 @@
 .terminal-stage ::selection {
     background-color: var(--brand-blue-light);
 }
+.static-export-link {
+    background-color: var(--brand-blue);
+    border-radius: 3px;
+    color: var(--paper);
+    display: inline-block;
+    font-size: 13px;
+    margin-top: 16px;
+    padding: 10px 18px;
+    text-decoration: none;
+    transition: background-color 80ms linear;
+}
+.static-export-link:hover {
+    background-color: var(--brand-blue-deep);
+}
