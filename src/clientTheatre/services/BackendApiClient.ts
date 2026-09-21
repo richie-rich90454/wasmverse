@@ -22,5 +22,8 @@ class BackendApiClient {
     constructSessionBaseUrl(sessionIdentifier: string): string {
         return `/session/${sessionIdentifier}/dist`;
     }
+    constructStaticExportUrl(sessionIdentifier: string): string {
+        return `/api/export/${sessionIdentifier}`;
+    }
 }
 export { BackendApiClient };
