@@ -1,13 +1,16 @@
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
+import { TerminalSelectionCopier } from "@clientTheatre/services/TerminalSelectionCopier.ts";
 class TerminalStageController {
     private terminalInstance: Terminal | undefined;
     private fitAddonInstance: FitAddon | undefined;
+    private readonly selectionCopier: TerminalSelectionCopier;
     private inputBuffer: string = "";
     private pendingReadResolver: ((line: string) => void) | undefined;
     private mountPromise: Promise<void>;
     private mountResolver: (() => void) | undefined;
     constructor() {
+        this.selectionCopier = new TerminalSelectionCopier();
         this.mountPromise = new Promise<void>((resolve) => {
             this.mountResolver = resolve;
         });
@@ -20,11 +23,17 @@ class TerminalStageController {
             fontFamily: 'Menlo, Consolas, "Courier New", monospace',
             fontSize: 13,
             lineHeight: 1.45,
-            theme: { background: "#0D0D0D", foreground: "#E8E5DD", cursor: "#7AA8D0" },
+            theme: {
+                background: "#0D0D0D",
+                foreground: "#E8E5DD",
+                cursor: "#7AA8D0",
+                selectionBackground: "#0A4D7A",
+            },
         });
         this.fitAddonInstance = new FitAddon();
         this.terminalInstance.loadAddon(this.fitAddonInstance);
         this.terminalInstance.open(container);
+        this.selectionCopier.attachTerminal(this.terminalInstance, container);
         this.fitAddonInstance.fit();
         this.terminalInstance.onData((data: string) => this.handleTerminalData(data));
         this.mountResolver?.();
@@ -73,6 +82,10 @@ class TerminalStageController {
                 this.writeText("\b \b");
             }
         } else if (data === "\u0003") {
+            if (this.selectionCopier.hasSelection()) {
+                void this.selectionCopier.copySelection();
+                return;
+            }
             this.inputBuffer = "";
             this.writeText("^C\r\n");
             const resolver = this.pendingReadResolver;
