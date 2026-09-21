@@ -42,6 +42,9 @@ class FileSystemOperations {
     async readTextFile(sourcePath: string): Promise<string> {
         return readFile(sourcePath, "utf8");
     }
+    async readBinaryFile(sourcePath: string): Promise<Uint8Array> {
+        return new Uint8Array(await readFile(sourcePath));
+    }
     async writeTextFile(targetPath: string, content: string): Promise<void> {
         await mkdir(dirname(targetPath), { recursive: true });
         await writeFile(targetPath, content, "utf8");
