@@ -68,12 +68,11 @@ class ZipArchiveExtractor {
         const sharedRoot = (writtenPaths[0] as string).split("/")[0] as string;
         const wrappedDirectory = `${sourceDirectory}/${sharedRoot}`;
         const stagingDirectory = `${sourceDirectory}.staging`;
-        await this.fileSystemOperations.ensureDirectoryExists(stagingDirectory);
-        await this.fileSystemOperations.copyDirectoryInto(wrappedDirectory, stagingDirectory);
-        await this.fileSystemOperations.removeRecursively(wrappedDirectory);
+        await this.fileSystemOperations.removeRecursively(stagingDirectory);
+        await this.fileSystemOperations.moveInto(wrappedDirectory, stagingDirectory);
         const stagedFiles = await this.fileSystemOperations.listFilesRecursively(stagingDirectory);
         for (const stagedFile of stagedFiles) {
-            await this.fileSystemOperations.copyFileInto(
+            await this.fileSystemOperations.moveInto(
                 `${stagingDirectory}/${stagedFile}`,
                 `${sourceDirectory}/${stagedFile}`,
             );
