@@ -1,4 +1,4 @@
-import { cp, mkdir, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
+import { cp, mkdir, readdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
 import { dirname, join, relative, sep } from "node:path";
 class FileSystemOperations {
     async ensureDirectoryExists(directoryPath: string): Promise<void> {
@@ -14,6 +14,10 @@ class FileSystemOperations {
     async copyDirectoryInto(sourcePath: string, targetPath: string): Promise<void> {
         await mkdir(targetPath, { recursive: true });
         await cp(sourcePath, targetPath, { recursive: true });
+    }
+    async moveInto(sourcePath: string, targetPath: string): Promise<void> {
+        await mkdir(dirname(targetPath), { recursive: true });
+        await rename(sourcePath, targetPath);
     }
     async listFilesRecursively(directoryPath: string): Promise<Array<string>> {
         const collected: Array<string> = [];
