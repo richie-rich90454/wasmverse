@@ -7,6 +7,7 @@ import {
     File,
     ConsoleStdout,
     PreopenDirectory,
+    Directory,
     Inode,
     wasi,
 } from "@bjorn3/browser_wasi_shim";
@@ -102,11 +103,7 @@ class RubyWasmLoader {
         const stderrFile = new ConsoleStdout((bytes: Uint8Array) =>
             outputTracker.appendBytes(bytes),
         );
-        const fileEntries: Array<[string, Inode]> = [];
-        for (const [fileName, fileContent] of userFiles) {
-            fileEntries.push([fileName, new File(new TextEncoder().encode(fileContent))]);
-        }
-        const rootDirectory = new PreopenDirectory("/", new Map<string, Inode>(fileEntries));
+        const rootDirectory = this.buildRootDirectory(userFiles);
         const wasiInstance = new WASI([], [], [stdinFile, stdoutFile, stderrFile, rootDirectory]);
         const { vm } = await RubyVM.instantiateModule({
             module: this.compiledModule,
@@ -114,13 +111,43 @@ class RubyWasmLoader {
         });
         return vm as RubyVmInstance;
     }
+    private buildRootDirectory(userFiles: ReadonlyMap<string, string>): PreopenDirectory {
+        const textEncoder = new TextEncoder();
+        const rootEntries = new Map<string, Inode>();
+        const directoryMaps = new Map<string, Map<string, Inode>>([["", rootEntries]]);
+        const ensureDirectory = (directoryPath: string): Map<string, Inode> => {
+            const existingDirectory = directoryMaps.get(directoryPath);
+            if (existingDirectory) {
+                return existingDirectory;
+            }
+            const parentPath = directoryPath.split("/").slice(0, -1).join("/");
+            const parentEntries = ensureDirectory(parentPath);
+            const childEntries = new Map<string, Inode>();
+            parentEntries.set(
+                directoryPath.split("/").pop() as string,
+                new Directory(childEntries),
+            );
+            directoryMaps.set(directoryPath, childEntries);
+            return childEntries;
+        };
+        for (const [relativePath, fileContent] of userFiles) {
+            const pathSegments = relativePath.split("/");
+            const fileName = pathSegments.pop() as string;
+            const containingDirectory = ensureDirectory(pathSegments.join("/"));
+            containingDirectory.set(fileName, new File(textEncoder.encode(fileContent)));
+        }
+        return new PreopenDirectory("/", new Map<string, Inode>(rootEntries));
+    }
 }
 class RubyWasmFileSystemWriter {
     private readonly sessionBaseUrl: string;
     constructor(sessionBaseUrl: string) {
         this.sessionBaseUrl = sessionBaseUrl;
     }
-    async fetchUserFiles(): Promise<{ entryFileName: string; userFiles: Map<string, string> }> {
+    async fetchUserFiles(): Promise<{
+        entryRelativePath: string;
+        userFiles: Map<string, string>;
+    }> {
         const manifestResponse = await fetch(`${this.sessionBaseUrl}/user-code/manifest.json`);
         if (!manifestResponse.ok) {
             throw new Error("Session manifest is missing. Rebuild the session and retry.");
@@ -138,11 +165,10 @@ class RubyWasmFileSystemWriter {
             if (!fileResponse.ok) {
                 throw new Error(`User file ${relativePath} is missing from the session.`);
             }
-            const fileName = relativePath.split("/").pop() as string;
+            const fileName = relativePath;
             userFiles.set(fileName, await fileResponse.text());
         }
-        const entryFileName = manifest.entryFileRelativePath.split("/").pop() as string;
-        return { entryFileName, userFiles };
+        return { entryRelativePath: manifest.entryFileRelativePath, userFiles };
     }
 }
 class RubyWasmEntryExecutor {
@@ -153,12 +179,12 @@ class RubyWasmEntryExecutor {
         this.outputTracker = outputTracker;
     }
     async executeEntry(
-        entryFileName: string,
+        entryRelativePath: string,
         userFiles: ReadonlyMap<string, string>,
         stage: TerminalStageController,
     ): Promise<void> {
         const fedLines: Array<string> = [];
-        const wrapperSource = `class TerminalInputNeeded < StandardError\nend\nbegin\n  load '/${entryFileName}'\nrescue Errno::EBADF\n  raise TerminalInputNeeded, "${TERMINAL_INPUT_MARKER}"\nend\n`;
+        const wrapperSource = `class TerminalInputNeeded < StandardError\nend\nbegin\n  load '/${entryRelativePath}'\nrescue Errno::EBADF\n  raise TerminalInputNeeded, "${TERMINAL_INPUT_MARKER}"\nend\n`;
         for (let inputCount = 0; ; inputCount++) {
             if (inputCount > MAXIMUM_REPLAY_INPUTS) {
                 throw new Error("Too many input prompts. Stopping to protect the session.");
@@ -199,7 +225,7 @@ class RubyWasmPerformer implements TerminalPerformerContract {
     private readonly runtimeLoader: RubyWasmLoader;
     private readonly fileSystemWriter: RubyWasmFileSystemWriter;
     private readonly entryExecutor: RubyWasmEntryExecutor;
-    private entryFileName: string = "";
+    private entryRelativePath: string = "";
     private userFiles: Map<string, string> = new Map();
     constructor(sessionBaseUrl: string) {
         this.runtimeLoader = new RubyWasmLoader(sessionBaseUrl);
@@ -212,12 +238,12 @@ class RubyWasmPerformer implements TerminalPerformerContract {
     async loadInto(stage: TerminalStageController): Promise<void> {
         await this.runtimeLoader.loadRuntime(stage);
         const fetchedFiles = await this.fileSystemWriter.fetchUserFiles();
-        this.entryFileName = fetchedFiles.entryFileName;
+        this.entryRelativePath = fetchedFiles.entryRelativePath;
         this.userFiles = fetchedFiles.userFiles;
         stage.writeLine("Ruby runtime ready.");
     }
     async performOn(stage: TerminalStageController): Promise<void> {
-        await this.entryExecutor.executeEntry(this.entryFileName, this.userFiles, stage);
+        await this.entryExecutor.executeEntry(this.entryRelativePath, this.userFiles, stage);
     }
 }
 export { RubyWasmPerformer };
