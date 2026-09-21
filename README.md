@@ -33,11 +33,12 @@ Python, Ruby, Lua, PHP, Rust, C, C++, Go, Zig, Swift, Kotlin, Dart, Java, C#, As
 ## Interactive Input
 
 Python and Ruby programs get full terminal input: synchronous `input()` / `gets` calls are satisfied by replaying the program with the answers collected so far, and Python also supports `await async_input(prompt)`. Lua and PHP run print-and-compute style; reads past end-of-input see EOF (`nil` / `false`), so guard reads accordingly. Every failure surfaces as a readable terminal line; nothing escapes as an unhandled exception.
-
 ## Terminal Copy
 
-Drag to select terminal text. Copy with right-click, Ctrl+C while text is selected, or Ctrl+Shift+C. Ctrl+C with no selection keeps its usual line-cancel meaning.
-
+Drag to select terminal text. Copy with right-click, Ctrl+C while text is
+selected, or Ctrl+Shift+C. Ctrl+C with no selection keeps its usual
+line-cancel meaning. Zoom the terminal font like a native console with
+Ctrl+Plus, Ctrl+Minus, Ctrl+0, or Ctrl+mouse wheel.
 ## Static Site Export
 
 After a program finishes, the **Download static site (.zip)** link fetches a self-contained bundle: `index.html`, one bundled `app.js`, the terminal stylesheet, `session.json`, and the session `runtime/` and `user-code/` folders with all paths relative. Unzip it behind any static host (GitHub Pages, `npx serve`, plain Nginx) and the program runs with full WASM abilities, no application server needed. The host must serve `.wasm` as `application/wasm`; GitHub Pages does. Interactive Python and Ruby programs keep working because the bundle carries the same performers.
