@@ -1,0 +1,34 @@
+:root {
+    --paper: #fdfcf8;
+    --cream: #f8f6f0;
+    --brand-blue: #003153;
+    --brand-blue-deep: #00223a;
+    --brand-blue-light: #0a4d7a;
+    --ink: #1a1a1a;
+    --ink-muted: #6b6b6b;
+    --rule: #d4cfc0;
+    --rule-strong: #a8a293;
+    --error-red: #8b2f2f;
+    --success-green: #2f5d3a;
+    --terminal-background: #0d0d0d;
+    --terminal-foreground: #e8e5dd;
+    --terminal-cursor: #7aa8d0;
+}
+html {
+    background-color: var(--paper);
+    color: var(--ink);
+}
+body {
+    background-color: var(--paper);
+    color: var(--ink);
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.4;
+    margin: 0;
+    padding: 0;
+}
+.universal-application-column {
+    margin: 0 auto;
+    max-width: 720px;
+    padding: 32px 16px 64px 16px;
+}
