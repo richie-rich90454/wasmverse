@@ -1,0 +1,37 @@
+{
+    "name": "wasmverse",
+    "type": "module",
+    "private": true,
+    "scripts": {
+        "dev": "bun scripts/DevelopmentLauncherScript.ts",
+        "build": "bun scripts/ProductionBuildScript.ts",
+        "start": "bun dist/server/ServerEntryPoint.js",
+        "setup": "bun scripts/SetupLocalToolchainsScript.ts",
+        "format": "bunx oxfmt .",
+        "format:check": "bunx oxfmt --check .",
+        "postinstall": "bun run setup"
+    },
+    "dependencies": {
+        "@ruby/3.4-wasm-wasi": "^2.10.1",
+        "@ruby/wasm-wasi": "^2.10.1",
+        "@xterm/addon-fit": "^0.11.0",
+        "@xterm/xterm": "^6.0.0",
+        "assemblyscript": "^0.28.20",
+        "fflate": "^0.8.3",
+        "php-wasm": "^0.1.0",
+        "pyodide": "^314.0.7",
+        "react": "^19.3.0",
+        "react-dom": "^19.3.0",
+        "wasmoon": "^1.16.0"
+    },
+    "devDependencies": {
+        "@types/bun": "^1.4.2",
+        "@types/node": "^26.6.2",
+        "@types/react": "^19.3.0",
+        "@types/react-dom": "^19.3.0",
+        "@vitejs/plugin-react": "^6.1.1",
+        "oxfmt": "^0.68.0",
+        "typescript": "6.0.3",
+        "vite": "^8.3.0"
+    }
+}
