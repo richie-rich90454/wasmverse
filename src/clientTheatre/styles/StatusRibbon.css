@@ -1,0 +1,20 @@
+.status-ribbon {
+    background-color: var(--cream);
+    border-top: 1px solid var(--rule);
+    color: var(--ink-muted);
+    font-family: Menlo, Consolas, "Courier New", monospace;
+    font-size: 11px;
+    height: 24px;
+    line-height: 24px;
+    margin-top: 16px;
+    padding: 0 8px;
+}
+.status-ribbon-ok {
+    color: var(--success-green);
+}
+.status-ribbon-err {
+    color: var(--error-red);
+}
+.status-ribbon-info {
+    color: var(--ink-muted);
+}
