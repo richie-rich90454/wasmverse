@@ -7,6 +7,7 @@ interface PhpRuntime {
     onoutput: ((event: { detail: Array<string> }) => void) | undefined;
     onerror: ((event: { detail: Array<string> }) => void) | undefined;
     writeFile(path: string, data: string): Promise<void>;
+    mkdir(path: string): Promise<void>;
     run(code: string): Promise<unknown>;
     flush(): void;
 }
@@ -51,7 +52,10 @@ class PhpWasmFileSystemWriter {
     constructor(sessionBaseUrl: string) {
         this.sessionBaseUrl = sessionBaseUrl;
     }
-    async fetchUserFiles(): Promise<{ entryFileName: string; userFiles: Map<string, string> }> {
+    async fetchUserFiles(): Promise<{
+        entryRelativePath: string;
+        userFiles: Map<string, string>;
+    }> {
         const manifestResponse = await fetch(`${this.sessionBaseUrl}/user-code/manifest.json`);
         if (!manifestResponse.ok) {
             throw new Error("Session manifest is missing. Rebuild the session and retry.");
@@ -69,28 +73,27 @@ class PhpWasmFileSystemWriter {
             if (!fileResponse.ok) {
                 throw new Error(`User file ${relativePath} is missing from the session.`);
             }
-            const fileName = relativePath.split("/").pop() as string;
-            userFiles.set(fileName, await fileResponse.text());
+            userFiles.set(relativePath, await fileResponse.text());
         }
-        const entryFileName = manifest.entryFileRelativePath.split("/").pop() as string;
-        return { entryFileName, userFiles };
+        return { entryRelativePath: manifest.entryFileRelativePath, userFiles };
     }
 }
 class PhpWasmEntryExecutor {
     async executeEntry(
         phpRuntime: PhpRuntime,
-        entryFileName: string,
+        entryRelativePath: string,
         userFiles: ReadonlyMap<string, string>,
         stage: TerminalStageController,
     ): Promise<void> {
         stage.writeLine("Running PHP entry script.");
         try {
-            for (const [fileName, fileContent] of userFiles) {
-                await phpRuntime.writeFile(`/${fileName}`, fileContent);
+            for (const [relativePath, fileContent] of userFiles) {
+                await this.ensureDirectoryFor(phpRuntime, relativePath);
+                await phpRuntime.writeFile(`/${relativePath}`, fileContent);
             }
-            const entrySource = userFiles.get(entryFileName);
+            const entrySource = userFiles.get(entryRelativePath);
             if (entrySource === undefined) {
-                throw new Error(`Entry file ${entryFileName} is missing from the session.`);
+                throw new Error(`Entry file ${entryRelativePath} is missing from the session.`);
             }
             await phpRuntime.run(entrySource);
             phpRuntime.flush();
@@ -100,13 +103,25 @@ class PhpWasmEntryExecutor {
             );
         }
     }
+    private async ensureDirectoryFor(phpRuntime: PhpRuntime, relativePath: string): Promise<void> {
+        const segments = relativePath.split("/").slice(0, -1);
+        let currentPath = "";
+        for (const segment of segments) {
+            currentPath += `/${segment}`;
+            try {
+                await phpRuntime.mkdir(currentPath);
+            } catch {
+                continue;
+            }
+        }
+    }
 }
 class PhpWasmPerformer implements TerminalPerformerContract {
     private readonly runtimeLoader: PhpWasmLoader;
     private readonly fileSystemWriter: PhpWasmFileSystemWriter;
     private readonly entryExecutor: PhpWasmEntryExecutor;
     private loadedRuntime: PhpRuntime | undefined;
-    private entryFileName: string = "";
+    private entryRelativePath: string = "";
     private userFiles: Map<string, string> = new Map();
     constructor(sessionBaseUrl: string) {
         this.runtimeLoader = new PhpWasmLoader(sessionBaseUrl);
@@ -116,7 +131,7 @@ class PhpWasmPerformer implements TerminalPerformerContract {
     async loadInto(stage: TerminalStageController): Promise<void> {
         this.loadedRuntime = await this.runtimeLoader.loadRuntime(stage);
         const fetchedFiles = await this.fileSystemWriter.fetchUserFiles();
-        this.entryFileName = fetchedFiles.entryFileName;
+        this.entryRelativePath = fetchedFiles.entryRelativePath;
         this.userFiles = fetchedFiles.userFiles;
         stage.writeLine("PHP runtime ready.");
     }
@@ -126,7 +141,7 @@ class PhpWasmPerformer implements TerminalPerformerContract {
         }
         await this.entryExecutor.executeEntry(
             this.loadedRuntime,
-            this.entryFileName,
+            this.entryRelativePath,
             this.userFiles,
             stage,
         );
