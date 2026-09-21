@@ -17,10 +17,7 @@ function ClientApplicationView(): React.JSX.Element {
     const showsTerminalStage =
         applicationController.currentState === "performing" ||
         applicationController.currentState === "finished";
-    const finishedSession =
-        applicationController.currentState === "finished"
-            ? applicationController.activeSession
-            : undefined;
+    const finishedSession = showsTerminalStage ? applicationController.activeSession : undefined;
     return (
         <div className="universal-application-column">
             <MarqueeHeadingView />
