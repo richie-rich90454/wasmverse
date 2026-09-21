@@ -28,9 +28,16 @@ try:
     _terminal_fed_lines
 except NameError:
     _terminal_fed_lines = []
+try:
+    _terminal_fed_index
+except NameError:
+    _terminal_fed_index = 0
 def _terminal_sync_input(prompt=""):
-    if _terminal_fed_lines:
-        return _terminal_fed_lines.pop(0)
+    global _terminal_fed_index
+    if _terminal_fed_index < len(_terminal_fed_lines):
+        line = _terminal_fed_lines[_terminal_fed_index]
+        _terminal_fed_index += 1
+        return line
     raise _NeedTerminalInput(str(prompt))
 _builtins.input = _terminal_sync_input
 _usercode_root = str(globals().get("_usercode_root", "/home/pyodide/usercode"))
@@ -124,6 +131,7 @@ class PyodideInputBridge {
     resetForRun(pyodide: PyodideInstance): void {
         this.asyncConsumed = 0;
         pyodide.globals.set("_terminal_fed_lines", pyodide.toPy(this.fedLines));
+        pyodide.globals.set("_terminal_fed_index", 0);
     }
     recordLine(line: string): void {
         this.fedLines.push(line);
