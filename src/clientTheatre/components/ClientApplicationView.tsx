@@ -17,6 +17,10 @@ function ClientApplicationView(): React.JSX.Element {
     const showsTerminalStage =
         applicationController.currentState === "performing" ||
         applicationController.currentState === "finished";
+    const finishedSession =
+        applicationController.currentState === "finished"
+            ? applicationController.activeSession
+            : undefined;
     return (
         <div className="universal-application-column">
             <MarqueeHeadingView />
@@ -26,6 +30,17 @@ function ClientApplicationView(): React.JSX.Element {
                 />
             ) : (
                 <UploadCurtainView applicationController={applicationController} />
+            )}
+            {finishedSession && (
+                <a
+                    className="static-export-link"
+                    href={applicationController.backendApiClient.constructStaticExportUrl(
+                        finishedSession.sessionIdentifier,
+                    )}
+                    download
+                >
+                    Download static site (.zip)
+                </a>
             )}
             <StatusRibbonView
                 statusRibbonController={applicationController.statusRibbonController}
