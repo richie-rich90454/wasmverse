@@ -5,6 +5,7 @@ interface PyodideInstance {
     setStderr(options: { batched(output: string): void }): void;
     globals: { set(name: string, value: unknown): void };
     toPy(value: unknown): unknown;
+    FS: { mkdirTree(path: string): void; writeFile(path: string, content: string): void };
     runPythonAsync(code: string): Promise<unknown>;
 }
 interface PyodideModule {
@@ -15,9 +16,11 @@ interface PythonErrorShape {
     message?: string;
 }
 const MAXIMUM_REPLAY_INPUTS = 1000;
+const USERCODE_ROOT = "/home/pyodide/usercode";
 const PYTHON_PRELUDE = `
 import builtins as _builtins
 import sys as _sys
+import os as _os
 import ast as _ast
 class _NeedTerminalInput(Exception):
     pass
@@ -30,6 +33,17 @@ def _terminal_sync_input(prompt=""):
         return _terminal_fed_lines.pop(0)
     raise _NeedTerminalInput(str(prompt))
 _builtins.input = _terminal_sync_input
+_usercode_root = str(globals().get("_usercode_root", "/home/pyodide/usercode"))
+_entry_relative_path = str(globals().get("_entry_relative_path", "main.py"))
+_entry_directory = _os.path.dirname(_entry_relative_path)
+_ordered_paths = [_usercode_root]
+if _entry_directory:
+    _ordered_paths.insert(0, _usercode_root + "/" + _entry_directory)
+for _candidate_path in reversed(_ordered_paths):
+    if _candidate_path not in _sys.path:
+        _sys.path.insert(0, _candidate_path)
+_os.chdir(_usercode_root)
+__file__ = _usercode_root + "/" + _entry_relative_path
 def _entry_calls_main_at_top_level(source_text):
     try:
         tree = _ast.parse(source_text)
@@ -41,7 +55,7 @@ def _entry_calls_main_at_top_level(source_text):
                 func = child.func
                 if isinstance(func, _ast.Name) and func.id == "main":
                     return True
-                if isinstance(func, _ast.Attribute) and func.attr == "run":
+                if isinstance(func, _ast.Attribute) and func.attr in ("run", "run_until_complete"):
                     for arg in child.args:
                         if isinstance(arg, _ast.Call) and isinstance(arg.func, _ast.Name) and arg.func.id == "main":
                             return True
@@ -123,21 +137,42 @@ class PyodideUserFileFetcher {
     constructor(sessionBaseUrl: string) {
         this.sessionBaseUrl = sessionBaseUrl;
     }
-    async fetchEntrySource(): Promise<string> {
+    async fetchUserFiles(): Promise<{ entryRelativePath: string; userFiles: Map<string, string> }> {
         const manifestResponse = await fetch(`${this.sessionBaseUrl}/user-code/manifest.json`);
         if (!manifestResponse.ok) {
             throw new Error("Session manifest is missing. Rebuild the session and retry.");
         }
         const manifest = (await manifestResponse.json()) as {
             entryFileRelativePath: string;
+            includedFileRelativePaths: Array<string>;
         };
-        const entryResponse = await fetch(
-            `${this.sessionBaseUrl}/user-code/${manifest.entryFileRelativePath}`,
-        );
-        if (!entryResponse.ok) {
+        const userFiles = new Map<string, string>();
+        for (const relativePath of manifest.includedFileRelativePaths) {
+            if (relativePath === "manifest.json") {
+                continue;
+            }
+            const fileResponse = await fetch(`${this.sessionBaseUrl}/user-code/${relativePath}`);
+            if (!fileResponse.ok) {
+                throw new Error(`User file ${relativePath} is missing from the session.`);
+            }
+            userFiles.set(relativePath, await fileResponse.text());
+        }
+        if (!userFiles.has(manifest.entryFileRelativePath)) {
             throw new Error(`Entry file ${manifest.entryFileRelativePath} is missing.`);
         }
-        return entryResponse.text();
+        return { entryRelativePath: manifest.entryFileRelativePath, userFiles };
+    }
+}
+class PyodideUserFileWriter {
+    writeUserFiles(pyodide: PyodideInstance, userFiles: ReadonlyMap<string, string>): void {
+        pyodide.FS.mkdirTree(USERCODE_ROOT);
+        for (const [relativePath, fileContent] of userFiles) {
+            const directory = relativePath.split("/").slice(0, -1).join("/");
+            if (directory) {
+                pyodide.FS.mkdirTree(`${USERCODE_ROOT}/${directory}`);
+            }
+            pyodide.FS.writeFile(`${USERCODE_ROOT}/${relativePath}`, fileContent);
+        }
     }
 }
 class PyodideEntryScriptExecutor {
@@ -152,11 +187,15 @@ class PyodideEntryScriptExecutor {
     }
     async executeEntry(
         pyodide: PyodideInstance,
-        entrySource: string,
+        entryRelativePath: string,
+        userFiles: ReadonlyMap<string, string>,
         stage: TerminalStageController,
     ): Promise<void> {
+        const entrySource = userFiles.get(entryRelativePath) as string;
         const executorSource = PYTHON_PRELUDE + entrySource + PYTHON_EPILOGUE;
         pyodide.globals.set("_entry_source_text", entrySource);
+        pyodide.globals.set("_usercode_root", USERCODE_ROOT);
+        pyodide.globals.set("_entry_relative_path", entryRelativePath);
         for (;;) {
             this.inputBridge.resetForRun(pyodide);
             try {
@@ -206,14 +245,17 @@ class PyodidePerformer implements TerminalPerformerContract {
     private readonly streamRedirector: PyodideStandardStreamRedirector;
     private readonly inputBridge: PyodideInputBridge;
     private readonly userFileFetcher: PyodideUserFileFetcher;
+    private readonly userFileWriter: PyodideUserFileWriter;
     private readonly entryExecutor: PyodideEntryScriptExecutor;
     private loadedRuntime: PyodideInstance | undefined;
-    private entrySource: string = "";
+    private entryRelativePath: string = "";
+    private userFiles: Map<string, string> = new Map();
     constructor(sessionBaseUrl: string) {
         this.runtimeLoader = new PyodideRuntimeLoader(sessionBaseUrl);
         this.streamRedirector = new PyodideStandardStreamRedirector();
         this.inputBridge = new PyodideInputBridge();
         this.userFileFetcher = new PyodideUserFileFetcher(sessionBaseUrl);
+        this.userFileWriter = new PyodideUserFileWriter();
         this.entryExecutor = new PyodideEntryScriptExecutor(
             this.streamRedirector,
             this.inputBridge,
@@ -230,14 +272,22 @@ class PyodidePerformer implements TerminalPerformerContract {
         }
         this.streamRedirector.redirectStreams(this.loadedRuntime);
         this.inputBridge.installBridge(this.loadedRuntime, stage);
-        this.entrySource = await this.userFileFetcher.fetchEntrySource();
+        const fetchedFiles = await this.userFileFetcher.fetchUserFiles();
+        this.entryRelativePath = fetchedFiles.entryRelativePath;
+        this.userFiles = fetchedFiles.userFiles;
         stage.writeLine("Python runtime ready.");
     }
     async performOn(stage: TerminalStageController): Promise<void> {
         if (!this.loadedRuntime) {
             throw new Error("Pyodide runtime not loaded. Call loadInto first.");
         }
-        await this.entryExecutor.executeEntry(this.loadedRuntime, this.entrySource, stage);
+        this.userFileWriter.writeUserFiles(this.loadedRuntime, this.userFiles);
+        await this.entryExecutor.executeEntry(
+            this.loadedRuntime,
+            this.entryRelativePath,
+            this.userFiles,
+            stage,
+        );
     }
 }
 export { PyodidePerformer };
