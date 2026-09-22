@@ -9,6 +9,8 @@
         "setup": "bun scripts/SetupLocalToolchainsScript.ts",
         "format": "bunx oxfmt .",
         "format:check": "bunx oxfmt --check .",
+        "typecheck": "bunx tsc --noEmit",
+        "test": "bun test",
         "postinstall": "bun run setup"
     },
     "dependencies": {
