@@ -28,6 +28,11 @@ function mavenProjectText(
         "    <build>\n" +
         "        <plugins>\n" +
         "            <plugin>\n" +
+        "                <groupId>org.apache.maven.plugins</groupId>\n" +
+        "                <artifactId>maven-compiler-plugin</artifactId>\n" +
+        "                <version>3.13.0</version>\n" +
+        "            </plugin>\n" +
+        "            <plugin>\n" +
         "                <groupId>org.teavm</groupId>\n" +
         "                <artifactId>teavm-maven-plugin</artifactId>\n" +
         `                <version>${TEAVM_VERSION}</version>\n` +
