@@ -6,8 +6,15 @@ class TerminalSelectionCopier {
         container.addEventListener("contextmenu", (event: MouseEvent) => {
             void this.handleContextMenu(event);
         });
-        container.addEventListener("keydown", (event: KeyboardEvent) => {
-            void this.handleKeyDown(event);
+        terminal.attachCustomKeyEventHandler((event: KeyboardEvent) => {
+            const isCopyModifier = event.ctrlKey || event.metaKey;
+            const isPlainCopy = isCopyModifier && !event.shiftKey && event.key.toLowerCase() === "c";
+            const isShiftCopy = isCopyModifier && event.shiftKey && event.key.toLowerCase() === "c";
+            if ((isPlainCopy || isShiftCopy) && this.hasSelection()) {
+                void this.copySelection();
+                return false;
+            }
+            return true;
         });
     }
     hasSelection(): boolean {
@@ -37,14 +44,6 @@ class TerminalSelectionCopier {
     }
     private async handleContextMenu(event: MouseEvent): Promise<void> {
         if (this.hasSelection()) {
-            event.preventDefault();
-            await this.copySelection();
-        }
-    }
-    private async handleKeyDown(event: KeyboardEvent): Promise<void> {
-        const copyShortcut =
-            (event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === "c";
-        if (copyShortcut && this.hasSelection()) {
             event.preventDefault();
             await this.copySelection();
         }
