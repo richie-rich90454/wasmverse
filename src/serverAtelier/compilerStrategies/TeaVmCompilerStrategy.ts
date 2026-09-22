@@ -37,7 +37,11 @@ class TeaVmCompilerStrategy implements CompilerStrategyContract {
             );
         }
         if (outcome.exitCode !== 0) {
-            throw new Error(`TeaVM build failed: ${outcome.standardError}`);
+            const detail =
+                outcome.standardError.trim().length > 0
+                    ? outcome.standardError
+                    : outcome.standardOutput;
+            throw new Error(`TeaVM build failed: ${detail}`);
         }
     }
 }
