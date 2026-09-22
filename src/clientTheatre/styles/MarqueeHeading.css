@@ -1,17 +1,36 @@
 .marquee-heading {
-    margin-bottom: 32px;
+    border-bottom: 1px solid var(--rule);
+    margin-bottom: 64px;
+    padding-bottom: 24px;
     text-align: center;
 }
 .marquee-title {
     color: var(--brand-blue);
-    font-family: Georgia, "Times New Roman", serif;
-    font-size: 28px;
+    font-family: "EB Garamond", Georgia, "Times New Roman", serif;
+    font-size: 32px;
+    font-weight: 500;
     letter-spacing: 0.02em;
     line-height: 1.2;
     margin: 0 0 8px 0;
 }
 .marquee-subtitle {
     color: var(--ink-muted);
-    font-size: 13px;
+    font-size: 14px;
+    margin: 0 0 16px 0;
+}
+.marquee-health {
+    background-color: var(--cream);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    color: var(--ink-muted);
+    display: inline-block;
+    font-size: 12px;
     margin: 0;
+    padding: 4px 8px;
+}
+.marquee-health-ok {
+    color: var(--success-green);
+}
+.marquee-health-err {
+    color: var(--error-red);
 }
