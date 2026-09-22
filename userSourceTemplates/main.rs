@@ -1,26 +1,6 @@
-use std::fmt::Write as _;
+use wasm_bindgen::prelude::*;
 
-#[derive(Debug, Clone, Copy)]
-struct Window {
-    start: usize,
-    end: usize,
-}
-
-impl Window {
-    fn size(&self) -> usize {
-        self.end.saturating_sub(self.start)
-    }
-}
-
-trait Describe {
-    fn summary(&self) -> String;
-}
-
-impl Describe for Window {
-    fn summary(&self) -> String {
-        format!("window[{}..{}) size {}", self.start, self.end, self.size())
-    }
-}
+const WINDOW_SIZE: usize = 12;
 
 fn sieve(limit: usize) -> Vec<usize> {
     if limit < 2 {
@@ -56,46 +36,24 @@ fn window_sums(values: &[usize], width: usize) -> Vec<usize> {
         .collect()
 }
 
-fn ownership_transfer(items: Vec<String>) -> (Vec<String>, usize) {
-    let total_length: usize = items.iter().map(|item| item.len()).sum();
-    let consumed = items;
-    let labels: Vec<String> = consumed
-        .into_iter()
-        .map(|item| item.to_uppercase())
-        .collect();
-    (labels, total_length)
-}
-
-fn main() {
+#[wasm_bindgen]
+pub fn run() -> String {
     let mut output = String::new();
-    let _ = writeln!(output, "WASMVerse Rust showcase");
-    let _ = writeln!(output, "Stage one: trait summaries over compute windows");
-    let windows = vec![
-        Window { start: 0, end: 500 },
-        Window { start: 500, end: 1200 },
-        Window { start: 1200, end: 2600 },
-    ];
-    for window in &windows {
-        let _ = writeln!(output, "{}", window.summary());
-    }
-    let _ = writeln!(output, "Stage two: iterator pipelines over a prime sieve");
+    output.push_str("WASMVerse Rust showcase\n");
+    output.push_str("Stage one: iterator pipelines over a prime sieve\n");
     let primes = sieve(2000);
-    let sums = window_sums(&primes, 12);
+    let sums = window_sums(&primes, WINDOW_SIZE);
     let largest = primes.last().copied().unwrap_or(0);
-    let _ = writeln!(output, "prime count up to 2000: {}", primes.len());
-    let _ = writeln!(output, "largest prime: {}", largest);
-    let first_sums: Vec<String> = sums.iter().take(6).map(|value| value.to_string()).collect();
-    let _ = writeln!(output, "first window sums: {}", first_sums.join(", "));
-    let even_twins: Vec<usize> = primes.iter().take(10).map(|value| value * 2).collect();
-    let _ = writeln!(output, "doubled head primes: {:?}", even_twins);
-    let _ = writeln!(output, "Stage three: ownership transfer across a compute graph");
-    let (labels, total_length) = ownership_transfer(vec![
-        String::from("parse"),
-        String::from("lower"),
-        String::from("render"),
-    ]);
-    let _ = writeln!(output, "labels: {}", labels.join(" -> "));
-    let _ = writeln!(output, "total label bytes: {}", total_length);
-    let _ = writeln!(output, "Showcase complete.");
-    print!("{}", output);
+    output.push_str(&format!("prime count up to 2000: {}\n", primes.len()));
+    output.push_str(&format!("largest prime: {}\n", largest));
+    let head: Vec<String> = sums.iter().take(6).map(|value| value.to_string()).collect();
+    output.push_str(&format!("first window sums: {}\n", head.join(", ")));
+    let doubled: Vec<String> = primes.iter().take(10).map(|value| (value * 2).to_string()).collect();
+    output.push_str(&format!("doubled head primes: {}\n", doubled.join(", ")));
+    output.push_str("Stage two: ownership transfer across a compute graph\n");
+    let labels = vec!["parse", "lower", "render"];
+    let upper: Vec<String> = labels.into_iter().map(|label| label.to_uppercase()).collect();
+    output.push_str(&format!("labels: {}\n", upper.join(" -> ")));
+    output.push_str("Showcase complete.\n");
+    output
 }

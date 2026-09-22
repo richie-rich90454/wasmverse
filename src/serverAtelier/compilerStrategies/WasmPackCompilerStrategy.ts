@@ -40,6 +40,8 @@ class WasmPackCompilerStrategy implements CompilerStrategyContract {
                     "web",
                     "--out-dir",
                     context.runtimeDirectory,
+                    "--out-name",
+                    "app",
                 ],
                 { workingDirectory: context.sourceDirectory },
             );
@@ -53,6 +55,8 @@ class WasmPackCompilerStrategy implements CompilerStrategyContract {
                 "web",
                 "--out-dir",
                 context.runtimeDirectory,
+                "--out-name",
+                "app",
             ]);
         }
         if (outcome.exitCode !== 0) {
