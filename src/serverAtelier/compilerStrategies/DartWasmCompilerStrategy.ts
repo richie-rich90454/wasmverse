@@ -17,14 +17,12 @@ class DartWasmCompilerStrategy implements CompilerStrategyContract {
     }
     async compileSourceInto(context: BuildContextRecord): Promise<void> {
         const toolchainExists = await this.fileSystemOperations.pathExists(this.dartBinaryPath);
-        if (!toolchainExists) {
-            throw new Error(
-                "Dart SDK not found. Run bun run setup to provision ./.tools/dart-sdk/.",
-            );
-        }
-        const outcome = await this.processRunner.runToCompletion(
-            [
-                this.dartBinaryPath,
+        const dartBinary = toolchainExists ? this.dartBinaryPath : "dart";
+        let outcome;
+        try {
+            outcome = await this.processRunner.runToCompletion(
+                [
+                    dartBinary,
                 "compile",
                 "wasm",
                 context.entryFileRelativePath,
@@ -32,9 +30,18 @@ class DartWasmCompilerStrategy implements CompilerStrategyContract {
                 `${context.runtimeDirectory}/app.wasm`,
             ],
             { workingDirectory: context.sourceDirectory },
-        );
+            );
+        } catch {
+            throw new Error(
+                "Dart SDK not found. Run bun run setup to provision ./.tools/dart-sdk/ or install Dart on PATH.",
+            );
+        }
         if (outcome.exitCode !== 0) {
-            throw new Error(`Dart WASM build failed: ${outcome.standardError}`);
+            const detail =
+                outcome.standardError.trim().length > 0
+                    ? outcome.standardError
+                    : outcome.standardOutput;
+            throw new Error(`Dart WASM build failed: ${detail}`);
         }
     }
 }
