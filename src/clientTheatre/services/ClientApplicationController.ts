@@ -27,22 +27,29 @@ class ClientApplicationController {
         this.notifyListeners();
     }
     async handleArchiveSubmission(file: File, entryFileName: string): Promise<void> {
-        this.uploadCurtainController.beginBuild();
+        this.uploadCurtainController.beginUpload();
         this.transitionToState("uploading");
-        this.statusRibbonController.setMessage("Uploading archive.", "info");
+        this.statusRibbonController.setMessage("Uploading the archive.", "info");
         try {
-            this.transitionToState("building");
-            this.statusRibbonController.setMessage("Building session.", "info");
             const descriptor = await this.backendApiClient.submitProjectArchive(
                 file,
                 entryFileName,
+                () => {
+                    if (this.currentState === "uploading") {
+                        this.uploadCurtainController.markBuilding();
+                        this.transitionToState("building");
+                        this.statusRibbonController.setMessage("Building the session.", "info");
+                    }
+                },
             );
+            if (this.currentState === "uploading") {
+                this.uploadCurtainController.markBuilding();
+                this.transitionToState("building");
+                this.statusRibbonController.setMessage("Building the session.", "info");
+            }
             this.activeSession = descriptor;
             this.transitionToState("performing");
-            this.statusRibbonController.setMessage(
-                `Session ${descriptor.sessionIdentifier} (${descriptor.languageIdentifier}).`,
-                "ok",
-            );
+            this.statusRibbonController.setMessage("Program running.", "info");
             const performer = this.terminalPerformerFactory.createForLanguage(
                 descriptor.languageIdentifier,
                 this.backendApiClient.constructSessionBaseUrl(descriptor.sessionIdentifier),
@@ -68,6 +75,13 @@ class ClientApplicationController {
                 this.transitionToState("idle");
             }
         }
+    }
+    beginAnotherRun(): void {
+        this.terminalStageController.dispose();
+        this.activeSession = undefined;
+        this.uploadCurtainController.reset();
+        this.statusRibbonController.setMessage("", "info");
+        this.transitionToState("idle");
     }
     subscribe(listener: ClientApplicationListener): () => void {
         this.listeners.add(listener);
