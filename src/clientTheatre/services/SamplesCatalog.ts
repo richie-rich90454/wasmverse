@@ -133,8 +133,7 @@ const SAMPLE_PLATES: ReadonlyArray<SamplePlate> = [
         languageLabel: "Java",
         entryFileName: "Main.java",
         programTitle: "Streams and collectors",
-        description:
-            "Lambdas, streams, and collectors summarize a small ledger for TeaVM.",
+        description: "Lambdas, streams, and collectors summarize a small ledger for TeaVM.",
         sourceText: sourceTextFor("Main.java"),
     },
     {
