@@ -1,6 +1,33 @@
+.upload-curtain-section {
+    margin-bottom: 64px;
+}
+.upload-section-eyebrow {
+    color: var(--ink-muted);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    margin: 0 0 8px 0;
+    text-transform: uppercase;
+}
+.upload-section-heading {
+    color: var(--ink);
+    font-family: "EB Garamond", Georgia, "Times New Roman", serif;
+    font-size: 30px;
+    font-weight: 500;
+    line-height: 1.15;
+    margin: 0 0 8px 0;
+}
+.upload-section-support {
+    color: var(--ink-muted);
+    font-size: 15px;
+    line-height: 1.55;
+    margin: 0 0 24px 0;
+    max-width: 68ch;
+}
 .upload-curtain {
     background-color: var(--cream);
     border: 1px solid var(--rule);
+    border-radius: 2px;
     display: flex;
     flex-direction: column;
     gap: 16px;
@@ -9,6 +36,7 @@
 .upload-dropzone {
     background-color: var(--cream);
     border: 1px solid var(--rule);
+    border-radius: 2px;
     color: var(--ink-muted);
     cursor: pointer;
     display: block;
@@ -18,6 +46,9 @@
     transition:
         background-color 100ms linear,
         border-color 100ms linear;
+}
+.upload-dropzone:hover {
+    background-color: #f1eee5;
 }
 .upload-dropzone-active {
     background-color: #f3f6f9;
@@ -48,7 +79,7 @@
 .upload-submit-button {
     background-color: var(--brand-blue);
     border: none;
-    border-radius: 3px;
+    border-radius: 2px;
     color: var(--paper);
     cursor: pointer;
     font-size: 13px;
