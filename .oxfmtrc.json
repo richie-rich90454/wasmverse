@@ -16,6 +16,7 @@
     "singleAttributePerLine": false,
     "sortPackageJson": false,
     "ignorePatterns": [
+        "userSourceTemplates/",
         "node_modules/",
         "dist/",
         "package-lock.json",
