@@ -28,7 +28,7 @@ function LanguageGalleryView(properties: LanguageGalleryViewProperties): React.J
     };
     return (
         <section className="language-gallery" aria-labelledby="language-index-heading">
-            <p className="section-eyebrow">PLATE ONE</p>
+            <p className="section-eyebrow">PLATE TWO</p>
             <h2 className="section-heading" id="language-index-heading">
                 The Language Index
             </h2>
