@@ -17,6 +17,16 @@ function TerminalStageView(properties: TerminalStageViewProperties): React.JSX.E
             properties.terminalStageController.dispose();
         };
     }, [properties.terminalStageController]);
-    return <div className="terminal-stage" ref={containerReference} />;
+    return (
+        <div className="terminal-frame">
+            <div className="terminal-chrome" aria-hidden="true">
+                <span className="terminal-chrome-dot" />
+                <span className="terminal-chrome-dot" />
+                <span className="terminal-chrome-dot" />
+                <span className="terminal-chrome-title">Terminal</span>
+            </div>
+            <div className="terminal-stage" ref={containerReference} />
+        </div>
+    );
 }
 export { TerminalStageView };
