@@ -117,7 +117,7 @@ class ServerApplication {
                 manifestWriter,
             ),
             new RustLanguagePlugin(
-                new WasmPackCompilerStrategy(processRunner),
+                new WasmPackCompilerStrategy(processRunner, this.fileSystemOperations),
                 new WasmPackGlueRuntimeAssembler(this.fileSystemOperations),
                 sourceFileCopier,
                 manifestWriter,
