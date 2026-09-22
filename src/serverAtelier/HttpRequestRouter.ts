@@ -6,6 +6,8 @@ import { LanguagePluginRegistry } from "@serverAtelier/pluginHost/LanguagePlugin
 import { ServerConfiguration } from "@serverAtelier/ServerConfiguration.ts";
 import { ScopedLogger } from "@serverAtelier/ScopedLogger.ts";
 import { PathGuard } from "@serverAtelier/utilities/PathGuard.ts";
+import { RateLimitGuard } from "@serverAtelier/RateLimitGuard.ts";
+import { applySecurityHeaders } from "@serverAtelier/SecurityHeaders.ts";
 class HttpRequestRouter {
     private readonly buildOrchestrator: BuildOrchestrator;
     private readonly sessionRegistry: SessionRegistry;
@@ -14,6 +16,7 @@ class HttpRequestRouter {
     private readonly serverConfiguration: ServerConfiguration;
     private readonly scopedLogger: ScopedLogger;
     private readonly pathGuard: PathGuard;
+    private readonly sessionUploadRateGuard: RateLimitGuard;
     constructor(
         buildOrchestrator: BuildOrchestrator,
         sessionRegistry: SessionRegistry,
@@ -30,24 +33,33 @@ class HttpRequestRouter {
         this.serverConfiguration = serverConfiguration;
         this.scopedLogger = scopedLogger;
         this.pathGuard = pathGuard;
+        this.sessionUploadRateGuard = new RateLimitGuard(10, 60_000);
     }
     async routeRequest(request: Request): Promise<Response> {
         const requestUrl = new URL(request.url);
+        let routedResponse: Response;
         if (request.method === "POST" && requestUrl.pathname === "/api/session") {
-            return this.handleSessionUpload(request);
+            routedResponse = await this.handleSessionUpload(request);
+        } else if (request.method === "GET" && requestUrl.pathname === "/api/health") {
+            routedResponse = this.handleHealthCheck();
+        } else if (request.method === "GET" && requestUrl.pathname.startsWith("/api/export/")) {
+            routedResponse = await this.handleStaticExport(requestUrl);
+        } else if (request.method === "GET" && requestUrl.pathname.startsWith("/session/")) {
+            routedResponse = await this.handleSessionAssetRequest(requestUrl);
+        } else {
+            routedResponse = await this.handleClientAssetRequest(requestUrl);
         }
-        if (request.method === "GET" && requestUrl.pathname === "/api/health") {
-            return this.handleHealthCheck();
-        }
-        if (request.method === "GET" && requestUrl.pathname.startsWith("/api/export/")) {
-            return this.handleStaticExport(requestUrl);
-        }
-        if (request.method === "GET" && requestUrl.pathname.startsWith("/session/")) {
-            return this.handleSessionAssetRequest(requestUrl);
-        }
-        return this.handleClientAssetRequest(requestUrl);
+        return applySecurityHeaders(routedResponse);
     }
     private async handleSessionUpload(request: Request): Promise<Response> {
+        const clientKey =
+            request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "anonymous";
+        if (!this.sessionUploadRateGuard.tryConsume(clientKey)) {
+            return this.buildErrorResponse(
+                429,
+                "Too many uploads. Wait one minute and try again.",
+            );
+        }
         try {
             const formData = await request.formData();
             const archiveField = formData.get("archive");
@@ -129,14 +141,16 @@ class HttpRequestRouter {
     }
     private async handleClientAssetRequest(requestUrl: URL): Promise<Response> {
         const relativePath = requestUrl.pathname.replace(/^\/+/, "");
-        const candidatePaths = [
-            `${this.serverConfiguration.clientBuildDirectory}/${relativePath}`,
-            `${this.serverConfiguration.clientBuildDirectory}/index.html`,
-        ];
-        for (const candidatePath of candidatePaths) {
-            const candidateFile = Bun.file(candidatePath);
-            if (await candidateFile.exists()) {
-                return new Response(candidateFile);
+        const exactCandidate = `${this.serverConfiguration.clientBuildDirectory}/${relativePath}`;
+        const exactCandidateFile = Bun.file(exactCandidate);
+        if (await exactCandidateFile.exists()) {
+            return new Response(exactCandidateFile);
+        }
+        const requestLooksLikeFile = /\.[a-z0-9]+$/i.test(relativePath);
+        if (!requestLooksLikeFile) {
+            const indexFile = Bun.file(`${this.serverConfiguration.clientBuildDirectory}/index.html`);
+            if (await indexFile.exists()) {
+                return new Response(indexFile);
             }
         }
         return this.buildErrorResponse(404, "Client asset not found.");
