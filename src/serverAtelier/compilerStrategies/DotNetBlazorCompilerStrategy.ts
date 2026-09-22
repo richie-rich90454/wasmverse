@@ -17,14 +17,12 @@ class DotNetBlazorCompilerStrategy implements CompilerStrategyContract {
     }
     async compileSourceInto(context: BuildContextRecord): Promise<void> {
         const toolchainExists = await this.fileSystemOperations.pathExists(this.dotNetBinaryPath);
-        if (!toolchainExists) {
-            throw new Error(
-                "dotnet SDK not found. Run bun run setup to provision ./.tools/dotnet/.",
-            );
-        }
-        const outcome = await this.processRunner.runToCompletion(
-            [
-                this.dotNetBinaryPath,
+        const dotnetBinary = toolchainExists ? this.dotNetBinaryPath : "dotnet";
+        let outcome;
+        try {
+            outcome = await this.processRunner.runToCompletion(
+                [
+                    dotnetBinary,
                 "publish",
                 "-c",
                 "Release",
@@ -34,9 +32,18 @@ class DotNetBlazorCompilerStrategy implements CompilerStrategyContract {
                 context.runtimeDirectory,
             ],
             { workingDirectory: context.sourceDirectory },
-        );
+            );
+        } catch {
+            throw new Error(
+                "dotnet SDK not found. Run bun run setup to provision ./.tools/dotnet/ or install dotnet on PATH.",
+            );
+        }
         if (outcome.exitCode !== 0) {
-            throw new Error(`dotnet publish failed: ${outcome.standardError}`);
+            const detail =
+                outcome.standardError.trim().length > 0
+                    ? outcome.standardError
+                    : outcome.standardOutput;
+            throw new Error(`dotnet publish failed: ${detail}`);
         }
     }
 }
