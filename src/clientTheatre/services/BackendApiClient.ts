@@ -3,18 +3,42 @@ class BackendApiClient {
     async submitProjectArchive(
         file: File,
         entryFileName: string,
+        onArchiveTransferred?: () => void,
     ): Promise<SessionDescriptorRecord> {
         const formData = new FormData();
         formData.append("archive", file);
         formData.append("entry", entryFileName);
-        const response = await fetch("/api/session", { method: "POST", body: formData });
-        if (!response.ok) {
-            const errorPayload = await response
-                .json()
-                .catch(() => ({ errorMessage: response.statusText }));
-            throw new Error(errorPayload.errorMessage ?? "Upload failed.");
-        }
-        return (await response.json()) as SessionDescriptorRecord;
+        return new Promise<SessionDescriptorRecord>((resolve, reject) => {
+            const request = new XMLHttpRequest();
+            request.open("POST", "/api/session");
+            request.upload.addEventListener("progress", (progressEvent) => {
+                if (
+                    progressEvent.lengthComputable &&
+                    progressEvent.loaded >= progressEvent.total &&
+                    onArchiveTransferred
+                ) {
+                    onArchiveTransferred();
+                }
+            });
+            request.addEventListener("load", () => {
+                if (request.status >= 200 && request.status < 300) {
+                    resolve(JSON.parse(request.responseText) as SessionDescriptorRecord);
+                    return;
+                }
+                try {
+                    const errorPayload = JSON.parse(request.responseText) as {
+                        errorMessage?: string;
+                    };
+                    reject(new Error(errorPayload.errorMessage ?? "Upload failed."));
+                } catch {
+                    reject(new Error(request.statusText || "Upload failed."));
+                }
+            });
+            request.addEventListener("error", () => {
+                reject(new Error("Upload failed. The server could not be reached."));
+            });
+            request.send(formData);
+        });
     }
     constructSessionAssetUrl(sessionIdentifier: string, relativePath: string): string {
         return `/session/${sessionIdentifier}/dist/${relativePath}`;
