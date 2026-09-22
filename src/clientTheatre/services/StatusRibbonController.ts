@@ -1,7 +1,7 @@
 type StatusRibbonKind = "info" | "ok" | "err";
 type StatusRibbonListener = () => void;
 class StatusRibbonController {
-    messageText: string = "Ready.";
+    messageText: string = "";
     messageKind: StatusRibbonKind = "info";
     private listeners: Set<StatusRibbonListener> = new Set();
     setMessage(text: string, kind: StatusRibbonKind): void {
