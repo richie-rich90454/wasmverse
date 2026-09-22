@@ -3,7 +3,11 @@ import type { CompilerStrategyContract } from "@serverAtelier/compilerStrategies
 import { FileSystemOperations } from "@serverAtelier/utilities/FileSystemOperations.ts";
 import { ProcessRunner } from "@serverAtelier/utilities/ProcessRunner.ts";
 const TEAVM_VERSION = "0.15.0";
-function mavenProjectText(artifactId: string, mainClassName: string): string {
+function mavenProjectText(
+    artifactId: string,
+    mainClassName: string,
+    targetDirectory: string,
+): string {
     return (
         "<project xmlns=\"http://maven.apache.org/POM/4.0.0\">\n" +
         "    <modelVersion>4.0.0</modelVersion>\n" +
@@ -11,7 +15,7 @@ function mavenProjectText(artifactId: string, mainClassName: string): string {
         `    <artifactId>${artifactId}</artifactId>\n` +
         "    <version>0.1.0</version>\n" +
         "    <properties>\n" +
-        "        <maven.compiler.release>8</maven.compiler.release>\n" +
+        "        <maven.compiler.release>11</maven.compiler.release>\n" +
         "        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>\n" +
         "    </properties>\n" +
         "    <dependencies>\n" +
@@ -33,7 +37,7 @@ function mavenProjectText(artifactId: string, mainClassName: string): string {
         "                        <goals><goal>compile</goal></goals>\n" +
         "                        <configuration>\n" +
         `                            <mainClass>${mainClassName}</mainClass>\n` +
-        "                            <targetDirectory>${teavm.output}</targetDirectory>\n" +
+        `                            <targetDirectory>${targetDirectory}</targetDirectory>\n` +
         "                            <targetFileName>classes.js</targetFileName>\n" +
         "                            <jsModuleType>ES2015</jsModuleType>\n" +
         "                            <minifying>false</minifying>\n" +
@@ -78,7 +82,7 @@ class TeaVmCompilerStrategy implements CompilerStrategyContract {
         let outcome;
         try {
             outcome = await this.processRunner.runToCompletion(
-                [this.mavenBinaryName, "-q", "package", `-Dteavm.output=${context.runtimeDirectory}`],
+                [this.mavenBinaryName, "-q", "package"],
                 { workingDirectory: context.sourceDirectory },
             );
         } catch {
@@ -105,7 +109,11 @@ class TeaVmCompilerStrategy implements CompilerStrategyContract {
         );
         await this.fileSystemOperations.writeTextFile(
             projectFile,
-            mavenProjectText(artifactIdForSession(context.sessionIdentifier), baseName),
+            mavenProjectText(
+                artifactIdForSession(context.sessionIdentifier),
+                baseName,
+                context.runtimeDirectory,
+            ),
         );
         const entrySource = await this.fileSystemOperations.readTextFile(
             `${context.sourceDirectory}/${context.entryFileRelativePath}`,
