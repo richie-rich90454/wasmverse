@@ -4,6 +4,7 @@ import { UploadCurtainView } from "@clientTheatre/components/UploadCurtainView.t
 import { TerminalStageView } from "@clientTheatre/components/TerminalStageView.tsx";
 import { StatusRibbonView } from "@clientTheatre/components/StatusRibbonView.tsx";
 import { MarqueeHeadingView } from "@clientTheatre/components/MarqueeHeadingView.tsx";
+import { SiteFooterView } from "@clientTheatre/components/SiteFooterView.tsx";
 import { LanguageGalleryView } from "@clientTheatre/components/LanguageGalleryView.tsx";
 function ClientApplicationView(): React.JSX.Element {
     const controllerReference = useRef<ClientApplicationController | null>(null);
@@ -43,7 +44,7 @@ function ClientApplicationView(): React.JSX.Element {
                             )}
                             download
                         >
-                            Download static site (.zip)
+                            Download static site
                         </a>
                     )}
                     {isFinished && (
@@ -52,7 +53,7 @@ function ClientApplicationView(): React.JSX.Element {
                             type="button"
                             onClick={() => applicationController.beginAnotherRun()}
                         >
-                            Run another program
+                            Run another
                         </button>
                     )}
                 </div>
@@ -60,6 +61,7 @@ function ClientApplicationView(): React.JSX.Element {
             <StatusRibbonView
                 statusRibbonController={applicationController.statusRibbonController}
             />
+            <SiteFooterView />
         </div>
     );
 }
