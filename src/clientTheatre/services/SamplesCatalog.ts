@@ -46,8 +46,7 @@ const SAMPLE_PLATES: ReadonlyArray<SamplePlate> = [
         languageLabel: "Lua",
         entryFileName: "main.lua",
         programTitle: "Metatables and coroutine scheduler",
-        description:
-            "A metatable-based entity system driven by a cooperative coroutine scheduler.",
+        description: "A metatable-based entity system driven by a cooperative coroutine scheduler.",
         sourceText: sourceTextFor("main.lua"),
     },
     {
@@ -100,8 +99,7 @@ const SAMPLE_PLATES: ReadonlyArray<SamplePlate> = [
         languageLabel: "Zig",
         entryFileName: "main.zig",
         programTitle: "Comptime and error unions",
-        description:
-            "Compile-time tables meet runtime error unions in a compact parsing pipeline.",
+        description: "Compile-time tables meet runtime error unions in a compact parsing pipeline.",
         sourceText: sourceTextFor("main.zig"),
     },
     {
@@ -127,8 +125,7 @@ const SAMPLE_PLATES: ReadonlyArray<SamplePlate> = [
         languageLabel: "Dart",
         entryFileName: "main.dart",
         programTitle: "Streams and isolate-style tasks",
-        description:
-            "Async streams, pattern matching, and scheduled tasks produce a live report.",
+        description: "Async streams, pattern matching, and scheduled tasks produce a live report.",
         sourceText: sourceTextFor("main.dart"),
     },
     {
@@ -154,8 +151,7 @@ const SAMPLE_PLATES: ReadonlyArray<SamplePlate> = [
         languageLabel: "AssemblyScript",
         entryFileName: "main.ts",
         programTitle: "Typed WebAssembly memory",
-        description:
-            "Static types, heap allocation, and arithmetic run directly on linear memory.",
+        description: "Static types, heap allocation, and arithmetic run directly on linear memory.",
         sourceText: sourceTextFor("main.ts"),
     },
     {
@@ -163,8 +159,7 @@ const SAMPLE_PLATES: ReadonlyArray<SamplePlate> = [
         languageLabel: "OCaml",
         entryFileName: "main.ml",
         programTitle: "Algebraic data types and folds",
-        description:
-            "Variant types, pattern matching, and folds evaluate an expression tree.",
+        description: "Variant types, pattern matching, and folds evaluate an expression tree.",
         sourceText: sourceTextFor("main.ml"),
     },
     {
