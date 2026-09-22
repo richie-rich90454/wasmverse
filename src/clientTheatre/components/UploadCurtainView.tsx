@@ -7,6 +7,7 @@ interface UploadCurtainViewProperties {
 function UploadCurtainView(properties: UploadCurtainViewProperties): React.JSX.Element {
     const curtainController = properties.applicationController.uploadCurtainController;
     const [, forceRender] = useState(0);
+    const [isDragActive, setIsDragActive] = useState(false);
     useEffect(() => {
         return curtainController.subscribe(() => forceRender((renderCount) => renderCount + 1));
     }, [curtainController]);
@@ -14,6 +15,22 @@ function UploadCurtainView(properties: UploadCurtainViewProperties): React.JSX.E
         const selectedFile = event.target.files?.[0];
         if (selectedFile) {
             curtainController.selectFile(selectedFile);
+        }
+    };
+    const handleDragOver = (event: React.DragEvent<HTMLLabelElement>) => {
+        event.preventDefault();
+        setIsDragActive(true);
+    };
+    const handleDragLeave = (event: React.DragEvent<HTMLLabelElement>) => {
+        event.preventDefault();
+        setIsDragActive(false);
+    };
+    const handleDrop = (event: React.DragEvent<HTMLLabelElement>) => {
+        event.preventDefault();
+        setIsDragActive(false);
+        const droppedFile = event.dataTransfer.files?.[0];
+        if (droppedFile) {
+            curtainController.selectFile(droppedFile);
         }
     };
     const handleSubmit = () => {
@@ -28,30 +45,39 @@ function UploadCurtainView(properties: UploadCurtainViewProperties): React.JSX.E
         !curtainController.selectedFile ||
         curtainController.entryFileName.trim().length === 0 ||
         curtainController.isBuilding;
+    const buttonLabel =
+        curtainController.phase === "uploading"
+            ? "Uploading"
+            : curtainController.phase === "building"
+              ? "Building"
+              : "Build and Run";
     return (
         <div className="upload-curtain">
-            <label className="upload-dropzone">
+            <label
+                className={`upload-dropzone${isDragActive ? " upload-dropzone-active" : ""}`}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+            >
                 {curtainController.selectedFile
                     ? curtainController.selectedFile.name
-                    : "Drop a zip archive here, or click to choose one."}
+                    : "Drop a zip archive here, or select one from your computer."}
                 <input type="file" accept=".zip" onChange={handleFileSelection} hidden />
             </label>
             <input
                 className="upload-entry-input"
                 type="text"
-                placeholder="Entry file, e.g. main.py"
+                placeholder="Entry file, for example main.py"
                 value={curtainController.entryFileName}
                 onChange={(event) => curtainController.setEntryFileName(event.target.value)}
             />
-            <button
-                className="upload-submit-button"
-                onClick={handleSubmit}
-                disabled={submitDisabled}
-            >
-                {curtainController.isBuilding ? "Building." : "Build and Run"}
+            <button className="upload-submit-button" onClick={handleSubmit} disabled={submitDisabled}>
+                {buttonLabel}
             </button>
             {curtainController.errorMessage.length > 0 && (
-                <div className="upload-error-message">{curtainController.errorMessage}</div>
+                <div className="upload-error-message" role="alert">
+                    {curtainController.errorMessage}
+                </div>
             )}
         </div>
     );
