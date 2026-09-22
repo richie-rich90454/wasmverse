@@ -4,6 +4,7 @@ import { UploadCurtainView } from "@clientTheatre/components/UploadCurtainView.t
 import { TerminalStageView } from "@clientTheatre/components/TerminalStageView.tsx";
 import { StatusRibbonView } from "@clientTheatre/components/StatusRibbonView.tsx";
 import { MarqueeHeadingView } from "@clientTheatre/components/MarqueeHeadingView.tsx";
+import { LanguageGalleryView } from "@clientTheatre/components/LanguageGalleryView.tsx";
 function ClientApplicationView(): React.JSX.Element {
     const controllerReference = useRef<ClientApplicationController | null>(null);
     if (!controllerReference.current) {
@@ -27,7 +28,10 @@ function ClientApplicationView(): React.JSX.Element {
                     terminalStageController={applicationController.terminalStageController}
                 />
             ) : (
-                <UploadCurtainView applicationController={applicationController} />
+                <>
+                    <LanguageGalleryView applicationController={applicationController} />
+                    <UploadCurtainView applicationController={applicationController} />
+                </>
             )}
             {(finishedSession || isFinished) && (
                 <div className="session-action-row">
