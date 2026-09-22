@@ -7,10 +7,23 @@ class TeaVmModuleLoader {
     }
     async loadModule(stage: TerminalStageController): Promise<Record<string, unknown>> {
         stage.writeLine("Loading TeaVM module.");
-        const loaderModule = (await import(
-            /* @vite-ignore */ `${this.sessionBaseUrl}/runtime/teavm-loader.mjs`
-        )) as { loadTeaVmModule(baseUrl: string): Promise<Record<string, unknown>> };
-        return loaderModule.loadTeaVmModule(`${this.sessionBaseUrl}/runtime`);
+        const originalLog = console.log;
+        const originalError = console.error;
+        console.log = (...args: Array<unknown>) => {
+            stage.writeLine(args.map((arg) => String(arg)).join(" "));
+        };
+        console.error = (...args: Array<unknown>) => {
+            stage.writeLine(args.map((arg) => String(arg)).join(" "));
+        };
+        try {
+            const loaderModule = (await import(
+                /* @vite-ignore */ `${this.sessionBaseUrl}/runtime/teavm-loader.mjs`
+            )) as { loadTeaVmModule(baseUrl: string): Promise<Record<string, unknown>> };
+            return loaderModule.loadTeaVmModule(`${this.sessionBaseUrl}/runtime`);
+        } finally {
+            console.log = originalLog;
+            console.error = originalError;
+        }
     }
 }
 class TeaVmMainInvoker {
@@ -20,11 +33,24 @@ class TeaVmMainInvoker {
     ): Promise<void> {
         const mainFunction = module["main"];
         if (typeof mainFunction !== "function") {
-            stage.writeLine("TeaVM module loaded. No main export found.");
+            stage.writeLine("TeaVM module loaded.");
             return;
         }
         stage.writeLine("Running TeaVM main.");
-        await (mainFunction as () => Promise<unknown> | unknown)();
+        const originalLog = console.log;
+        const originalError = console.error;
+        console.log = (...args: Array<unknown>) => {
+            stage.writeLine(args.map((arg) => String(arg)).join(" "));
+        };
+        console.error = (...args: Array<unknown>) => {
+            stage.writeLine(args.map((arg) => String(arg)).join(" "));
+        };
+        try {
+            await (mainFunction as () => Promise<unknown> | unknown)();
+        } finally {
+            console.log = originalLog;
+            console.error = originalError;
+        }
     }
 }
 class TeaVmPerformer implements TerminalPerformerContract {
