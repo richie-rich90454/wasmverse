@@ -8,7 +8,8 @@ class TerminalSelectionCopier {
         });
         terminal.attachCustomKeyEventHandler((event: KeyboardEvent) => {
             const isCopyModifier = event.ctrlKey || event.metaKey;
-            const isPlainCopy = isCopyModifier && !event.shiftKey && event.key.toLowerCase() === "c";
+            const isPlainCopy =
+                isCopyModifier && !event.shiftKey && event.key.toLowerCase() === "c";
             const isShiftCopy = isCopyModifier && event.shiftKey && event.key.toLowerCase() === "c";
             if ((isPlainCopy || isShiftCopy) && this.hasSelection()) {
                 void this.copySelection();
