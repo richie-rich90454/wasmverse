@@ -1,26 +1,43 @@
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 public class Main {
-    public sealed interface LedgerEntry permits Deposit, Withdrawal, Note {}
-    public record Deposit(String account, int amount) implements LedgerEntry {}
-    public record Withdrawal(String account, int amount) implements LedgerEntry {}
-    public record Note(String text) implements LedgerEntry {}
+    static class Movement {
+        final String account;
+        final int amount;
+        final boolean deposit;
 
-    static String describe(LedgerEntry entry) {
-        return switch (entry) {
-            case Deposit deposit -> "deposit " + deposit.amount() + " to " + deposit.account();
-            case Withdrawal withdrawal -> "withdraw " + withdrawal.amount() + " from " + withdrawal.account();
-            case Note note -> "note: " + note.text();
-        };
+        Movement(String account, int amount, boolean deposit) {
+            this.account = account;
+            this.amount = amount;
+            this.deposit = deposit;
+        }
+
+        String describe() {
+            if (deposit) {
+                return "deposit " + amount + " to " + account;
+            }
+            return "withdraw " + amount + " from " + account;
+        }
+
+        int signedAmount() {
+            return deposit ? amount : -amount;
+        }
     }
 
     static List<Integer> sieve(int limit) {
         boolean[] flags = new boolean[limit + 1];
-        for (int index = 2; index <= limit; index++) {
-            flags[index] = true;
+        Arrays.fill(flags, true);
+        if (limit >= 0) {
+            flags[0] = false;
+        }
+        if (limit >= 1) {
+            flags[1] = false;
         }
         for (int number = 2; number * number <= limit; number++) {
             if (flags[number]) {
@@ -40,34 +57,30 @@ public class Main {
 
     public static void main(String[] args) {
         System.out.println("WASMVerse Java showcase");
-        System.out.println("Stage one: records model ledger entries");
-        List<LedgerEntry> entries = List.of(
-            new Deposit("alpha", 120),
-            new Deposit("beta", 75),
-            new Withdrawal("alpha", 40),
-            new Note("midday reconciliation")
+        System.out.println("Stage one: lambdas describe ledger movements");
+        List<Movement> movements = Arrays.asList(
+            new Movement("alpha", 120, true),
+            new Movement("beta", 75, true),
+            new Movement("alpha", 40, false),
+            new Movement("beta", 10, false)
         );
-        for (LedgerEntry entry : entries) {
-            System.out.println(describe(entry));
-        }
-        System.out.println("Stage two: switch patterns summarize balances");
-        Map<String, Integer> totals = new HashMap<>();
-        for (LedgerEntry entry : entries) {
-            switch (entry) {
-                case Deposit deposit -> totals.merge(deposit.account(), deposit.amount(), Integer::sum);
-                case Withdrawal withdrawal -> totals.merge(withdrawal.account(), -withdrawal.amount(), Integer::sum);
-                case Note ignored -> {}
-            }
-        }
-        for (String account : totals.keySet().stream().sorted().toList()) {
-            System.out.println(account + " balance: " + totals.get(account));
-        }
+        movements.stream().map(Movement::describe).forEach(System.out::println);
+        System.out.println("Stage two: collectors summarize balances");
+        Map<String, Integer> totals = movements.stream().collect(
+            Collectors.groupingBy(
+                movement -> movement.account,
+                TreeMap::new,
+                Collectors.summingInt(Movement::signedAmount)
+            )
+        );
+        totals.forEach((account, total) -> System.out.println(account + " balance: " + total));
+        List<Map.Entry<String, Integer>> ranked = totals.entrySet().stream()
+            .sorted(Comparator.comparing(Map.Entry<String, Integer>::getValue).reversed())
+            .collect(Collectors.toList());
+        System.out.println("top account: " + ranked.get(0).getKey());
         System.out.println("Stage three: prime stream and window sums");
         List<Integer> primes = sieve(900);
-        long windowSum = 0;
-        for (int index = 0; index < 6 && index < primes.size(); index++) {
-            windowSum += primes.get(index);
-        }
+        long windowSum = primes.stream().limit(6).mapToLong(Integer::longValue).sum();
         System.out.println("prime count up to 900: " + primes.size());
         System.out.println("largest prime: " + primes.get(primes.size() - 1));
         System.out.println("first window sum: " + windowSum);
