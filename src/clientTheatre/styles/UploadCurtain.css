@@ -15,6 +15,13 @@
     font-size: 13px;
     padding: 24px 16px;
     text-align: center;
+    transition:
+        background-color 100ms linear,
+        border-color 100ms linear;
+}
+.upload-dropzone-active {
+    background-color: #f3f6f9;
+    border-color: var(--brand-blue-light);
 }
 .upload-entry-input {
     background-color: var(--paper);
