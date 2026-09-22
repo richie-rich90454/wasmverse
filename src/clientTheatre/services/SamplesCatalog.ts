@@ -62,9 +62,9 @@ const SAMPLE_PLATES: ReadonlyArray<SamplePlate> = [
         languageIdentifier: "rust",
         languageLabel: "Rust",
         entryFileName: "main.rs",
-        programTitle: "Traits, iterators, and ownership",
+        programTitle: "Iterators and ownership",
         description:
-            "Trait objects, zero-copy iterators, and ownership transfer across a compute graph.",
+            "Iterator pipelines and ownership transfer across a compute graph, returned as one string.",
         sourceText: sourceTextFor("main.rs"),
     },
     {
@@ -80,9 +80,9 @@ const SAMPLE_PLATES: ReadonlyArray<SamplePlate> = [
         languageIdentifier: "cpp",
         languageLabel: "C++",
         entryFileName: "main.cpp",
-        programTitle: "Templates and constexpr evaluation",
+        programTitle: "Variants and constexpr evaluation",
         description:
-            "Variadic templates, std::variant visitors, and constexpr math computed at compile time.",
+            "Shared ownership, std::variant visitors, and constexpr math computed at compile time.",
         sourceText: sourceTextFor("main.cpp"),
     },
     {
@@ -132,9 +132,9 @@ const SAMPLE_PLATES: ReadonlyArray<SamplePlate> = [
         languageIdentifier: "java",
         languageLabel: "Java",
         entryFileName: "Main.java",
-        programTitle: "Records and sealed interfaces",
+        programTitle: "Streams and collectors",
         description:
-            "Immutable records, sealed interfaces, and switch patterns model a small ledger.",
+            "Lambdas, streams, and collectors summarize a small ledger for TeaVM.",
         sourceText: sourceTextFor("Main.java"),
     },
     {
