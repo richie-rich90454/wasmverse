@@ -13,18 +13,37 @@ class WasmPackGlueModuleLoader {
         return loaderModule.loadWasmPackModule(`${this.sessionBaseUrl}/runtime`);
     }
 }
+class WasmPackOutputWriter {
+    writeReturnedText(returnedValue: unknown, stage: TerminalStageController): void {
+        if (typeof returnedValue === "string" && returnedValue.length > 0) {
+            stage.writeText(returnedValue);
+        }
+    }
+}
 class WasmPackExportedFunctionInvoker {
+    private readonly outputWriter: WasmPackOutputWriter;
+    constructor() {
+        this.outputWriter = new WasmPackOutputWriter();
+    }
     async invokeMain(
         module: Record<string, unknown>,
         stage: TerminalStageController,
     ): Promise<void> {
-        const mainFunction = module["main"] ?? module["run"];
-        if (typeof mainFunction !== "function") {
-            stage.writeLine("WASM module loaded. No main export found.");
-            return;
+        (globalThis as Record<string, unknown>).__wasmverseWriteLine = (text: string) => {
+            stage.writeText(text);
+        };
+        try {
+            const mainFunction = module["main"] ?? module["run"];
+            if (typeof mainFunction !== "function") {
+                stage.writeLine("WASM module loaded. No main export found.");
+                return;
+            }
+            stage.writeLine("Running WASM main export.");
+            const returnedValue = await (mainFunction as () => Promise<unknown> | unknown)();
+            this.outputWriter.writeReturnedText(returnedValue, stage);
+        } finally {
+            delete (globalThis as Record<string, unknown>).__wasmverseWriteLine;
         }
-        stage.writeLine("Running WASM main export.");
-        await (mainFunction as () => Promise<unknown> | unknown)();
     }
 }
 class WasmPackPerformer implements TerminalPerformerContract {
