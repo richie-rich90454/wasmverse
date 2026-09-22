@@ -53,7 +53,15 @@ function UploadCurtainView(properties: UploadCurtainViewProperties): React.JSX.E
               ? "Building"
               : "Build and Run";
     return (
-        <div className="upload-curtain">
+        <section className="upload-curtain-section" aria-labelledby="own-archive-heading">
+            <p className="upload-section-eyebrow">PLATE TWO</p>
+            <h2 className="upload-section-heading" id="own-archive-heading">
+                Your Own Archive
+            </h2>
+            <p className="upload-section-support">
+                Upload a zip archive and name the entry file to run it in the terminal.
+            </p>
+            <div className="upload-curtain">
             <label
                 className={`upload-dropzone${isDragActive ? " upload-dropzone-active" : ""}`}
                 onDragOver={handleDragOver}
@@ -103,7 +111,8 @@ function UploadCurtainView(properties: UploadCurtainViewProperties): React.JSX.E
                     {curtainController.errorMessage}
                 </div>
             )}
-        </div>
+            </div>
+        </section>
     );
 }
 export { UploadCurtainView };
