@@ -71,6 +71,13 @@ class TerminalStageController {
         this.terminalInstance?.dispose();
         this.terminalInstance = undefined;
         this.fitAddonInstance = undefined;
+        this.inputBuffer = "";
+        this.pendingReadResolver = undefined;
+        if (!this.mountResolver) {
+            this.mountPromise = new Promise<void>((resolve) => {
+                this.mountResolver = resolve;
+            });
+        }
     }
     private handleTerminalData(data: string): void {
         if (!this.pendingReadResolver) {
