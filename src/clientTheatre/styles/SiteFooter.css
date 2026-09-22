@@ -1,0 +1,19 @@
+.site-footer {
+    border-top: 1px solid var(--rule);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 24px;
+    justify-content: space-between;
+    margin-top: 64px;
+    padding: 16px 0;
+}
+.site-footer-mark {
+    color: var(--brand-blue);
+    font-family: "EB Garamond", Georgia, "Times New Roman", serif;
+    font-size: 18px;
+    font-weight: 500;
+}
+.site-footer-note {
+    color: var(--ink-muted);
+    font-size: 13px;
+}
