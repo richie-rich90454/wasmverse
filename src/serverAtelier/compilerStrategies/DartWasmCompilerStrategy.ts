@@ -23,13 +23,13 @@ class DartWasmCompilerStrategy implements CompilerStrategyContract {
             outcome = await this.processRunner.runToCompletion(
                 [
                     dartBinary,
-                "compile",
-                "wasm",
-                context.entryFileRelativePath,
-                "-o",
-                `${context.runtimeDirectory}/app.wasm`,
-            ],
-            { workingDirectory: context.sourceDirectory },
+                    "compile",
+                    "wasm",
+                    context.entryFileRelativePath,
+                    "-o",
+                    `${context.runtimeDirectory}/app.wasm`,
+                ],
+                { workingDirectory: context.sourceDirectory },
             );
         } catch {
             throw new Error(
