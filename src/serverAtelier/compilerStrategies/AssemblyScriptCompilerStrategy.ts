@@ -1,10 +1,19 @@
 import type { BuildContextRecord } from "@sharedKernel/BuildContextRecord.ts";
 import type { CompilerStrategyContract } from "@serverAtelier/compilerStrategies/CompilerStrategyContract.ts";
+import { FileSystemOperations } from "@serverAtelier/utilities/FileSystemOperations.ts";
 import { ProcessRunner } from "@serverAtelier/utilities/ProcessRunner.ts";
+const ASSEMBLYSCRIPT_LOADER_TEXT =
+    "let instance = null;\n" +
+    "function forwardedWrite(pointer, length){ const text = new TextDecoder().decode(new Uint8Array(instance.exports.memory.buffer, pointer, length)); const hook = globalThis.__wasmverseWriteLine; if (typeof hook === 'function'){ hook(text); } }\n" +
+    "export default async function(){ const response = await fetch('./app.wasm'); const bytes = await response.arrayBuffer(); const result = await WebAssembly.instantiate(bytes, { env: { abort(){ throw new Error('AssemblyScript abort'); }, write: forwardedWrite } }); instance = result.instance; }\n" +
+    "export function main(){ instance.exports.main(); }\n" +
+    "export function run(){ instance.exports.main(); }\n";
 class AssemblyScriptCompilerStrategy implements CompilerStrategyContract {
     private readonly processRunner: ProcessRunner;
+    private readonly fileSystemOperations: FileSystemOperations;
     constructor(processRunner: ProcessRunner) {
         this.processRunner = processRunner;
+        this.fileSystemOperations = new FileSystemOperations();
     }
     async compileSourceInto(context: BuildContextRecord): Promise<void> {
         const outcome = await this.processRunner.runToCompletion(
@@ -19,8 +28,16 @@ class AssemblyScriptCompilerStrategy implements CompilerStrategyContract {
             { workingDirectory: context.sourceDirectory },
         );
         if (outcome.exitCode !== 0) {
-            throw new Error(`AssemblyScript compilation failed: ${outcome.standardError}`);
+            const detail =
+                outcome.standardError.trim().length > 0
+                    ? outcome.standardError
+                    : outcome.standardOutput;
+            throw new Error(`AssemblyScript compilation failed: ${detail}`);
         }
+        await this.fileSystemOperations.writeTextFile(
+            `${context.runtimeDirectory}/app.js`,
+            ASSEMBLYSCRIPT_LOADER_TEXT,
+        );
     }
 }
 export { AssemblyScriptCompilerStrategy };
