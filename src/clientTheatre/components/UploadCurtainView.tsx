@@ -54,7 +54,7 @@ function UploadCurtainView(properties: UploadCurtainViewProperties): React.JSX.E
               : "Build and Run";
     return (
         <section className="upload-curtain-section" aria-labelledby="own-archive-heading">
-            <p className="upload-section-eyebrow">PLATE TWO</p>
+            <p className="upload-section-eyebrow">PLATE ONE</p>
             <h2 className="upload-section-heading" id="own-archive-heading">
                 Your Own Archive
             </h2>
