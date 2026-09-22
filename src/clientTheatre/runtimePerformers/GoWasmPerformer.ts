@@ -26,7 +26,20 @@ class GoWasmInstanceRunner {
             runner.importObject as WebAssembly.Imports,
         );
         stage.writeLine("Running Go WASM module.");
-        runner.run(instance);
+        const originalLog = console.log;
+        const originalError = console.error;
+        console.log = (...args: Array<unknown>) => {
+            stage.writeLine(args.map((arg) => String(arg)).join(" "));
+        };
+        console.error = (...args: Array<unknown>) => {
+            stage.writeLine(args.map((arg) => String(arg)).join(" "));
+        };
+        try {
+            await runner.run(instance);
+        } finally {
+            console.log = originalLog;
+            console.error = originalError;
+        }
     }
 }
 class GoWasmPerformer implements TerminalPerformerContract {
