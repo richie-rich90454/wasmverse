@@ -55,10 +55,7 @@ class HttpRequestRouter {
         const clientKey =
             request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "anonymous";
         if (!this.sessionUploadRateGuard.tryConsume(clientKey)) {
-            return this.buildErrorResponse(
-                429,
-                "Too many uploads. Wait one minute and try again.",
-            );
+            return this.buildErrorResponse(429, "Too many uploads. Wait one minute and try again.");
         }
         try {
             const formData = await request.formData();
@@ -148,7 +145,9 @@ class HttpRequestRouter {
         }
         const requestLooksLikeFile = /\.[a-z0-9]+$/i.test(relativePath);
         if (!requestLooksLikeFile) {
-            const indexFile = Bun.file(`${this.serverConfiguration.clientBuildDirectory}/index.html`);
+            const indexFile = Bun.file(
+                `${this.serverConfiguration.clientBuildDirectory}/index.html`,
+            );
             if (await indexFile.exists()) {
                 return new Response(indexFile);
             }
