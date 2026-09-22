@@ -1,3 +1,4 @@
+import { resolve } from "node:path";
 import type { LanguageIdentifier } from "@sharedKernel/LanguageIdentifier.ts";
 import type { SessionDescriptorRecord } from "@sharedKernel/SessionDescriptorRecord.ts";
 import { FileSystemOperations } from "@serverAtelier/utilities/FileSystemOperations.ts";
@@ -22,7 +23,7 @@ class SessionLifecycleRecord {
         this.languageIdentifier = languageIdentifier;
         this.entryFileRelativePath = entryFileRelativePath;
         this.creationTimestamp = Date.now();
-        this.sessionDirectory = `${sessionsDirectory}/${sessionIdentifier}`;
+        this.sessionDirectory = `${resolve(sessionsDirectory)}/${sessionIdentifier}`;
         this.sourceDirectory = `${this.sessionDirectory}/source`;
         this.runtimeDirectory = `${this.sessionDirectory}/dist/runtime`;
         this.userCodeDirectory = `${this.sessionDirectory}/dist/user-code`;
