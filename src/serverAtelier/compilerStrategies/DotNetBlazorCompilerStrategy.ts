@@ -23,15 +23,15 @@ class DotNetBlazorCompilerStrategy implements CompilerStrategyContract {
             outcome = await this.processRunner.runToCompletion(
                 [
                     dotnetBinary,
-                "publish",
-                "-c",
-                "Release",
-                "-r",
-                "browser-wasm",
-                "-o",
-                context.runtimeDirectory,
-            ],
-            { workingDirectory: context.sourceDirectory },
+                    "publish",
+                    "-c",
+                    "Release",
+                    "-r",
+                    "browser-wasm",
+                    "-o",
+                    context.runtimeDirectory,
+                ],
+                { workingDirectory: context.sourceDirectory },
             );
         } catch {
             throw new Error(
