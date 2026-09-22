@@ -30,8 +30,8 @@ function ClientApplicationView(): React.JSX.Element {
                 />
             ) : (
                 <>
-                    <LanguageGalleryView applicationController={applicationController} />
                     <UploadCurtainView applicationController={applicationController} />
+                    <LanguageGalleryView applicationController={applicationController} />
                 </>
             )}
             {(finishedSession || isFinished) && (
