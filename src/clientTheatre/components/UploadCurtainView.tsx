@@ -14,7 +14,7 @@ function UploadCurtainView(properties: UploadCurtainViewProperties): React.JSX.E
     const handleFileSelection = (event: React.ChangeEvent<HTMLInputElement>) => {
         const selectedFile = event.target.files?.[0];
         if (selectedFile) {
-            curtainController.selectFile(selectedFile);
+            void curtainController.selectFile(selectedFile);
         }
     };
     const handleDragOver = (event: React.DragEvent<HTMLLabelElement>) => {
@@ -30,7 +30,7 @@ function UploadCurtainView(properties: UploadCurtainViewProperties): React.JSX.E
         setIsDragActive(false);
         const droppedFile = event.dataTransfer.files?.[0];
         if (droppedFile) {
-            curtainController.selectFile(droppedFile);
+            void curtainController.selectFile(droppedFile);
         }
     };
     const handleSubmit = () => {
@@ -41,6 +41,7 @@ function UploadCurtainView(properties: UploadCurtainViewProperties): React.JSX.E
             );
         }
     };
+    const hasEntryListing = curtainController.entryFileOptions.length > 0;
     const submitDisabled =
         !curtainController.selectedFile ||
         curtainController.entryFileName.trim().length === 0 ||
@@ -60,18 +61,41 @@ function UploadCurtainView(properties: UploadCurtainViewProperties): React.JSX.E
                 onDrop={handleDrop}
             >
                 {curtainController.selectedFile
-                    ? curtainController.selectedFile.name
+                    ? `${curtainController.selectedFile.name} (${curtainController.entryFileOptions.length} files detected)`
                     : "Drop a zip archive here, or select one from your computer."}
                 <input type="file" accept=".zip" onChange={handleFileSelection} hidden />
             </label>
-            <input
-                className="upload-entry-input"
-                type="text"
-                placeholder="Entry file, for example main.py"
-                value={curtainController.entryFileName}
-                onChange={(event) => curtainController.setEntryFileName(event.target.value)}
-            />
-            <button className="upload-submit-button" onClick={handleSubmit} disabled={submitDisabled}>
+            <label className="upload-entry-label" htmlFor="upload-entry-select">
+                ENTRY FILE
+            </label>
+            {hasEntryListing ? (
+                <select
+                    id="upload-entry-select"
+                    className="upload-entry-input"
+                    value={curtainController.entryFileName}
+                    onChange={(event) => curtainController.setEntryFileName(event.target.value)}
+                >
+                    {curtainController.entryFileOptions.map((optionPath) => (
+                        <option key={optionPath} value={optionPath}>
+                            {optionPath}
+                        </option>
+                    ))}
+                </select>
+            ) : (
+                <input
+                    id="upload-entry-select"
+                    className="upload-entry-input"
+                    type="text"
+                    placeholder="Entry file, for example main.py"
+                    value={curtainController.entryFileName}
+                    onChange={(event) => curtainController.setEntryFileName(event.target.value)}
+                />
+            )}
+            <button
+                className="upload-submit-button"
+                onClick={handleSubmit}
+                disabled={submitDisabled}
+            >
                 {buttonLabel}
             </button>
             {curtainController.errorMessage.length > 0 && (
