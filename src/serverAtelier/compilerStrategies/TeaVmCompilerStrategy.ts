@@ -9,7 +9,7 @@ function mavenProjectText(
     targetDirectory: string,
 ): string {
     return (
-        "<project xmlns=\"http://maven.apache.org/POM/4.0.0\">\n" +
+        '<project xmlns="http://maven.apache.org/POM/4.0.0">\n' +
         "    <modelVersion>4.0.0</modelVersion>\n" +
         "    <groupId>wasmverse</groupId>\n" +
         `    <artifactId>${artifactId}</artifactId>\n` +
