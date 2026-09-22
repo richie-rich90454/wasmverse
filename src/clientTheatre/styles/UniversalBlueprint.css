@@ -18,6 +18,11 @@ html {
     background-color: var(--paper);
     color: var(--ink);
 }
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
 body {
     background-color: var(--paper);
     color: var(--ink);
@@ -27,8 +32,24 @@ body {
     margin: 0;
     padding: 0;
 }
+:focus-visible {
+    outline: 2px solid var(--brand-blue-light);
+    outline-offset: 2px;
+}
 .universal-application-column {
     margin: 0 auto;
-    max-width: 720px;
-    padding: 32px 16px 64px 16px;
+    max-width: 1120px;
+    padding: 32px 24px 64px 24px;
+}
+@media (max-width: 639px) {
+    .universal-application-column {
+        padding: 24px 16px 48px 16px;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        transition: none;
+    }
 }
