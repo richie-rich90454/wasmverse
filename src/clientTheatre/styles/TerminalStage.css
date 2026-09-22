@@ -1,3 +1,30 @@
+.terminal-frame {
+    background-color: var(--terminal-background);
+    border: 1px solid var(--rule-strong);
+    border-radius: 2px;
+    overflow: hidden;
+    width: 100%;
+}
+.terminal-chrome {
+    align-items: center;
+    border-bottom: 1px solid var(--rule-strong);
+    display: flex;
+    gap: 8px;
+    padding: 8px 12px;
+}
+.terminal-chrome-dot {
+    background-color: var(--rule-strong);
+    border-radius: 50%;
+    display: inline-block;
+    height: 10px;
+    width: 10px;
+}
+.terminal-chrome-title {
+    color: var(--terminal-foreground);
+    font-family: Menlo, Consolas, "Courier New", monospace;
+    font-size: 12px;
+    margin-left: 4px;
+}
 .terminal-stage {
     background-color: var(--terminal-background);
     box-sizing: border-box;
@@ -17,7 +44,7 @@
 }
 .static-export-link {
     background-color: var(--brand-blue);
-    border-radius: 3px;
+    border-radius: 2px;
     color: var(--paper);
     display: inline-block;
     font-size: 13px;
@@ -37,7 +64,7 @@
 .run-another-button {
     background-color: transparent;
     border: 1px solid var(--rule);
-    border-radius: 3px;
+    border-radius: 2px;
     color: var(--brand-blue);
     cursor: pointer;
     font-size: 13px;
