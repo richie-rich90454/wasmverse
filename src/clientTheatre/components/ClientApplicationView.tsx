@@ -18,6 +18,7 @@ function ClientApplicationView(): React.JSX.Element {
         applicationController.currentState === "performing" ||
         applicationController.currentState === "finished";
     const finishedSession = showsTerminalStage ? applicationController.activeSession : undefined;
+    const isFinished = applicationController.currentState === "finished";
     return (
         <div className="universal-application-column">
             <MarqueeHeadingView />
@@ -28,16 +29,29 @@ function ClientApplicationView(): React.JSX.Element {
             ) : (
                 <UploadCurtainView applicationController={applicationController} />
             )}
-            {finishedSession && (
-                <a
-                    className="static-export-link"
-                    href={applicationController.backendApiClient.constructStaticExportUrl(
-                        finishedSession.sessionIdentifier,
+            {(finishedSession || isFinished) && (
+                <div className="session-action-row">
+                    {finishedSession && (
+                        <a
+                            className="static-export-link"
+                            href={applicationController.backendApiClient.constructStaticExportUrl(
+                                finishedSession.sessionIdentifier,
+                            )}
+                            download
+                        >
+                            Download static site (.zip)
+                        </a>
                     )}
-                    download
-                >
-                    Download static site (.zip)
-                </a>
+                    {isFinished && (
+                        <button
+                            className="run-another-button"
+                            type="button"
+                            onClick={() => applicationController.beginAnotherRun()}
+                        >
+                            Run another program
+                        </button>
+                    )}
+                </div>
             )}
             <StatusRibbonView
                 statusRibbonController={applicationController.statusRibbonController}
