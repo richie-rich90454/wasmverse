@@ -1,5 +1,6 @@
 import type { TerminalStageController } from "@clientTheatre/services/TerminalStageController.ts";
 import type { TerminalPerformerContract } from "@clientTheatre/runtimePerformers/TerminalPerformerContract.ts";
+import { encodeUserCodePath } from "@clientTheatre/runtimePerformers/UserCodeUrl.ts";
 interface PyodideInstance {
     setStdout(options: { batched(output: string): void }): void;
     setStderr(options: { batched(output: string): void }): void;
@@ -9,7 +10,7 @@ interface PyodideInstance {
     runPythonAsync(code: string): Promise<unknown>;
 }
 interface PyodideModule {
-    loadPyodide(options: { indexURL: string }): Promise<PyodideInstance>;
+    loadPyodide(options: { indexURL: string; packageBaseUrl: string }): Promise<PyodideInstance>;
 }
 interface PythonErrorShape {
     type?: string;
@@ -89,10 +90,14 @@ class PyodideRuntimeLoader {
         this.sessionBaseUrl = sessionBaseUrl;
     }
     async loadRuntime(): Promise<PyodideInstance> {
+        const runtimeUrl = `${this.sessionBaseUrl}/runtime/`;
         const pyodideModule = (await import(
-            /* @vite-ignore */ `${this.sessionBaseUrl}/runtime/pyodide.mjs`
+            /* @vite-ignore */ `${this.sessionBaseUrl}/runtime/python-runtime.js`
         )) as PyodideModule;
-        return pyodideModule.loadPyodide({ indexURL: `${this.sessionBaseUrl}/runtime/` });
+        return pyodideModule.loadPyodide({
+            indexURL: runtimeUrl,
+            packageBaseUrl: runtimeUrl,
+        });
     }
 }
 class PyodideStandardStreamRedirector {
@@ -159,7 +164,9 @@ class PyodideUserFileFetcher {
             if (relativePath === "manifest.json") {
                 continue;
             }
-            const fileResponse = await fetch(`${this.sessionBaseUrl}/user-code/${relativePath}`);
+            const fileResponse = await fetch(
+                `${this.sessionBaseUrl}/user-code/${encodeUserCodePath(relativePath)}`,
+            );
             if (!fileResponse.ok) {
                 throw new Error(`User file ${relativePath} is missing from the session.`);
             }
