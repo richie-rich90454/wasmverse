@@ -9,8 +9,8 @@ class EmscriptenGlueRuntimeAssembler implements RuntimeAssetAssemblerContract {
     async assembleRuntimeInto(context: BuildContextRecord): Promise<void> {
         await this.fileSystemOperations.ensureDirectoryExists(context.runtimeDirectory);
         await this.fileSystemOperations.writeTextFile(
-            `${context.runtimeDirectory}/emscripten-loader.mjs`,
-            "export async function loadEmscriptenModule(baseUrl){ const factory = (await import(`${baseUrl}/app.js`)).default; return factory(); }\n",
+            `${context.runtimeDirectory}/emscripten-loader.js`,
+            "export async function loadEmscriptenModule(baseUrl){ const factory = (await import(`${baseUrl}/app.js`)).default; return factory({ locateFile: (fileName) => `${baseUrl}/${fileName}` }); }\n",
         );
     }
 }
