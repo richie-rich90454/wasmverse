@@ -3,6 +3,7 @@ import type { CompilerStrategyContract } from "@serverAtelier/compilerStrategies
 import { FileSystemOperations } from "@serverAtelier/utilities/FileSystemOperations.ts";
 import { ProcessRunner } from "@serverAtelier/utilities/ProcessRunner.ts";
 const TEAVM_VERSION = "0.15.0";
+const TEAVM_OUTPUT_RELATIVE_PATH = "target/wasmverse";
 function mavenProjectText(
     artifactId: string,
     mainClassName: string,
@@ -102,6 +103,18 @@ class TeaVmCompilerStrategy implements CompilerStrategyContract {
                     : outcome.standardOutput;
             throw new Error(`TeaVM build failed: ${detail}`);
         }
+        await this.publishTeaVmOutput(context);
+    }
+    private async publishTeaVmOutput(context: BuildContextRecord): Promise<void> {
+        const teavmOutputDirectory = `${context.sourceDirectory}/${TEAVM_OUTPUT_RELATIVE_PATH}`;
+        const producedFiles =
+            await this.fileSystemOperations.listFilesRecursively(teavmOutputDirectory);
+        for (const relativePath of producedFiles) {
+            await this.fileSystemOperations.copyFileInto(
+                `${teavmOutputDirectory}/${relativePath}`,
+                `${context.runtimeDirectory}/${relativePath}`,
+            );
+        }
     }
     private async ensureMavenProject(context: BuildContextRecord): Promise<void> {
         const projectFile = `${context.sourceDirectory}/pom.xml`;
@@ -117,7 +130,7 @@ class TeaVmCompilerStrategy implements CompilerStrategyContract {
             mavenProjectText(
                 artifactIdForSession(context.sessionIdentifier),
                 baseName,
-                context.runtimeDirectory,
+                TEAVM_OUTPUT_RELATIVE_PATH,
             ),
         );
         const entrySource = await this.fileSystemOperations.readTextFile(
