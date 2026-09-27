@@ -1,5 +1,6 @@
 import type { TerminalStageController } from "@clientTheatre/services/TerminalStageController.ts";
 import type { TerminalPerformerContract } from "@clientTheatre/runtimePerformers/TerminalPerformerContract.ts";
+import { encodeUserCodePath } from "@clientTheatre/runtimePerformers/UserCodeUrl.ts";
 interface PhpWebModule {
     PhpWeb: new (args: Record<string, unknown>) => unknown;
 }
@@ -18,10 +19,15 @@ class PhpWasmLoader {
     }
     async loadRuntime(stage: TerminalStageController): Promise<PhpRuntime> {
         stage.writeLine("Loading PHP runtime.");
+        if (typeof navigator === "undefined" || !navigator.locks) {
+            throw new Error(
+                "PHP needs an HTTPS origin because the runtime serialises file writes with the Web Locks API.",
+            );
+        }
         try {
             const runtimeBaseUrl = `${this.sessionBaseUrl}/runtime`;
             const phpWebModule = (await import(
-                /* @vite-ignore */ `${runtimeBaseUrl}/php-wasm/PhpWeb.mjs`
+                /* @vite-ignore */ `${runtimeBaseUrl}/php-wasm/PhpWeb.js`
             )) as PhpWebModule;
             const phpRuntime = new phpWebModule.PhpWeb({
                 version: "8.4",
@@ -69,7 +75,9 @@ class PhpWasmFileSystemWriter {
             if (relativePath === "manifest.json") {
                 continue;
             }
-            const fileResponse = await fetch(`${this.sessionBaseUrl}/user-code/${relativePath}`);
+            const fileResponse = await fetch(
+                `${this.sessionBaseUrl}/user-code/${encodeUserCodePath(relativePath)}`,
+            );
             if (!fileResponse.ok) {
                 throw new Error(`User file ${relativePath} is missing from the session.`);
             }
