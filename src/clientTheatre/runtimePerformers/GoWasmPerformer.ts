@@ -8,7 +8,7 @@ class GoWasmExecScriptLoader {
     async loadGoRunner(stage: TerminalStageController): Promise<unknown> {
         stage.writeLine("Loading Go WASM runner.");
         const loaderModule = (await import(
-            /* @vite-ignore */ `${this.sessionBaseUrl}/runtime/go-loader.mjs`
+            /* @vite-ignore */ `${this.sessionBaseUrl}/runtime/go-loader.js`
         )) as { createGoRunner(): unknown };
         return loaderModule.createGoRunner();
     }
@@ -20,9 +20,9 @@ class GoWasmInstanceRunner {
     }
     async runInstance(goRunner: unknown, stage: TerminalStageController): Promise<void> {
         const runner = goRunner as { importObject: unknown; run(instance: unknown): void };
-        const response = await fetch(`${this.sessionBaseUrl}/runtime/app.wasm`);
-        const { instance } = await WebAssembly.instantiateStreaming(
-            response,
+        const moduleBytes = await this.fetchWasmBytes();
+        const { instance } = await WebAssembly.instantiate(
+            moduleBytes,
             runner.importObject as WebAssembly.Imports,
         );
         stage.writeLine("Running Go WASM module.");
@@ -40,6 +40,13 @@ class GoWasmInstanceRunner {
             console.log = originalLog;
             console.error = originalError;
         }
+    }
+    private async fetchWasmBytes(): Promise<ArrayBuffer> {
+        const response = await fetch(`${this.sessionBaseUrl}/runtime/app.wasm`);
+        if (!response.ok) {
+            throw new Error(`app.wasm request failed with status ${response.status}.`);
+        }
+        return await response.arrayBuffer();
     }
 }
 class GoWasmPerformer implements TerminalPerformerContract {
