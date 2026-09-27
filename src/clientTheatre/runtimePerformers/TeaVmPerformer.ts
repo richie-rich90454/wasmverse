@@ -17,7 +17,7 @@ class TeaVmModuleLoader {
         };
         try {
             const loaderModule = (await import(
-                /* @vite-ignore */ `${this.sessionBaseUrl}/runtime/teavm-loader.mjs`
+                /* @vite-ignore */ `${this.sessionBaseUrl}/runtime/teavm-loader.js`
             )) as { loadTeaVmModule(baseUrl: string): Promise<Record<string, unknown>> };
             return loaderModule.loadTeaVmModule(`${this.sessionBaseUrl}/runtime`);
         } finally {
