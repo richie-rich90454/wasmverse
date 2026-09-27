@@ -11,7 +11,7 @@ class DartWasmModuleLoader {
     async loadInstance(stage: TerminalStageController): Promise<DartInstantiatedApp> {
         stage.writeLine("Loading Dart WASM module.");
         const loaderModule = (await import(
-            /* @vite-ignore */ `${this.sessionBaseUrl}/runtime/dart-loader.mjs`
+            /* @vite-ignore */ `${this.sessionBaseUrl}/runtime/dart-loader.js`
         )) as {
             loadDartApp: (baseUrl: string) => Promise<DartInstantiatedApp>;
         };
