@@ -8,7 +8,7 @@ class BlazorRuntimeLoader {
     async loadRuntime(stage: TerminalStageController): Promise<unknown> {
         stage.writeLine("Loading Blazor runtime.");
         const loaderModule = (await import(
-            /* @vite-ignore */ `${this.sessionBaseUrl}/runtime/blazor-loader.mjs`
+            /* @vite-ignore */ `${this.sessionBaseUrl}/runtime/blazor-loader.js`
         )) as { loadBlazorRuntime(): Promise<unknown> };
         return loaderModule.loadBlazorRuntime();
     }
