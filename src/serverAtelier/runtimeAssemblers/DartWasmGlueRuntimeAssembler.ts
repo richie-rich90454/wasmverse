@@ -9,9 +9,9 @@ class DartWasmGlueRuntimeAssembler implements RuntimeAssetAssemblerContract {
     async assembleRuntimeInto(context: BuildContextRecord): Promise<void> {
         await this.fileSystemOperations.ensureDirectoryExists(context.runtimeDirectory);
         await this.fileSystemOperations.writeTextFile(
-            `${context.runtimeDirectory}/dart-loader.mjs`,
-            'import { compileStreaming } from "./app.wasm.mjs";\n' +
-                "export async function loadDartApp(baseUrl){ const compiled = await compileStreaming(fetch(`${baseUrl}/app.wasm`)); return compiled.instantiate(); }\n",
+            `${context.runtimeDirectory}/dart-loader.js`,
+            'import { compile } from "./app.wasm.js";\n' +
+                "export async function loadDartApp(baseUrl){ const response = await fetch(`${baseUrl}/app.wasm`); if (!response.ok) { throw new Error(`app.wasm request failed with status ${response.status}`); } const compiled = await compile(await response.arrayBuffer()); return compiled.instantiate(); }\n",
         );
     }
 }
