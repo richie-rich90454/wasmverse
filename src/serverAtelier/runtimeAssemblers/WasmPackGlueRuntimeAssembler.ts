@@ -9,7 +9,7 @@ class WasmPackGlueRuntimeAssembler implements RuntimeAssetAssemblerContract {
     async assembleRuntimeInto(context: BuildContextRecord): Promise<void> {
         await this.fileSystemOperations.ensureDirectoryExists(context.runtimeDirectory);
         await this.fileSystemOperations.writeTextFile(
-            `${context.runtimeDirectory}/wasm-pack-loader.mjs`,
+            `${context.runtimeDirectory}/wasm-pack-loader.js`,
             "export async function loadWasmPackModule(baseUrl){ const module = await import(`${baseUrl}/app.js`); await module.default(); return module; }\n",
         );
     }
