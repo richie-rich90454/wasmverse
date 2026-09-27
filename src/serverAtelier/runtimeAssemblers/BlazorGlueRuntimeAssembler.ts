@@ -9,8 +9,8 @@ class BlazorGlueRuntimeAssembler implements RuntimeAssetAssemblerContract {
     async assembleRuntimeInto(context: BuildContextRecord): Promise<void> {
         await this.fileSystemOperations.ensureDirectoryExists(context.runtimeDirectory);
         await this.fileSystemOperations.writeTextFile(
-            `${context.runtimeDirectory}/blazor-loader.mjs`,
-            'export async function loadBlazorRuntime(){ await import("./_framework/blazor.webassembly.js"); return globalThis.Blazor; }\n',
+            `${context.runtimeDirectory}/blazor-loader.js`,
+            'export async function loadBlazorRuntime(){ await import("./wwwroot/_framework/blazor.webassembly.js"); return globalThis.Blazor; }\n',
         );
     }
 }
