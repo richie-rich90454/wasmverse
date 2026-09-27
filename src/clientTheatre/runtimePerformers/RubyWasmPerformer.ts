@@ -1,5 +1,6 @@
 import type { TerminalStageController } from "@clientTheatre/services/TerminalStageController.ts";
 import type { TerminalPerformerContract } from "@clientTheatre/runtimePerformers/TerminalPerformerContract.ts";
+import { encodeUserCodePath } from "@clientTheatre/runtimePerformers/UserCodeUrl.ts";
 import { RubyVM } from "@ruby/wasm-wasi";
 import {
     WASI,
@@ -180,7 +181,9 @@ class RubyWasmFileSystemWriter {
             if (relativePath === "manifest.json") {
                 continue;
             }
-            const fileResponse = await fetch(`${this.sessionBaseUrl}/user-code/${relativePath}`);
+            const fileResponse = await fetch(
+                `${this.sessionBaseUrl}/user-code/${encodeUserCodePath(relativePath)}`,
+            );
             if (!fileResponse.ok) {
                 throw new Error(`User file ${relativePath} is missing from the session.`);
             }
