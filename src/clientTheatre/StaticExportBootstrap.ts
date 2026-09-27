@@ -1,31 +1,48 @@
-import type { SessionDescriptorRecord } from "@sharedKernel/SessionDescriptorRecord.ts";
+import type { LanguageIdentifier } from "@sharedKernel/LanguageIdentifier.ts";
+import type { TerminalPerformerContract } from "@clientTheatre/runtimePerformers/TerminalPerformerContract.ts";
 import { TerminalStageController } from "@clientTheatre/services/TerminalStageController.ts";
-import { TerminalPerformerFactory } from "@clientTheatre/runtimePerformers/TerminalPerformerFactory.ts";
-async function bootstrapStaticExport(): Promise<void> {
-    const descriptorResponse = await fetch("./session.json");
-    if (!descriptorResponse.ok) {
-        throw new Error("Export descriptor session.json is missing.");
+type PerformerCreator = (sessionBaseUrl: string) => TerminalPerformerContract;
+let mountedStage: TerminalStageController | undefined;
+function reportFailure(reason: unknown): void {
+    const rawMessage = reason instanceof Error ? reason.message : String(reason);
+    const firstLine = rawMessage.split("\n")[0] ?? rawMessage;
+    if (mountedStage) {
+        mountedStage.writeLine(`Error: ${firstLine}`);
+        return;
     }
-    const descriptor = (await descriptorResponse.json()) as SessionDescriptorRecord;
+    document.body.textContent = `WASMVERSE export failed: ${firstLine}`;
+}
+function mountStage(): TerminalStageController {
     const container = document.getElementById("terminal");
     if (!container) {
         throw new Error("Export page is missing its terminal container.");
     }
-    const stageController = new TerminalStageController();
-    stageController.mountInto(container);
-    const performerFactory = new TerminalPerformerFactory();
-    const performer = performerFactory.createForLanguage(
-        descriptor.languageIdentifier,
-        ".",
-        descriptor,
-    );
-    try {
-        await performer.loadInto(stageController);
-        await performer.performOn(stageController);
-    } catch (exportError) {
-        const errorMessage =
-            exportError instanceof Error ? exportError.message : String(exportError);
-        stageController.writeLine(`Error: ${errorMessage.split("\n")[0] as string}`);
-    }
+    const stage = new TerminalStageController();
+    stage.mountInto(container);
+    mountedStage = stage;
+    return stage;
 }
-void bootstrapStaticExport();
+async function startStaticExport(
+    languageIdentifier: LanguageIdentifier,
+    createPerformer: PerformerCreator,
+): Promise<void> {
+    const stage = mountStage();
+    stage.writeLine(`WASMVERSE export ready: ${languageIdentifier}`);
+    const sessionBaseUrl = new URL(".", import.meta.url).href;
+    const performer = createPerformer(sessionBaseUrl);
+    await performer.loadInto(stage);
+    await performer.performOn(stage);
+}
+function runStaticExport(
+    languageIdentifier: LanguageIdentifier,
+    createPerformer: PerformerCreator,
+): void {
+    window.addEventListener("error", (event) => {
+        reportFailure(event.error ?? event.message);
+    });
+    window.addEventListener("unhandledrejection", (event) => {
+        reportFailure(event.reason);
+    });
+    void startStaticExport(languageIdentifier, createPerformer).catch(reportFailure);
+}
+export { runStaticExport };
