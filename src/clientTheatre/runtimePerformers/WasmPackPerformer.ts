@@ -8,7 +8,7 @@ class WasmPackGlueModuleLoader {
     async loadModule(stage: TerminalStageController): Promise<Record<string, unknown>> {
         stage.writeLine("Loading WASM module.");
         const loaderModule = (await import(
-            /* @vite-ignore */ `${this.sessionBaseUrl}/runtime/wasm-pack-loader.mjs`
+            /* @vite-ignore */ `${this.sessionBaseUrl}/runtime/wasm-pack-loader.js`
         )) as { loadWasmPackModule(baseUrl: string): Promise<Record<string, unknown>> };
         return loaderModule.loadWasmPackModule(`${this.sessionBaseUrl}/runtime`);
     }
