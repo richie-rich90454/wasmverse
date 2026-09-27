@@ -8,8 +8,7 @@ import { PhpWasmPerformer } from "@clientTheatre/runtimePerformers/PhpWasmPerfor
 import { WasmPackPerformer } from "@clientTheatre/runtimePerformers/WasmPackPerformer.ts";
 import { EmscriptenPerformer } from "@clientTheatre/runtimePerformers/EmscriptenPerformer.ts";
 import { GoWasmPerformer } from "@clientTheatre/runtimePerformers/GoWasmPerformer.ts";
-import { SwiftWasmPerformer } from "@clientTheatre/runtimePerformers/SwiftWasmPerformer.ts";
-import { KotlinWasmPerformer } from "@clientTheatre/runtimePerformers/KotlinWasmPerformer.ts";
+import { WasiWasmPerformer } from "@clientTheatre/runtimePerformers/WasiWasmPerformer.ts";
 import { DartWasmPerformer } from "@clientTheatre/runtimePerformers/DartWasmPerformer.ts";
 import { BlazorPerformer } from "@clientTheatre/runtimePerformers/BlazorPerformer.ts";
 import { TeaVmPerformer } from "@clientTheatre/runtimePerformers/TeaVmPerformer.ts";
@@ -30,15 +29,15 @@ class TerminalPerformerFactory {
             ["c", (sessionBaseUrl) => new EmscriptenPerformer(sessionBaseUrl)],
             ["cpp", (sessionBaseUrl) => new EmscriptenPerformer(sessionBaseUrl)],
             ["go", (sessionBaseUrl) => new GoWasmPerformer(sessionBaseUrl)],
-            ["zig", (sessionBaseUrl) => new EmscriptenPerformer(sessionBaseUrl)],
-            ["swift", (sessionBaseUrl) => new SwiftWasmPerformer(sessionBaseUrl)],
-            ["kotlin", (sessionBaseUrl) => new KotlinWasmPerformer(sessionBaseUrl)],
+            ["zig", (sessionBaseUrl) => new WasiWasmPerformer(sessionBaseUrl)],
+            ["swift", (sessionBaseUrl) => new WasiWasmPerformer(sessionBaseUrl)],
+            ["kotlin", (sessionBaseUrl) => new WasiWasmPerformer(sessionBaseUrl)],
             ["dart", (sessionBaseUrl) => new DartWasmPerformer(sessionBaseUrl)],
             ["java", (sessionBaseUrl) => new TeaVmPerformer(sessionBaseUrl)],
             ["csharp", (sessionBaseUrl) => new BlazorPerformer(sessionBaseUrl)],
             ["assemblyscript", (sessionBaseUrl) => new WasmPackPerformer(sessionBaseUrl)],
-            ["ocaml", (sessionBaseUrl) => new EmscriptenPerformer(sessionBaseUrl)],
-            ["haskell", (sessionBaseUrl) => new EmscriptenPerformer(sessionBaseUrl)],
+            ["ocaml", (sessionBaseUrl) => new WasiWasmPerformer(sessionBaseUrl)],
+            ["haskell", (sessionBaseUrl) => new WasiWasmPerformer(sessionBaseUrl)],
         ];
         this.creatorClosures = new Map(performerEntries);
     }
