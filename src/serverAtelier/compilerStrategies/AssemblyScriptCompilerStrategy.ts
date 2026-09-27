@@ -5,7 +5,7 @@ import { ProcessRunner } from "@serverAtelier/utilities/ProcessRunner.ts";
 const ASSEMBLYSCRIPT_LOADER_TEXT =
     "let instance = null;\n" +
     "function forwardedWrite(pointer, length){ const text = new TextDecoder().decode(new Uint8Array(instance.exports.memory.buffer, pointer, length)); const hook = globalThis.__wasmverseWriteLine; if (typeof hook === 'function'){ hook(text); } }\n" +
-    "export default async function(){ const response = await fetch('./app.wasm'); const bytes = await response.arrayBuffer(); const result = await WebAssembly.instantiate(bytes, { env: { abort(){ throw new Error('AssemblyScript abort'); }, write: forwardedWrite } }); instance = result.instance; }\n" +
+    "export default async function(){ const response = await fetch(new URL('./app.wasm', import.meta.url)); const bytes = await response.arrayBuffer(); const result = await WebAssembly.instantiate(bytes, { env: { abort(){ throw new Error('AssemblyScript abort'); }, write: forwardedWrite } }); instance = result.instance; }\n" +
     "export function main(){ instance.exports.main(); }\n" +
     "export function run(){ instance.exports.main(); }\n";
 class AssemblyScriptCompilerStrategy implements CompilerStrategyContract {
