@@ -35,8 +35,7 @@ import { PhpWasmRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/PhpWas
 import { WasmPackGlueRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/WasmPackGlueRuntimeAssembler.ts";
 import { EmscriptenGlueRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/EmscriptenGlueRuntimeAssembler.ts";
 import { GoWasmExecRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/GoWasmExecRuntimeAssembler.ts";
-import { SwiftWasmGlueRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/SwiftWasmGlueRuntimeAssembler.ts";
-import { KotlinWasmGlueRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/KotlinWasmGlueRuntimeAssembler.ts";
+import { WasiWasmGlueRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/WasiWasmGlueRuntimeAssembler.ts";
 import { DartWasmGlueRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/DartWasmGlueRuntimeAssembler.ts";
 import { BlazorGlueRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/BlazorGlueRuntimeAssembler.ts";
 import { TeaVmGlueRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/TeaVmGlueRuntimeAssembler.ts";
@@ -142,19 +141,19 @@ class ServerApplication {
             ),
             new ZigLanguagePlugin(
                 new ZigWasmCompilerStrategy(processRunner, this.fileSystemOperations),
-                new EmscriptenGlueRuntimeAssembler(this.fileSystemOperations),
+                new WasiWasmGlueRuntimeAssembler(this.fileSystemOperations),
                 sourceFileCopier,
                 manifestWriter,
             ),
             new SwiftLanguagePlugin(
                 new SwiftWasmCompilerStrategy(processRunner, this.fileSystemOperations),
-                new SwiftWasmGlueRuntimeAssembler(this.fileSystemOperations),
+                new WasiWasmGlueRuntimeAssembler(this.fileSystemOperations),
                 sourceFileCopier,
                 manifestWriter,
             ),
             new KotlinLanguagePlugin(
                 new KotlinWasmCompilerStrategy(processRunner, this.fileSystemOperations),
-                new KotlinWasmGlueRuntimeAssembler(this.fileSystemOperations),
+                new WasiWasmGlueRuntimeAssembler(this.fileSystemOperations),
                 sourceFileCopier,
                 manifestWriter,
             ),
@@ -184,13 +183,13 @@ class ServerApplication {
             ),
             new OcamlLanguagePlugin(
                 new OcamlWasmCompilerStrategy(processRunner, this.fileSystemOperations),
-                new EmscriptenGlueRuntimeAssembler(this.fileSystemOperations),
+                new WasiWasmGlueRuntimeAssembler(this.fileSystemOperations),
                 sourceFileCopier,
                 manifestWriter,
             ),
             new HaskellLanguagePlugin(
                 new GhcWasmCompilerStrategy(processRunner, this.fileSystemOperations),
-                new EmscriptenGlueRuntimeAssembler(this.fileSystemOperations),
+                new WasiWasmGlueRuntimeAssembler(this.fileSystemOperations),
                 sourceFileCopier,
                 manifestWriter,
             ),
