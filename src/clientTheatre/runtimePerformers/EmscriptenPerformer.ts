@@ -8,7 +8,7 @@ class EmscriptenGlueScriptLoader {
     async loadModuleFactory(stage: TerminalStageController): Promise<unknown> {
         stage.writeLine("Loading Emscripten module.");
         const loaderModule = (await import(
-            /* @vite-ignore */ `${this.sessionBaseUrl}/runtime/emscripten-loader.mjs`
+            /* @vite-ignore */ `${this.sessionBaseUrl}/runtime/emscripten-loader.js`
         )) as { loadEmscriptenModule(baseUrl: string): Promise<unknown> };
         return loaderModule.loadEmscriptenModule(`${this.sessionBaseUrl}/runtime`);
     }
