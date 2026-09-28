@@ -1,6 +1,7 @@
 import type { LanguageIdentifier } from "@sharedKernel/LanguageIdentifier.ts";
 import type { UserManifestRecord } from "@sharedKernel/UserManifestRecord.ts";
 import { FileSystemOperations } from "@serverAtelier/utilities/FileSystemOperations.ts";
+import { isBuildOutputPath } from "@serverAtelier/utilities/BuildOutputFilter.ts";
 class UserManifestWriter {
     private readonly fileSystemOperations: FileSystemOperations;
     constructor(fileSystemOperations: FileSystemOperations) {
@@ -11,8 +12,11 @@ class UserManifestWriter {
         entryFileRelativePath: string,
         languageIdentifier: LanguageIdentifier,
     ): Promise<UserManifestRecord> {
-        const includedFileRelativePaths =
+        const everyFilePath =
             await this.fileSystemOperations.listFilesRecursively(userCodeDirectory);
+        const includedFileRelativePaths = everyFilePath.filter(
+            (relativePath) => !isBuildOutputPath(relativePath),
+        );
         const manifest: UserManifestRecord = {
             entryFileRelativePath,
             includedFileRelativePaths,
