@@ -73,20 +73,16 @@ foreach ($generator as $entry) {
     $collected[] = $entry;
 }
 echo "odd multiples of three up to 40: " . implode(", ", $collected) . "\n";
-echo "Stage three: fibers coordinate the typed state machine\n";
-$states = [0, 1, 2];
-$fiber = new Fiber(function () use ($states): string {
+echo "Stage three: generators drive the typed state machine\n";
+$stateMachine = (function () {
+    $states = [0, 1, 2];
     foreach ($states as $state) {
-        Fiber::suspend(labelFor($state));
+        yield labelFor($state);
     }
-    return labelFor(2);
-});
-$step = $fiber->start();
-while (!$fiber->isTerminated()) {
-    echo "fiber state: {$step}\n";
-    $step = $fiber->resume();
+})();
+foreach ($stateMachine as $stateLabel) {
+    echo "state machine: {$stateLabel}\n";
 }
-echo "fiber result: {$step}\n";
 echo "Stage four: typed accumulator ledger\n";
 $ledger = ["alpha" => 0, "beta" => 0, "gamma" => 0];
 foreach ($primes as $index => $prime) {
