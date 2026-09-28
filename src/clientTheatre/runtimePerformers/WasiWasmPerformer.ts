@@ -44,20 +44,7 @@ class WasiEntryInvoker {
             throw new Error("WASI module exposes neither a main nor a _start export.");
         }
         stage.writeLine("Running WASI entry point.");
-        const originalLog = console.log;
-        const originalError = console.error;
-        console.log = (...args: Array<unknown>) => {
-            stage.writeLine(args.map((arg) => String(arg)).join(" "));
-        };
-        console.error = (...args: Array<unknown>) => {
-            stage.writeLine(args.map((arg) => String(arg)).join(" "));
-        };
-        try {
-            await entryFunction();
-        } finally {
-            console.log = originalLog;
-            console.error = originalError;
-        }
+        await entryFunction();
     }
 }
 class WasiWasmPerformer implements TerminalPerformerContract {
