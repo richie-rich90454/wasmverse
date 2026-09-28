@@ -26,20 +26,7 @@ class GoWasmInstanceRunner {
             runner.importObject as WebAssembly.Imports,
         );
         stage.writeLine("Running Go WASM module.");
-        const originalLog = console.log;
-        const originalError = console.error;
-        console.log = (...args: Array<unknown>) => {
-            stage.writeLine(args.map((arg) => String(arg)).join(" "));
-        };
-        console.error = (...args: Array<unknown>) => {
-            stage.writeLine(args.map((arg) => String(arg)).join(" "));
-        };
-        try {
-            await runner.run(instance);
-        } finally {
-            console.log = originalLog;
-            console.error = originalError;
-        }
+        await runner.run(instance);
     }
     private async fetchWasmBytes(): Promise<ArrayBuffer> {
         const response = await fetch(`${this.sessionBaseUrl}/runtime/app.wasm`);
