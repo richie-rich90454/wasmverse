@@ -20,6 +20,7 @@ class HttpServerHost {
         this.serverHandle = Bun.serve({
             hostname: this.serverConfiguration.host,
             port: this.serverConfiguration.port,
+            idleTimeout: this.serverConfiguration.requestIdleTimeoutSeconds,
             fetch: (request: Request) => router.routeRequest(request),
         });
         this.scopedLogger.logSuccess(
