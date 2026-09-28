@@ -10,7 +10,7 @@ class TeaVmGlueRuntimeAssembler implements RuntimeAssetAssemblerContract {
         await this.fileSystemOperations.ensureDirectoryExists(context.runtimeDirectory);
         await this.fileSystemOperations.writeTextFile(
             `${context.runtimeDirectory}/teavm-loader.js`,
-            "export async function loadTeaVmModule(baseUrl){ const module = await import(`${baseUrl}/classes.js`); return module; }\n",
+            "export async function loadTeaVmModule(baseUrl, writeLine){ globalThis.$rt_putStdoutCustom = (rawText) => { const lines = String(rawText).split('\\n'); if (lines[lines.length - 1] === '') { lines.pop(); } for (const line of lines) { writeLine(line); } }; return await import(`${baseUrl}/classes.js`); }\n",
         );
     }
 }
