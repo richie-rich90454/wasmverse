@@ -1,5 +1,5 @@
 class Lexer
-  TOKEN = /\d+|[()+\-*/]/
+  TOKEN = %r{\d+|[()+\-*/]}
 
   def initialize(input_text)
     @tokens = input_text.scan(TOKEN)
@@ -79,15 +79,15 @@ class Evaluator
   end
 end
 
-class FiberChain
+class ChainBuilder
   def initialize(values)
     @values = values
   end
 
   def map(&block)
-    Fiber.new do
-      result = @values.map(&block)
-      Fiber.yield(result)
+    Enumerator.new do |yielder|
+      @values.each { |value| yielder << value }
+      yielder << @values.map(&block)
     end
   end
 end
@@ -106,13 +106,16 @@ lazy_totals = (1..200_000)
   .select { |number| number % 7 == 0 && number % 3 == 0 }
   .map { |number| number * number }
   .first(6)
-puts "first sixth-power-smooth candidates: #{lazy_totals.join(", ")}"
-puts "Stage three: fiber-style transformation chain"
-chain = FiberChain.new([1, 2, 3, 4, 5, 6])
-doubled = chain.map { |value| value * 2 }.resume
-puts "doubled series: #{doubled.join(", ")}"
-groups = doubled.group_by { |value| value.even? ? "even" : "odd" }
-groups.each { |label, values| puts "#{label}: #{values.join(", ")}" }
+puts "first sixth-power-smooth candidates: #{lazy_totals.join(', ')}"
+puts "Stage three: enumerator transformation chain"
+chain = ChainBuilder.new([1, 2, 3, 4, 5, 6])
+doubled = chain.map { |value| value * 2 }
+source_values = []
+6.times { source_values << doubled.next }
+puts "source values: #{source_values.join(', ')}"
+puts "transformed series: #{doubled.next.join(', ')}"
+groups = [1, 2, 3, 4, 5, 6].group_by { |value| value.even? ? "even" : "odd" }
+groups.each { |label, values| puts "#{label}: #{values.join(', ')}" }
 puts "Stage four: interactive expression evaluator"
 print "Enter an arithmetic expression: "
 line = gets
