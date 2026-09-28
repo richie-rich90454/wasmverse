@@ -23,6 +23,7 @@ Open `http://localhost:5173`, press Run plate on the Python plate, and answer th
 6. `bun run format:check` verifies formatting without writing.
 7. `bun run typecheck` runs `tsc --noEmit`.
 8. `bun test` runs the unit test suite.
+9. `bun run verify:export` builds every showcase, exports it, then serves each bundle from a deliberately hostile static host (`.wasm` as `application/octet-stream`, `nosniff`, subdirectory paths) and drives real headless Chrome over the DevTools protocol. It fails on any console error, uncaught exception, failed request, or missing output line. Pass a language name to check one plate.
 
 `bun install` runs `setup` automatically through `postinstall`. Missing toolchains never fail the install. Languages without a toolchain report a clear error at build time until the toolchain is provisioned.
 
@@ -40,13 +41,23 @@ Python, Ruby, Lua, and PHP run fully client side through Pyodide, ruby-wasm-wasi
 
 Python and Ruby programs get full terminal input. Synchronous `input()` and `gets` calls are satisfied by replaying the program with the answers collected so far, and Python also supports `await async_input(prompt)`. Lua and PHP run print-and-compute style. Reads past end of input see end of file (`nil` in Lua, `false` in PHP), so guard reads accordingly. Every failure surfaces as a readable terminal line.
 
+The terminal also mirrors every `console` call, so runtime output that a language sends to the JavaScript console appears alongside the program's own output instead of disappearing into browser developer tools.
+
 ## Terminal Copy
 
 Drag to select terminal text. Copy with right-click, Ctrl+C while text is selected, or Ctrl+Shift+C. Ctrl+C with no selection keeps its usual line-cancel meaning. Zoom the terminal font like a native console with Ctrl+Plus, Ctrl+Minus, Ctrl+0, or Ctrl+mouse wheel.
 
 ## Static Site Export
 
-After a program finishes, the Download static site link fetches a self-contained bundle: `index.html`, one bundled `app.js`, the terminal stylesheet, `session.json`, and the session `runtime/` plus `user-code/` folders with all paths relative. Unzip it behind any static host (GitHub Pages, `npx serve`, plain Nginx) and the program runs with full WebAssembly abilities and no application server required. The host must serve `.wasm` as `application/wasm`. GitHub Pages does. Interactive Python and Ruby programs keep working because the bundle carries the same performers.
+After a program finishes, the Download static site link fetches a self-contained bundle: `index.html`, one per-language bundled `app.js`, the terminal stylesheet, `session.json`, a `.nojekyll` marker, and the session `runtime/` plus `user-code/` folders. Every path is relative, so the bundle works from a domain root or from any subdirectory.
+
+The bundle is fully local. There is no CDN, no import map, and no remote origin anywhere in it, and the production build refuses to emit one. WebAssembly is always compiled from an `ArrayBuffer` rather than a streamed response, so the host does not need `Content-Type: application/wasm`. Every script is a `.js` file because object storage maps unknown extensions to `application/octet-stream`, which browsers reject under `nosniff`. Only what a replay needs is shipped: type declarations, source maps, package manifests, and compiler build output such as Rust `target/` are left out.
+
+Unzip it behind any static host (GitHub Pages, Netlify, Vercel, Cloudflare Pages, Firebase, S3, Nginx, Apache) and the program runs with full WebAssembly abilities and no application server. Interactive Python and Ruby programs keep working, and the terminal is focused so a prompt can be answered immediately.
+
+Approximate export sizes: AssemblyScript 105 KB, Rust 113 KB, Dart 120 KB, Java 124 KB, Lua 248 KB, Go 897 KB, PHP 3.8 MB, Python 6.4 MB, Ruby 9.1 MB. The larger bundles are the runtimes themselves, which no host can compress away.
+
+PHP needs an HTTPS origin because php-wasm serialises file writes with the Web Locks API; over plain HTTP the export says so instead of hanging. php-wasm also has no fiber support, and `run()` cannot honour a leading `declare(strict_types=1)`, so the performer drops that declaration before running.
 
 ## Architecture
 
@@ -66,6 +77,7 @@ Composition only: no `extends`, no abstract classes. Contracts are interfaces. B
 5. Register the plugin in `ServerApplication` and map its extensions in `LanguageIdentifierResolver`.
 6. Write a client performer and add it to `TerminalPerformerFactory`.
 7. Add a showcase template in `userSourceTemplates/` and a plate in `SamplesCatalog.ts`.
+8. Add the language to `PERFORMER_CLASS_BY_LANGUAGE` in `StaticSiteExporter.ts` so static exports bundle only that performer.
 
 ## API
 
@@ -78,4 +90,4 @@ Uploads are rate limited per client. Security headers apply to every response. A
 
 ## Design
 
-Flat drafting-table aesthetic: warm paper background, deep-blue actions, 1px rules, EB Garamond display type with Noto Sans body, platform monospace terminal. No shadows, no gradients, no animation beyond 100ms hover transitions, and no transitions at all under `prefers-reduced-motion`. Tokens live in `src/clientTheatre/styles/UniversalBlueprint.css`. Fonts ship locally through Fontsource with no CDN calls.
+Flat drafting-table aesthetic: warm paper background, deep-blue actions, 1px rules, EB Garamond display type with Noto Sans body, platform monospace terminal. No shadows, no gradients, no animation beyond 100ms hover transitions, and no transitions at all under `prefers-reduced-motion`. Tokens live in `src/clientTheatre/styles/UniversalBlueprint.css`. Fonts ship locally through Fontsource with no CDN calls, and `bun run build` fails if any remote asset origin survives into `dist/`.
