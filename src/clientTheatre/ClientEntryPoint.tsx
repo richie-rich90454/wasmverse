@@ -7,6 +7,10 @@ import "@fontsource/noto-sans/400.css";
 import "@fontsource/noto-sans/500.css";
 import "@fontsource/noto-sans/600.css";
 import "@clientTheatre/styles/UniversalBlueprint.css";
+import { forceBufferBasedWasmCompilation } from "@clientTheatre/runtimePerformers/PortableWasmCompilation.ts";
+import { installTerminalConsoleBridge } from "@clientTheatre/services/TerminalConsoleBridge.ts";
+forceBufferBasedWasmCompilation();
+installTerminalConsoleBridge();
 const rootElement = document.getElementById("root");
 if (rootElement) {
     createRoot(rootElement).render(<ClientApplicationView />);
