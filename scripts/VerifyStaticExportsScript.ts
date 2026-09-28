@@ -32,6 +32,16 @@ interface ShowcaseUnderTest {
     entryFileName: string;
     budgetMilliseconds: number;
 }
+const TOOLCHAIN_PENDING_LANGUAGES: ReadonlyArray<[string, string]> = [
+    ["c", "Emscripten is not provisioned under ./.emsdk/"],
+    ["cpp", "Emscripten is not provisioned under ./.emsdk/"],
+    ["zig", "no zig toolchain under ./.tools/"],
+    ["swift", "no swift toolchain under ./.tools/"],
+    ["kotlin", "no kotlin toolchain under ./.tools/"],
+    ["csharp", "the dotnet browser-wasm workload is not installed"],
+    ["ocaml", "no ocaml toolchain under ./.tools/"],
+    ["haskell", "no ghc toolchain under ./.tools/"],
+];
 const SHOWCASES: ReadonlyArray<ShowcaseUnderTest> = [
     {
         languageIdentifier: "python",
@@ -531,3 +541,6 @@ if (failureCount > 0) {
     process.exit(1);
 }
 scopedLogger.logSuccess("Every verified export ran clean on a hostile static host.");
+for (const [languageIdentifier, reason] of TOOLCHAIN_PENDING_LANGUAGES) {
+    scopedLogger.logSuccess(`not covered: ${languageIdentifier} because ${reason}.`);
+}
