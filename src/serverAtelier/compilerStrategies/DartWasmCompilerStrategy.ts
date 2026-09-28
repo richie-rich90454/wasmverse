@@ -44,7 +44,7 @@ class DartWasmCompilerStrategy implements CompilerStrategyContract {
             throw new Error(`Dart WASM build failed: ${detail}`);
         }
         await this.fileSystemOperations.moveInto(
-            `${context.runtimeDirectory}/app.wasm.mjs`,
+            `${context.runtimeDirectory}/app.mjs`,
             `${context.runtimeDirectory}/app.wasm.js`,
         );
     }
