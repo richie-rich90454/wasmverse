@@ -2,6 +2,7 @@ import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { TerminalSelectionCopier } from "@clientTheatre/services/TerminalSelectionCopier.ts";
 import { TerminalZoomController } from "@clientTheatre/services/TerminalZoomController.ts";
+import { registerTerminalStage } from "@clientTheatre/services/TerminalConsoleBridge.ts";
 class TerminalStageController {
     private terminalInstance: Terminal | undefined;
     private fitAddonInstance: FitAddon | undefined;
@@ -22,6 +23,7 @@ class TerminalStageController {
         await this.mountPromise;
     }
     mountInto(container: HTMLElement): void {
+        registerTerminalStage(this);
         this.terminalInstance = new Terminal({
             fontFamily: 'Menlo, Consolas, "Courier New", monospace',
             fontSize: 13,
