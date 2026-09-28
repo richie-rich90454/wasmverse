@@ -12,6 +12,20 @@ interface PhpRuntime {
     run(code: string): Promise<unknown>;
     flush(): void;
 }
+const LEADING_STRICT_TYPES_DECLARE =
+    /^[ \t]*declare[ \t]*\([ \t]*strict_types[ \t]*=[ \t]*1[ \t]*\)[ \t]*;[ \t]*\r?\n?/;
+const OPENING_TAG = /^[ \t\r\n]*<\?php[ \t\r\n]*/;
+function toPhpEvalSource(sourceText: string): string {
+    const withoutByteOrderMark = sourceText.replace(/^\uFEFF/, "");
+    const openingTag = withoutByteOrderMark.match(OPENING_TAG);
+    if (!openingTag) {
+        return withoutByteOrderMark;
+    }
+    const body = withoutByteOrderMark
+        .slice(openingTag[0].length)
+        .replace(LEADING_STRICT_TYPES_DECLARE, "");
+    return `<?php\n${body}`;
+}
 class PhpWasmLoader {
     private readonly sessionBaseUrl: string;
     constructor(sessionBaseUrl: string) {
@@ -103,7 +117,7 @@ class PhpWasmEntryExecutor {
             if (entrySource === undefined) {
                 throw new Error(`Entry file ${entryRelativePath} is missing from the session.`);
             }
-            await phpRuntime.run(entrySource);
+            await phpRuntime.run(toPhpEvalSource(entrySource));
             phpRuntime.flush();
         } catch (runError) {
             throw new Error(
