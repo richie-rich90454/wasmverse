@@ -24,20 +24,7 @@ class DartWasmEntryInvoker {
         stage: TerminalStageController,
     ): Promise<void> {
         stage.writeLine("Running Dart main.");
-        const originalLog = console.log;
-        const originalError = console.error;
-        console.log = (...args: Array<unknown>) => {
-            stage.writeLine(args.map((arg) => String(arg)).join(" "));
-        };
-        console.error = (...args: Array<unknown>) => {
-            stage.writeLine(args.map((arg) => String(arg)).join(" "));
-        };
-        try {
-            await instantiatedApp.invokeMain();
-        } finally {
-            console.log = originalLog;
-            console.error = originalError;
-        }
+        await instantiatedApp.invokeMain();
     }
 }
 class DartWasmPerformer implements TerminalPerformerContract {
