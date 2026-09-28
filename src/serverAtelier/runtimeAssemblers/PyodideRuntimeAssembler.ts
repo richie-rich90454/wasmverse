@@ -10,10 +10,18 @@ const REQUIRED_RUNTIME_FILES: ReadonlyArray<[string, string]> = [
     ["python_stdlib.zip", "python_stdlib.zip"],
     ["pyodide-lock.json", "pyodide-lock.json"],
 ];
-const STREAMING_INSTANTIATION = "WebAssembly.instantiateStreaming(n,s)";
-const BUFFERED_INSTANTIATION = "WebAssembly.instantiate(await n.arrayBuffer(),s)";
-const REMOTE_PACKAGE_BASE = "https://cdn.jsdelivr.net/pyodide/v${U}/full/";
-const REMOTE_HOST_MARKERS = ["cdn.jsdelivr.net", "instantiateStreaming"];
+const STREAMING_INSTANTIATION =
+    "n?l=await WebAssembly.instantiateStreaming(n,s):l=await WebAssembly.instantiate(await t,s)";
+const BUFFERED_INSTANTIATION =
+    "l=await WebAssembly.instantiate(t??(await(await n).arrayBuffer()),s)";
+const REMOTE_PACKAGE_HOST = "cdn.jsdelivr.net";
+const REMOTE_PACKAGE_VERSION_TOKEN = "${U}";
+const REMOTE_PACKAGE_BASE = `https://${REMOTE_PACKAGE_HOST}/pyodide/v${REMOTE_PACKAGE_VERSION_TOKEN}/full/`;
+const REMOTE_HOST_MARKERS = ["cdn.jsdelivr.net"];
+const STREAMING_MARKERS_BY_FILE: Record<string, ReadonlyArray<string>> = {
+    "pyodide.mjs": ["instantiateStreaming"],
+    "pyodide.asm.mjs": [],
+};
 const MODULE_EXTENSION_REWRITES: ReadonlyArray<[string, string]> = [
     ["pyodide.asm.mjs", PYTHON_ASM_FILE_NAME],
 ];
@@ -54,15 +62,20 @@ class PyodideRuntimeAssembler implements RuntimeAssetAssemblerContract {
             `${this.pyodidePackageDirectory}/${packageFileName}`,
         );
         let patchedText = sourceText
-            .replace(STREAMING_INSTANTIATION, BUFFERED_INSTANTIATION)
-            .replace(REMOTE_PACKAGE_BASE, "./");
+            .split(STREAMING_INSTANTIATION)
+            .join(BUFFERED_INSTANTIATION)
+            .split(REMOTE_PACKAGE_BASE)
+            .join("./");
         for (const [originalSpecifier, hostSafeSpecifier] of MODULE_EXTENSION_REWRITES) {
             patchedText = patchedText.split(originalSpecifier).join(hostSafeSpecifier);
         }
-        for (const remoteMarker of REMOTE_HOST_MARKERS) {
-            if (patchedText.includes(remoteMarker)) {
+        for (const forbiddenMarker of [
+            ...REMOTE_HOST_MARKERS,
+            ...(STREAMING_MARKERS_BY_FILE[packageFileName] ?? []),
+        ]) {
+            if (patchedText.includes(forbiddenMarker)) {
                 throw new Error(
-                    `${packageFileName} still contains ${remoteMarker}. Reinstall pyodide and recheck the runtime patch.`,
+                    `${packageFileName} still contains ${forbiddenMarker}. Reinstall pyodide and recheck the runtime patch.`,
                 );
             }
         }
