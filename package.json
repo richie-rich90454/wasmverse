@@ -11,7 +11,7 @@
         "format:check": "bunx oxfmt --check .",
         "typecheck": "bunx tsc --noEmit",
         "test": "bun test",
-    "verify:export": "bun scripts/VerifyStaticExportsScript.ts",
+        "verify:export": "bun scripts/VerifyStaticExportsScript.ts",
         "postinstall": "bun run setup"
     },
     "dependencies": {
