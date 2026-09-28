@@ -11,6 +11,7 @@ import {
     findRemoteAssetOrigins,
     scrubRemoteAssetOrigins,
 } from "@serverAtelier/utilities/RemoteAssetScrubber.ts";
+import { isBuildOutputPath } from "@serverAtelier/utilities/BuildOutputFilter.ts";
 const EXPORT_BUNDLE_NAME = "app.js";
 const EXPORT_STYLE_NAME = "terminal.css";
 const EXPORT_DESCRIPTOR_NAME = "session.json";
@@ -46,6 +47,23 @@ const UNSHIPPED_RUNTIME_FILE_PATTERNS: ReadonlyArray<RegExp> = [
     /^console.*\.html$/,
 ];
 const SCANNED_TEXT_FILE_PATTERN = /\.(js|css|html|json)$/;
+const NODE_ONLY_MODULE_SPECIFIERS = [
+    "module",
+    "fs",
+    "url",
+    "path",
+    "vm",
+    "crypto",
+    "ws",
+    "child_process",
+    "node:module",
+    "node:fs",
+    "node:url",
+    "node:path",
+    "node:vm",
+    "node:crypto",
+    "node:child_process",
+];
 const FAVICON_DATA_URL =
     "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230D0D0D'/%3E%3Ctext x='16' y='23' font-family='monospace' font-size='20' font-weight='700' fill='%23D8C7A1' text-anchor='middle'%3EW%3C/text%3E%3C/svg%3E";
 let cachedProjectRoot: string | undefined;
@@ -100,10 +118,7 @@ class StaticSiteExporter {
                 "",
             );
             await this.copyRuntimeAssets(sessionRecord, stagingDirectory);
-            await this.fileSystemOperations.copyDirectoryInto(
-                `${sessionRecord.sessionDirectory}/dist/user-code`,
-                `${stagingDirectory}/user-code`,
-            );
+            await this.copyUserCode(sessionRecord, stagingDirectory);
             await this.assertExportIsHostIndependent(stagingDirectory);
             return await this.zipStagingDirectory(stagingDirectory);
         } finally {
@@ -143,6 +158,7 @@ class StaticSiteExporter {
             format: "esm",
             minify: true,
             naming: { entry: EXPORT_BUNDLE_NAME },
+            external: NODE_ONLY_MODULE_SPECIFIERS,
         });
         if (!buildOutcome.success || buildOutcome.outputs.length !== 1) {
             for (const buildMessage of buildOutcome.logs) {
@@ -173,6 +189,23 @@ class StaticSiteExporter {
             await this.fileSystemOperations.copyFileInto(
                 `${runtimeDirectory}/${relativePath}`,
                 `${stagingDirectory}/runtime/${relativePath}`,
+            );
+        }
+    }
+    private async copyUserCode(
+        sessionRecord: SessionLifecycleRecord,
+        stagingDirectory: string,
+    ): Promise<void> {
+        const userCodeDirectory = `${sessionRecord.sessionDirectory}/dist/user-code`;
+        const userCodeFiles =
+            await this.fileSystemOperations.listFilesRecursively(userCodeDirectory);
+        for (const relativePath of userCodeFiles) {
+            if (isBuildOutputPath(relativePath)) {
+                continue;
+            }
+            await this.fileSystemOperations.copyFileInto(
+                `${userCodeDirectory}/${relativePath}`,
+                `${stagingDirectory}/user-code/${relativePath}`,
             );
         }
     }
