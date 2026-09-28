@@ -1,16 +1,18 @@
 import type { LanguageIdentifier } from "@sharedKernel/LanguageIdentifier.ts";
 import type { TerminalPerformerContract } from "@clientTheatre/runtimePerformers/TerminalPerformerContract.ts";
 import { TerminalStageController } from "@clientTheatre/services/TerminalStageController.ts";
+import { forceBufferBasedWasmCompilation } from "@clientTheatre/runtimePerformers/PortableWasmCompilation.ts";
+import { installTerminalConsoleBridge } from "@clientTheatre/services/TerminalConsoleBridge.ts";
 type PerformerCreator = (sessionBaseUrl: string) => TerminalPerformerContract;
 let mountedStage: TerminalStageController | undefined;
 function reportFailure(reason: unknown): void {
     const rawMessage = reason instanceof Error ? reason.message : String(reason);
-    const firstLine = rawMessage.split("\n")[0] ?? rawMessage;
     if (mountedStage) {
-        mountedStage.writeLine(`Error: ${firstLine}`);
+        mountedStage.writeLine("Error:");
+        mountedStage.writeLine(rawMessage);
         return;
     }
-    document.body.textContent = `WASMVERSE export failed: ${firstLine}`;
+    document.body.textContent = `WASMVERSE export failed: ${rawMessage}`;
 }
 function mountStage(): TerminalStageController {
     const container = document.getElementById("terminal");
@@ -26,8 +28,12 @@ async function startStaticExport(
     languageIdentifier: LanguageIdentifier,
     createPerformer: PerformerCreator,
 ): Promise<void> {
+    forceBufferBasedWasmCompilation();
+    installTerminalConsoleBridge();
     const stage = mountStage();
+    stage.focusStage();
     stage.writeLine(`WASMVERSE export ready: ${languageIdentifier}`);
+    stage.writeLine("Type a value and press Enter when the program asks for input.");
     const sessionBaseUrl = new URL(".", import.meta.url).href;
     const performer = createPerformer(sessionBaseUrl);
     await performer.loadInto(stage);
