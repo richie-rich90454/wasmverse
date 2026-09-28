@@ -124,7 +124,9 @@ class RubyWasmLoader {
             outputTracker.appendBytes(bytes),
         );
         const rootDirectory = this.buildRootDirectory(userFiles);
-        const wasiInstance = new WASI([], [], [stdinFile, stdoutFile, stderrFile, rootDirectory]);
+        const wasiInstance = new WASI([], [], [stdinFile, stdoutFile, stderrFile, rootDirectory], {
+            debug: false,
+        });
         const { vm } = await RubyVM.instantiateModule({
             module: this.compiledModule,
             wasip1: wasiInstance,
@@ -238,9 +240,11 @@ class RubyWasmEntryExecutor {
         this.outputTracker.flushShownInto(stage);
     }
     private describeRubyError(errorMessage: string): string {
-        const messageLines = errorMessage.split("\n").filter((line) => line.trim().length > 0);
-        const lastLine = messageLines[messageLines.length - 1] ?? errorMessage;
-        return lastLine.length > 300 ? lastLine.slice(0, 300) : lastLine;
+        const messageLines = errorMessage
+            .split("\n")
+            .map((line) => line.trimEnd())
+            .filter((line) => line.trim().length > 0);
+        return messageLines.join("\n").slice(0, 900);
     }
 }
 class RubyWasmPerformer implements TerminalPerformerContract {
