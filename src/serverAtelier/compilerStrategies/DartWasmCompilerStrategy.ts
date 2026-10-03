@@ -2,9 +2,11 @@ import type { BuildContextRecord } from "@sharedKernel/BuildContextRecord.ts";
 import type { CompilerStrategyContract } from "@serverAtelier/compilerStrategies/CompilerStrategyContract.ts";
 import { FileSystemOperations } from "@serverAtelier/utilities/FileSystemOperations.ts";
 import { ProcessRunner } from "@serverAtelier/utilities/ProcessRunner.ts";
+import { ToolchainLocator } from "@serverAtelier/utilities/ToolchainLocator.ts";
 class DartWasmCompilerStrategy implements CompilerStrategyContract {
     private readonly processRunner: ProcessRunner;
     private readonly fileSystemOperations: FileSystemOperations;
+    private readonly toolchainLocator: ToolchainLocator;
     private readonly dartBinaryPath: string;
     constructor(
         processRunner: ProcessRunner,
@@ -13,16 +15,20 @@ class DartWasmCompilerStrategy implements CompilerStrategyContract {
     ) {
         this.processRunner = processRunner;
         this.fileSystemOperations = fileSystemOperations;
+        this.toolchainLocator = new ToolchainLocator(fileSystemOperations);
         this.dartBinaryPath = dartBinaryPath;
     }
     async compileSourceInto(context: BuildContextRecord): Promise<void> {
-        const toolchainExists = await this.fileSystemOperations.pathExists(this.dartBinaryPath);
-        const dartBinary = toolchainExists ? this.dartBinaryPath : "dart";
+        const dartBinary = await this.toolchainLocator.resolveCommandVector(
+            this.dartBinaryPath,
+            "dart",
+            "Dart",
+        );
         let outcome;
         try {
             outcome = await this.processRunner.runToCompletion(
                 [
-                    dartBinary,
+                    ...dartBinary,
                     "compile",
                     "wasm",
                     context.entryFileRelativePath,
