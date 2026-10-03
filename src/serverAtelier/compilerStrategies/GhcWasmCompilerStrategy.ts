@@ -2,9 +2,11 @@ import type { BuildContextRecord } from "@sharedKernel/BuildContextRecord.ts";
 import type { CompilerStrategyContract } from "@serverAtelier/compilerStrategies/CompilerStrategyContract.ts";
 import { FileSystemOperations } from "@serverAtelier/utilities/FileSystemOperations.ts";
 import { ProcessRunner } from "@serverAtelier/utilities/ProcessRunner.ts";
+import { ToolchainLocator } from "@serverAtelier/utilities/ToolchainLocator.ts";
 class GhcWasmCompilerStrategy implements CompilerStrategyContract {
     private readonly processRunner: ProcessRunner;
     private readonly fileSystemOperations: FileSystemOperations;
+    private readonly toolchainLocator: ToolchainLocator;
     private readonly ghcCompilerPath: string;
     constructor(
         processRunner: ProcessRunner,
@@ -13,18 +15,18 @@ class GhcWasmCompilerStrategy implements CompilerStrategyContract {
     ) {
         this.processRunner = processRunner;
         this.fileSystemOperations = fileSystemOperations;
+        this.toolchainLocator = new ToolchainLocator(fileSystemOperations);
         this.ghcCompilerPath = ghcCompilerPath;
     }
     async compileSourceInto(context: BuildContextRecord): Promise<void> {
-        const toolchainExists = await this.fileSystemOperations.pathExists(this.ghcCompilerPath);
-        if (!toolchainExists) {
-            throw new Error(
-                "GHC WASM toolchain not found. Run bun run setup to provision ./.tools/ghc-wasm/.",
-            );
-        }
+        const ghcCompiler = await this.toolchainLocator.resolveCommandVector(
+            this.ghcCompilerPath,
+            "wasm32-wasi-ghc",
+            "GHC WASM",
+        );
         const outcome = await this.processRunner.runToCompletion(
             [
-                this.ghcCompilerPath,
+                ...ghcCompiler,
                 context.entryFileRelativePath,
                 "-o",
                 `${context.runtimeDirectory}/app.wasm`,
@@ -32,7 +34,11 @@ class GhcWasmCompilerStrategy implements CompilerStrategyContract {
             { workingDirectory: context.sourceDirectory },
         );
         if (outcome.exitCode !== 0) {
-            throw new Error(`GHC WASM build failed: ${outcome.standardError}`);
+            const detail =
+                outcome.standardError.trim().length > 0
+                    ? outcome.standardError
+                    : outcome.standardOutput;
+            throw new Error(`GHC WASM build failed: ${detail}`);
         }
     }
 }
