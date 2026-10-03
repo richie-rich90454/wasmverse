@@ -2,9 +2,11 @@ import type { BuildContextRecord } from "@sharedKernel/BuildContextRecord.ts";
 import type { CompilerStrategyContract } from "@serverAtelier/compilerStrategies/CompilerStrategyContract.ts";
 import { FileSystemOperations } from "@serverAtelier/utilities/FileSystemOperations.ts";
 import { ProcessRunner } from "@serverAtelier/utilities/ProcessRunner.ts";
+import { ToolchainLocator } from "@serverAtelier/utilities/ToolchainLocator.ts";
 class ZigWasmCompilerStrategy implements CompilerStrategyContract {
     private readonly processRunner: ProcessRunner;
     private readonly fileSystemOperations: FileSystemOperations;
+    private readonly toolchainLocator: ToolchainLocator;
     private readonly zigBinaryPath: string;
     constructor(
         processRunner: ProcessRunner,
@@ -13,33 +15,35 @@ class ZigWasmCompilerStrategy implements CompilerStrategyContract {
     ) {
         this.processRunner = processRunner;
         this.fileSystemOperations = fileSystemOperations;
+        this.toolchainLocator = new ToolchainLocator(fileSystemOperations);
         this.zigBinaryPath = zigBinaryPath;
     }
     async compileSourceInto(context: BuildContextRecord): Promise<void> {
-        const toolchainExists = await this.fileSystemOperations.pathExists(this.zigBinaryPath);
-        if (!toolchainExists) {
-            throw new Error(
-                "Zig toolchain not found. Run bun run setup to provision ./.tools/zig/.",
-            );
-        }
+        const zigBinary = await this.toolchainLocator.resolveCommandVector(
+            this.zigBinaryPath,
+            "zig",
+            "Zig",
+        );
         const outcome = await this.processRunner.runToCompletion(
             [
-                this.zigBinaryPath,
+                ...zigBinary,
                 "build-exe",
                 "-target",
-                "wasm32-freestanding",
+                "wasm32-wasi",
                 "-O",
                 "ReleaseSmall",
-                "-fno-entry",
                 "--export=main",
                 context.entryFileRelativePath,
-                "-femit-bin",
-                `${context.runtimeDirectory}/app.wasm`,
+                `-femit-bin=${context.runtimeDirectory}/app.wasm`,
             ],
             { workingDirectory: context.sourceDirectory },
         );
         if (outcome.exitCode !== 0) {
-            throw new Error(`Zig WASM build failed: ${outcome.standardError}`);
+            const detail =
+                outcome.standardError.trim().length > 0
+                    ? outcome.standardError
+                    : outcome.standardOutput;
+            throw new Error(`Zig WASM build failed: ${detail}`);
         }
     }
 }
