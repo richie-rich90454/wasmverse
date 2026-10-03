@@ -10,7 +10,7 @@ import { EmscriptenPerformer } from "@clientTheatre/runtimePerformers/Emscripten
 import { GoWasmPerformer } from "@clientTheatre/runtimePerformers/GoWasmPerformer.ts";
 import { WasiWasmPerformer } from "@clientTheatre/runtimePerformers/WasiWasmPerformer.ts";
 import { DartWasmPerformer } from "@clientTheatre/runtimePerformers/DartWasmPerformer.ts";
-import { BlazorPerformer } from "@clientTheatre/runtimePerformers/BlazorPerformer.ts";
+import { DotNetWasmPerformer } from "@clientTheatre/runtimePerformers/DotNetWasmPerformer.ts";
 import { TeaVmPerformer } from "@clientTheatre/runtimePerformers/TeaVmPerformer.ts";
 class TerminalPerformerFactory {
     private readonly creatorClosures: Map<
@@ -34,7 +34,7 @@ class TerminalPerformerFactory {
             ["kotlin", (sessionBaseUrl) => new WasiWasmPerformer(sessionBaseUrl)],
             ["dart", (sessionBaseUrl) => new DartWasmPerformer(sessionBaseUrl)],
             ["java", (sessionBaseUrl) => new TeaVmPerformer(sessionBaseUrl)],
-            ["csharp", (sessionBaseUrl) => new BlazorPerformer(sessionBaseUrl)],
+            ["csharp", (sessionBaseUrl) => new DotNetWasmPerformer(sessionBaseUrl)],
             ["assemblyscript", (sessionBaseUrl) => new WasmPackPerformer(sessionBaseUrl)],
             ["ocaml", (sessionBaseUrl) => new WasiWasmPerformer(sessionBaseUrl)],
             ["haskell", (sessionBaseUrl) => new WasiWasmPerformer(sessionBaseUrl)],
