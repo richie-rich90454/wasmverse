@@ -1,0 +1,15 @@
+# Normalize line endings in the repository so every checkout matches the
+# formatter output. Without this, a Windows clone with core.autocrlf=true
+# rewrites LF files to CRLF and `bun run format:check` fails on every file.
+* text=auto eol=lf
+
+# Binary assets must never be touched.
+*.wasm binary
+*.zip binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
