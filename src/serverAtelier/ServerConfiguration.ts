@@ -6,6 +6,7 @@ class ServerConfiguration {
     readonly sessionTimeToLiveMilliseconds: number;
     readonly maximumUploadSizeInBytes: number;
     readonly requestIdleTimeoutSeconds: number;
+    readonly uploadsPerMinutePerClient: number;
     constructor() {
         this.port = Number(process.env.PORT ?? 3000);
         this.host = process.env.HOST ?? "0.0.0.0";
@@ -16,6 +17,10 @@ class ServerConfiguration {
         );
         this.maximumUploadSizeInBytes = Number(process.env.MAX_UPLOAD_BYTES ?? 25 * 1024 * 1024);
         this.requestIdleTimeoutSeconds = Number(process.env.REQUEST_IDLE_TIMEOUT_SECONDS ?? 255);
+        // Ten uploads a minute per client protects a public server from abuse. The
+        // export verifier legitimately uploads one archive per language, so it
+        // raises this rather than being throttled halfway through.
+        this.uploadsPerMinutePerClient = Number(process.env.UPLOADS_PER_MINUTE_PER_CLIENT ?? 10);
     }
 }
 export { ServerConfiguration };
