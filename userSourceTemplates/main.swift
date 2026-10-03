@@ -16,12 +16,14 @@ enum PipelineError: Error {
 }
 
 func parseTotal(_ text: String) -> Result<Int, PipelineError> {
-    let trimmed = text.trimmingCharacters(in: .whitespaces)
+    // The WASI target has no Foundation, so trimming is spelled out here rather
+    // than reached for through `String.trimmingCharacters(in:)`.
+    let trimmed = text.split(whereSeparator: { $0 == " " || $0 == "\n" || $0 == "\t" })
     if trimmed.isEmpty {
         return .failure(.emptyInput)
     }
     var total = 0
-    for part in trimmed.split(separator: " ") {
+    for part in trimmed {
         guard let value = Int(part) else {
             return .failure(.badToken(String(part)))
         }
