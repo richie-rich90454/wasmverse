@@ -41,7 +41,7 @@ pub export fn main() void {
         }
     }
     std.debug.print("Stage three: bounded sieve\n", .{});
-    var flags = [_]bool{true} ** 301;
+    var flags: [301]bool = @splat(true);
     flags[0] = false;
     flags[1] = false;
     var number: usize = 2;
