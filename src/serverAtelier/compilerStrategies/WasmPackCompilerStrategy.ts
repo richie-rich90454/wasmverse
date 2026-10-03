@@ -29,42 +29,42 @@ class WasmPackCompilerStrategy implements CompilerStrategyContract {
     }
     async compileSourceInto(context: BuildContextRecord): Promise<void> {
         await this.ensureCargoProject(context);
-        let outcome;
-        try {
-            outcome = await this.processRunner.runToCompletion(
-                [
-                    "wasm-pack",
-                    "build",
-                    context.sourceDirectory,
-                    "--target",
-                    "web",
-                    "--out-dir",
-                    context.runtimeDirectory,
-                    "--out-name",
-                    "app",
-                ],
-                { workingDirectory: context.sourceDirectory },
-            );
-        } catch {
-            outcome = await this.processRunner.runToCompletion([
-                "bunx",
-                "wasm-pack",
-                "build",
-                context.sourceDirectory,
-                "--target",
-                "web",
-                "--out-dir",
-                context.runtimeDirectory,
-                "--out-name",
-                "app",
-            ]);
-        }
+        const wasmPackArguments = [
+            "build",
+            context.sourceDirectory,
+            "--target",
+            "web",
+            "--out-dir",
+            context.runtimeDirectory,
+            "--out-name",
+            "app",
+        ];
+        // `wasm-pack` is often absent but always runnable through `bunx`, so a
+        // missing binary is not fatal. Prefer a real binary and fall back to bunx,
+        // which downloads it on demand.
+        const hasWasmPackOnPath = await this.isWasmPackOnPath();
+        const wasmPackPrefix = hasWasmPackOnPath ? ["wasm-pack"] : ["bunx", "wasm-pack"];
+        const outcome = await this.processRunner.runToCompletion(
+            [...wasmPackPrefix, ...wasmPackArguments],
+            { workingDirectory: context.sourceDirectory },
+        );
         if (outcome.exitCode !== 0) {
             const detail =
                 outcome.standardError.trim().length > 0
                     ? outcome.standardError
                     : outcome.standardOutput;
             throw new Error(`wasm-pack build failed: ${detail}`);
+        }
+    }
+    private async isWasmPackOnPath(): Promise<boolean> {
+        try {
+            const probe = await this.processRunner.runToCompletion([
+                process.platform === "win32" ? "where" : "which",
+                "wasm-pack",
+            ]);
+            return probe.exitCode === 0;
+        } catch {
+            return false;
         }
     }
     private async ensureCargoProject(context: BuildContextRecord): Promise<void> {
