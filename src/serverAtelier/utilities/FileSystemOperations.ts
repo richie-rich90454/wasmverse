@@ -19,6 +19,21 @@ class FileSystemOperations {
         await mkdir(dirname(targetPath), { recursive: true });
         await rename(sourcePath, targetPath);
     }
+    async listDirectoriesRecursively(directoryPath: string): Promise<Array<string>> {
+        const collected: Array<string> = [];
+        const walkDirectory = async (currentDirectory: string): Promise<void> => {
+            const entries = await readdir(currentDirectory, { withFileTypes: true });
+            for (const entry of entries) {
+                if (!entry.isDirectory()) {
+                    continue;
+                }
+                collected.push(join(currentDirectory, entry.name));
+                await walkDirectory(join(currentDirectory, entry.name));
+            }
+        };
+        await walkDirectory(directoryPath);
+        return collected.sort();
+    }
     async listFilesRecursively(directoryPath: string): Promise<Array<string>> {
         const collected: Array<string> = [];
         const walkDirectory = async (currentDirectory: string): Promise<void> => {
