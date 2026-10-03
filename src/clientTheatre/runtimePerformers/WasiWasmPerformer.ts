@@ -1,11 +1,28 @@
 import type { TerminalStageController } from "@clientTheatre/services/TerminalStageController.ts";
 import type { TerminalPerformerContract } from "@clientTheatre/runtimePerformers/TerminalPerformerContract.ts";
-import { WASI } from "@bjorn3/browser_wasi_shim";
+import { WASI, ConsoleStdout } from "@bjorn3/browser_wasi_shim";
 type WasiExportedEntry = () => Promise<unknown> | unknown;
+const WASI_MODULE_NAMESPACE = "wasi_snapshot_preview1";
+/**
+ * Modules compiled for `wasm32-wasi` import their host calls from the
+ * `wasi_snapshot_preview1` namespace, so the shim's flat import table has to be
+ * nested under that name before it reaches `WebAssembly.instantiate`. Handing over
+ * the flat table instead fails to link with "module is not an object or function".
+ */
+class WasiImportObjectBuilder {
+    buildFor(wasiInstance: WASI): WebAssembly.Imports {
+        return {
+            [WASI_MODULE_NAMESPACE]:
+                wasiInstance.wasiImport as unknown as WebAssembly.ModuleImports,
+        };
+    }
+}
 class WasiWasmModuleLoader {
     private readonly sessionBaseUrl: string;
+    private readonly importObjectBuilder: WasiImportObjectBuilder;
     constructor(sessionBaseUrl: string) {
         this.sessionBaseUrl = sessionBaseUrl;
+        this.importObjectBuilder = new WasiImportObjectBuilder();
     }
     async loadInstance(stage: TerminalStageController): Promise<WebAssembly.Instance> {
         stage.writeLine("Loading WASI module.");
@@ -17,18 +34,35 @@ class WasiWasmModuleLoader {
                 importObject: WebAssembly.Imports,
             ): Promise<WebAssembly.Instance>;
         };
-        const wasiInstance = new WASI([], [], []);
+        // The shim indexes this array by file descriptor number, so every standard
+        // descriptor the program may write to needs its own slot. Zig's
+        // `std.debug.print` writes to stderr, which lands on index 2.
+        const writeToTerminal = (bytes: Uint8Array) =>
+            stage.writeText(WasiWasmModuleLoader.decode(bytes));
+        const wasiInstance = new WASI(
+            [],
+            [],
+            [
+                new ConsoleStdout(writeToTerminal),
+                new ConsoleStdout(writeToTerminal),
+                new ConsoleStdout(writeToTerminal),
+            ],
+        );
         const instance = await loaderModule.instantiateWasiModule(
             `${this.sessionBaseUrl}/runtime`,
-            wasiInstance.wasiImport as unknown as WebAssembly.Imports,
+            this.importObjectBuilder.buildFor(wasiInstance),
         );
-        const instanceExports = instance.exports as Record<string, unknown>;
-        if (typeof instanceExports["_initialize"] === "function") {
-            wasiInstance.initialize(
-                instance as unknown as Parameters<typeof wasiInstance.initialize>[0],
-            );
-        }
+        // `initialize` binds the instance the shim's import closures read memory
+        // through, and only calls `_initialize` when the module exports one. A
+        // command module such as Zig's exports `_start` instead, so skipping this
+        // leaves the shim reading an unbound instance on the first host call.
+        wasiInstance.initialize(
+            instance as unknown as Parameters<typeof wasiInstance.initialize>[0],
+        );
         return instance;
+    }
+    private static decode(bytes: Uint8Array): string {
+        return new TextDecoder().decode(bytes);
     }
 }
 class WasiEntryInvoker {
