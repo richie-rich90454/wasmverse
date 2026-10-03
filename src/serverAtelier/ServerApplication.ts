@@ -24,7 +24,7 @@ import { SwiftWasmCompilerStrategy } from "@serverAtelier/compilerStrategies/Swi
 import { KotlinWasmCompilerStrategy } from "@serverAtelier/compilerStrategies/KotlinWasmCompilerStrategy.ts";
 import { DartWasmCompilerStrategy } from "@serverAtelier/compilerStrategies/DartWasmCompilerStrategy.ts";
 import { TeaVmCompilerStrategy } from "@serverAtelier/compilerStrategies/TeaVmCompilerStrategy.ts";
-import { DotNetBlazorCompilerStrategy } from "@serverAtelier/compilerStrategies/DotNetBlazorCompilerStrategy.ts";
+import { DotNetWasmConsoleCompilerStrategy } from "@serverAtelier/compilerStrategies/DotNetWasmConsoleCompilerStrategy.ts";
 import { AssemblyScriptCompilerStrategy } from "@serverAtelier/compilerStrategies/AssemblyScriptCompilerStrategy.ts";
 import { OcamlWasmCompilerStrategy } from "@serverAtelier/compilerStrategies/OcamlWasmCompilerStrategy.ts";
 import { GhcWasmCompilerStrategy } from "@serverAtelier/compilerStrategies/GhcWasmCompilerStrategy.ts";
@@ -37,7 +37,7 @@ import { EmscriptenGlueRuntimeAssembler } from "@serverAtelier/runtimeAssemblers
 import { GoWasmExecRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/GoWasmExecRuntimeAssembler.ts";
 import { WasiWasmGlueRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/WasiWasmGlueRuntimeAssembler.ts";
 import { DartWasmGlueRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/DartWasmGlueRuntimeAssembler.ts";
-import { BlazorGlueRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/BlazorGlueRuntimeAssembler.ts";
+import { DotNetAppBundleRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/DotNetAppBundleRuntimeAssembler.ts";
 import { TeaVmGlueRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/TeaVmGlueRuntimeAssembler.ts";
 import { PythonLanguagePlugin } from "@serverAtelier/languagePlugins/PythonLanguagePlugin.ts";
 import { RubyLanguagePlugin } from "@serverAtelier/languagePlugins/RubyLanguagePlugin.ts";
@@ -87,6 +87,12 @@ class ServerApplication {
         const emscriptenCompilerStrategy = new EmscriptenCompilerStrategy(
             processRunner,
             this.fileSystemOperations,
+            "emcc",
+        );
+        const emscriptenCppCompilerStrategy = new EmscriptenCompilerStrategy(
+            processRunner,
+            this.fileSystemOperations,
+            "em++",
         );
         const sourceFileCopier = new UserSourceFileCopier(this.fileSystemOperations);
         const manifestWriter = new UserManifestWriter(this.fileSystemOperations);
@@ -128,7 +134,7 @@ class ServerApplication {
                 manifestWriter,
             ),
             new CppLanguagePlugin(
-                emscriptenCompilerStrategy,
+                emscriptenCppCompilerStrategy,
                 new EmscriptenGlueRuntimeAssembler(this.fileSystemOperations),
                 sourceFileCopier,
                 manifestWriter,
@@ -170,8 +176,8 @@ class ServerApplication {
                 manifestWriter,
             ),
             new CSharpLanguagePlugin(
-                new DotNetBlazorCompilerStrategy(processRunner, this.fileSystemOperations),
-                new BlazorGlueRuntimeAssembler(this.fileSystemOperations),
+                new DotNetWasmConsoleCompilerStrategy(processRunner, this.fileSystemOperations),
+                new DotNetAppBundleRuntimeAssembler(this.fileSystemOperations),
                 sourceFileCopier,
                 manifestWriter,
             ),
