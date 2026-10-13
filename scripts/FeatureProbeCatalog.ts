@@ -660,6 +660,146 @@ const FEATURE_PROBES: ReadonlyArray<FeatureProbeDefinition> = [
             },
         ],
     },
+    {
+        languageIdentifier: "duckdb",
+        entryFileName: "main.duckdb.sql",
+        sourceFiles: {
+            "main.duckdb.sql":
+                "CREATE TABLE probe (label TEXT NOT NULL, amount INTEGER NOT NULL);\n" +
+                "INSERT INTO probe (label, amount) VALUES ('alpha', 7), ('beta', 12);\n" +
+                "SELECT label || ':' || amount AS reading FROM probe ORDER BY label ASC;\n" +
+                "SELECT 'PROBE-DONE' AS marker;\n",
+        },
+        programArguments: [],
+        terminalAnswers: [],
+        expectedLines: ["alpha:7", "beta:12", "PROBE-DONE"],
+        exercisedFeatures: [],
+        unsupportedFeatures: [
+            {
+                feature: "stdin",
+                reason: "DuckDB scripts have no stdin in this runtime",
+            },
+            {
+                feature: "arguments",
+                reason: "DuckDB scripts have no argv in this runtime",
+            },
+            {
+                feature: "fileIo",
+                reason: "scripts run against an in-memory database with no host files",
+            },
+            {
+                feature: "multiFile",
+                reason: "scripts run against an in-memory database with no host files",
+            },
+        ],
+    },
+    {
+        languageIdentifier: "pglite",
+        entryFileName: "main.pglite.sql",
+        sourceFiles: {
+            "main.pglite.sql":
+                "CREATE TABLE probe (label TEXT NOT NULL, amount INTEGER NOT NULL);\n" +
+                "INSERT INTO probe (label, amount) VALUES ('alpha', 7), ('beta', 12);\n" +
+                "SELECT label || ':' || amount AS reading FROM probe ORDER BY label ASC;\n" +
+                "SELECT 'PROBE-DONE' AS marker;\n",
+        },
+        programArguments: [],
+        terminalAnswers: [],
+        expectedLines: ["alpha:7", "beta:12", "PROBE-DONE"],
+        exercisedFeatures: [],
+        unsupportedFeatures: [
+            {
+                feature: "stdin",
+                reason: "PGlite scripts have no stdin in this runtime",
+            },
+            {
+                feature: "arguments",
+                reason: "PGlite scripts have no argv in this runtime",
+            },
+            {
+                feature: "fileIo",
+                reason: "scripts run against an in-memory database with no host files",
+            },
+            {
+                feature: "multiFile",
+                reason: "scripts run against an in-memory database with no host files",
+            },
+        ],
+    },
+    {
+        languageIdentifier: "awk",
+        entryFileName: "main.awk",
+        sourceFiles: {
+            "main.awk":
+                'BEGIN { helper = "helper" }\n' +
+                'NR == 1 { print "greet:" helper ":" $0; exit }\n' +
+                "END {\n" +
+                '    print "arg0:" (arg0 == "" ? "none" : arg0)\n' +
+                '    print "written" > "out.txt"\n' +
+                '    close("out.txt")\n' +
+                '    getline written < "out.txt"\n' +
+                '    close("out.txt")\n' +
+                '    print "file:" written\n' +
+                '    print "PROBE-DONE"\n' +
+                "}\n",
+        },
+        programArguments: PROBE_ARGUMENTS,
+        terminalAnswers: PROBE_ANSWERS,
+        expectedLines: ["greet:helper:Ada", "arg0:alpha", "file:written", "PROBE-DONE"],
+        exercisedFeatures: ["stdin", "arguments", "fileIo"],
+        unsupportedFeatures: [
+            {
+                feature: "multiFile",
+                reason: "busybox awk has no include directive; the performer runs the entry program only",
+            },
+        ],
+    },
+    {
+        languageIdentifier: "jq",
+        entryFileName: "main.jq",
+        sourceFiles: {
+            "main.jq": '"greet:" + .name, ("arg0:" + $arg0), "PROBE-DONE"\n',
+            "data.json": '{"name": "probe-data"}\n',
+        },
+        programArguments: PROBE_ARGUMENTS,
+        terminalAnswers: [],
+        expectedLines: ["greet:probe-data", "arg0:alpha", "PROBE-DONE"],
+        exercisedFeatures: ["arguments"],
+        unsupportedFeatures: [
+            {
+                feature: "stdin",
+                reason: "the jq runtime takes its input document as one string; there is no interactive read",
+            },
+            {
+                feature: "fileIo",
+                reason: "jq filters write only to stdout and cannot name input files",
+            },
+            {
+                feature: "multiFile",
+                reason: "the jq runtime exposes no module include path to the filter",
+            },
+        ],
+    },
+    {
+        languageIdentifier: "bash",
+        entryFileName: "main.sh",
+        sourceFiles: {
+            "main.sh":
+                "read name\n" +
+                ". /helper.sh\n" +
+                'echo "greet:$(helper_label):$name"\n' +
+                'echo "arg0:$1"\n' +
+                "echo written > out.txt\n" +
+                'echo "file:$(cat out.txt)"\n' +
+                "echo PROBE-DONE\n",
+            "helper.sh": "helper_label() {\n    printf helper\n}\n",
+        },
+        programArguments: PROBE_ARGUMENTS,
+        terminalAnswers: PROBE_ANSWERS,
+        expectedLines: ["greet:helper:Ada", "arg0:alpha", "file:written", "PROBE-DONE"],
+        exercisedFeatures: ["stdin", "arguments", "fileIo", "multiFile"],
+        unsupportedFeatures: [],
+    },
 ];
 export { FEATURE_PROBES };
 export type { FeatureName, FeatureProbeDefinition, UnsupportedFeature };
