@@ -33,6 +33,7 @@ class JavaLanguagePlugin implements LanguagePluginContract {
             context.userCodeDirectory,
             context.entryFileRelativePath,
             this.languageIdentifier,
+            context.programArguments,
         );
         return {
             runtimeDirectory: context.runtimeDirectory,
