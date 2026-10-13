@@ -151,6 +151,31 @@ const SHOWCASES: ReadonlyArray<ShowcaseUnderTest> = [
         entryFileName: "main.sql",
         budgetMilliseconds: 120_000,
     },
+    {
+        languageIdentifier: "duckdb",
+        entryFileName: "main.duckdb.sql",
+        budgetMilliseconds: 300_000,
+    },
+    {
+        languageIdentifier: "pglite",
+        entryFileName: "main.pglite.sql",
+        budgetMilliseconds: 300_000,
+    },
+    {
+        languageIdentifier: "awk",
+        entryFileName: "main.awk",
+        budgetMilliseconds: 120_000,
+    },
+    {
+        languageIdentifier: "jq",
+        entryFileName: "main.jq",
+        budgetMilliseconds: 120_000,
+    },
+    {
+        languageIdentifier: "bash",
+        entryFileName: "main.sh",
+        budgetMilliseconds: 120_000,
+    },
 ];
 function isToolchainPendingMessage(message: string): boolean {
     return TOOLCHAIN_PENDING_PATTERNS.some((pattern) => pattern.test(message));
@@ -527,14 +552,21 @@ function firstMeaningfulLine(terminalText: string): string {
 }
 async function sendText(devTools: DevToolsSession, sessionId: string, text: string): Promise<void> {
     for (const character of text) {
-        const keyEvent = {
-            key: character,
-            code: "",
-            text: character,
-            unmodifiedText: character,
-        };
-        await devTools.call("Input.dispatchKeyEvent", { type: "keyDown", ...keyEvent }, sessionId);
-        await devTools.call("Input.dispatchKeyEvent", { type: "keyUp", ...keyEvent }, sessionId);
+        const virtualKeyCode = character.toUpperCase().charCodeAt(0);
+        await devTools.call(
+            "Input.dispatchKeyEvent",
+            {
+                type: "char",
+                text: character,
+                unmodifiedText: character,
+                key: character,
+                code: "",
+                windowsVirtualKeyCode: virtualKeyCode,
+                nativeVirtualKeyCode: virtualKeyCode,
+                keyCode: virtualKeyCode,
+            },
+            sessionId,
+        );
     }
 }
 async function verifyProbeInBrowser(
@@ -580,8 +612,15 @@ async function verifyProbeInBrowser(
         }
         if (Date.now() - lastChangeAt > 1500) {
             if (answersSent < probe.terminalAnswers.length) {
-                await sendText(devTools, sessionId, probe.terminalAnswers[answersSent] as string);
+                const answerText = probe.terminalAnswers[answersSent] as string;
                 answersSent += 1;
+                let answerEchoed = false;
+                for (let typingAttempt = 0; typingAttempt < 3 && !answerEchoed; typingAttempt++) {
+                    await sendText(devTools, sessionId, answerText);
+                    await new Promise((resolve) => setTimeout(resolve, 350));
+                    const echoCheckText = await readTerminalText(devTools, sessionId);
+                    answerEchoed = echoCheckText.includes(answerText);
+                }
                 await sendEnterKey(devTools, sessionId);
             } else if (answersSent < probe.terminalAnswers.length + 2) {
                 answersSent += 1;
@@ -690,7 +729,11 @@ const applicationServer = spawn(
         ? ["node_modules/tsx/dist/cli.mjs", applicationServerEntry]
         : [applicationServerEntry],
     {
-        env: { ...process.env, PORT: String(APP_PORT) } as Record<string, string>,
+        env: {
+            ...process.env,
+            PORT: String(APP_PORT),
+            SESSION_UPLOADS_PER_MINUTE: "1000",
+        } as Record<string, string>,
         stdio: ["ignore", "pipe", "pipe"],
     },
 );
