@@ -1,0 +1,23 @@
+{
+    "generatedAt": "seed",
+    "source": "verify:export",
+    "languages": [
+        { "languageIdentifier": "python", "toolchain": "pending", "showcase": "pending", "features": { "stdin": "pending", "arguments": "pending", "fileIo": "pending", "multiFile": "pending" }, "exportBytes": 0, "problems": [] },
+        { "languageIdentifier": "ruby", "toolchain": "pending", "showcase": "pending", "features": { "stdin": "pending", "arguments": "pending", "fileIo": "pending", "multiFile": "pending" }, "exportBytes": 0, "problems": [] },
+        { "languageIdentifier": "lua", "toolchain": "pending", "showcase": "pending", "features": { "stdin": "pending", "arguments": "pending", "fileIo": "pending", "multiFile": "pending" }, "exportBytes": 0, "problems": [] },
+        { "languageIdentifier": "php", "toolchain": "pending", "showcase": "pending", "features": { "stdin": "pending", "arguments": "pending", "fileIo": "pending", "multiFile": "pending" }, "exportBytes": 0, "problems": [] },
+        { "languageIdentifier": "rust", "toolchain": "pending", "showcase": "pending", "features": { "stdin": "pending", "arguments": "pending", "fileIo": "pending", "multiFile": "pending" }, "exportBytes": 0, "problems": [] },
+        { "languageIdentifier": "c", "toolchain": "pending", "showcase": "pending", "features": { "stdin": "pending", "arguments": "pending", "fileIo": "pending", "multiFile": "pending" }, "exportBytes": 0, "problems": [] },
+        { "languageIdentifier": "cpp", "toolchain": "pending", "showcase": "pending", "features": { "stdin": "pending", "arguments": "pending", "fileIo": "pending", "multiFile": "pending" }, "exportBytes": 0, "problems": [] },
+        { "languageIdentifier": "go", "toolchain": "pending", "showcase": "pending", "features": { "stdin": "pending", "arguments": "pending", "fileIo": "pending", "multiFile": "pending" }, "exportBytes": 0, "problems": [] },
+        { "languageIdentifier": "zig", "toolchain": "pending", "showcase": "pending", "features": { "stdin": "pending", "arguments": "pending", "fileIo": "pending", "multiFile": "pending" }, "exportBytes": 0, "problems": [] },
+        { "languageIdentifier": "swift", "toolchain": "pending", "showcase": "pending", "features": { "stdin": "pending", "arguments": "pending", "fileIo": "pending", "multiFile": "pending" }, "exportBytes": 0, "problems": [] },
+        { "languageIdentifier": "kotlin", "toolchain": "pending", "showcase": "pending", "features": { "stdin": "pending", "arguments": "pending", "fileIo": "pending", "multiFile": "pending" }, "exportBytes": 0, "problems": [] },
+        { "languageIdentifier": "dart", "toolchain": "pending", "showcase": "pending", "features": { "stdin": "pending", "arguments": "pending", "fileIo": "pending", "multiFile": "pending" }, "exportBytes": 0, "problems": [] },
+        { "languageIdentifier": "java", "toolchain": "pending", "showcase": "pending", "features": { "stdin": "pending", "arguments": "pending", "fileIo": "pending", "multiFile": "pending" }, "exportBytes": 0, "problems": [] },
+        { "languageIdentifier": "csharp", "toolchain": "pending", "showcase": "pending", "features": { "stdin": "pending", "arguments": "pending", "fileIo": "pending", "multiFile": "pending" }, "exportBytes": 0, "problems": [] },
+        { "languageIdentifier": "assemblyscript", "toolchain": "pending", "showcase": "pending", "features": { "stdin": "pending", "arguments": "pending", "fileIo": "pending", "multiFile": "pending" }, "exportBytes": 0, "problems": [] },
+        { "languageIdentifier": "ocaml", "toolchain": "pending", "showcase": "pending", "features": { "stdin": "pending", "arguments": "pending", "fileIo": "pending", "multiFile": "pending" }, "exportBytes": 0, "problems": [] },
+        { "languageIdentifier": "haskell", "toolchain": "pending", "showcase": "pending", "features": { "stdin": "pending", "arguments": "pending", "fileIo": "pending", "multiFile": "pending" }, "exportBytes": 0, "problems": [] }
+    ]
+}
