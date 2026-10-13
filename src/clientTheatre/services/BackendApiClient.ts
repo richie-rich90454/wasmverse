@@ -1,13 +1,18 @@
 import type { SessionDescriptorRecord } from "@sharedKernel/SessionDescriptorRecord.ts";
 class BackendApiClient {
     async submitProjectArchive(
-        file: File,
+        archive: File | Blob,
         entryFileName: string,
         onArchiveTransferred?: () => void,
+        programArguments?: ReadonlyArray<string>,
     ): Promise<SessionDescriptorRecord> {
         const formData = new FormData();
-        formData.append("archive", file);
+        const archiveFileName = archive instanceof File ? archive.name : "project.zip";
+        formData.append("archive", archive, archiveFileName);
         formData.append("entry", entryFileName);
+        if (programArguments && programArguments.length > 0) {
+            formData.append("args", programArguments.join("\n"));
+        }
         return new Promise<SessionDescriptorRecord>((resolve, reject) => {
             const request = new XMLHttpRequest();
             request.open("POST", "/api/session");
