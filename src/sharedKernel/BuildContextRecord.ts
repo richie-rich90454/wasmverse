@@ -6,6 +6,7 @@ interface BuildContextRecord {
     runtimeDirectory: string;
     userCodeDirectory: string;
     entryFileRelativePath: string;
+    programArguments: ReadonlyArray<string>;
     languageIdentifier: LanguageIdentifier;
 }
 export type { BuildContextRecord };
