@@ -9,7 +9,7 @@ import { UserManifestWriter } from "@serverAtelier/pluginHost/UserManifestWriter
 class AssemblyScriptLanguagePlugin implements LanguagePluginContract {
     readonly languageIdentifier: LanguageIdentifier = "assemblyscript";
     readonly displayName = "AssemblyScript";
-    readonly supportedFileExtensions = [".ts"];
+    readonly supportedFileExtensions = [".as"];
     private readonly compilerStrategy: CompilerStrategyContract;
     private readonly runtimeAssembler: RuntimeAssetAssemblerContract;
     private readonly sourceFileCopier: UserSourceFileCopier;
