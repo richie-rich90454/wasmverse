@@ -790,10 +790,28 @@ const matrixDocument: CompatibilityMatrixDocument = {
     source: "verify:export",
     languages: matrixRows,
 };
-await writeFile(
-    join(process.cwd(), "compatibility-matrix.json"),
-    JSON.stringify(matrixDocument, null, 4) + "\n",
-);
+const matrixPath = join(process.cwd(), "compatibility-matrix.json");
+let mergedMatrixDocument = matrixDocument;
+try {
+    const existingMatrix = JSON.parse(await readFile(matrixPath, "utf8")) as {
+        languages?: ReadonlyArray<CompatibilityMatrixRow>;
+    };
+    if (existingMatrix.languages && languageFilter.length > 0) {
+        const verifiedIdentifiers = new Set(
+            matrixRows.map((matrixRow) => matrixRow.languageIdentifier),
+        );
+        mergedMatrixDocument = {
+            ...matrixDocument,
+            languages: [
+                ...matrixRows,
+                ...existingMatrix.languages.filter(
+                    (existingRow) => !verifiedIdentifiers.has(existingRow.languageIdentifier),
+                ),
+            ],
+        };
+    }
+} catch {}
+await writeFile(matrixPath, JSON.stringify(mergedMatrixDocument, null, 4) + "\n");
 let failureCount = 0;
 for (const outcome of outcomes) {
     const sizeInKilobytes = Math.round(outcome.zipBytes / 1024);
