@@ -4,6 +4,7 @@ import type { CompilerStrategyContract } from "@serverAtelier/compilerStrategies
 import { FileSystemOperations } from "@serverAtelier/utilities/FileSystemOperations.ts";
 import { ProcessRunner } from "@serverAtelier/utilities/ProcessRunner.ts";
 const DOTNET_PROJECT_FILE_NAME = "WasmVerseProgram.csproj";
+const DOTNET_HOST_SUPPORT_FILE_NAME = "WasmVerseHost.cs";
 const DEFAULT_TARGET_FRAMEWORK = "net8.0";
 const DOTNET_TOOLCHAIN_DIRECTORY = "./.tools/dotnet";
 const DEFAULT_DOTNET_BINARY_PATH =
@@ -21,6 +22,25 @@ function dotnetProjectText(targetFramework: string): string {
         "        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>\n" +
         "    </PropertyGroup>\n" +
         "</Project>\n"
+    );
+}
+function dotnetHostSupportText(): string {
+    return (
+        "using System.Runtime.InteropServices.JavaScript;\n" +
+        "\n" +
+        "internal partial class WasmVerseHost {\n" +
+        '    [JSImport("readLine", "WasmVerseHost")]\n' +
+        "    internal static partial string ReadLine();\n" +
+        "\n" +
+        '    [JSImport("getArguments", "WasmVerseHost")]\n' +
+        "    internal static partial string[] GetArguments();\n" +
+        "\n" +
+        '    [JSImport("readFile", "WasmVerseHost")]\n' +
+        "    internal static partial string ReadFile(string path);\n" +
+        "\n" +
+        '    [JSImport("listFiles", "WasmVerseHost")]\n' +
+        "    internal static partial string[] ListFiles();\n" +
+        "}\n"
     );
 }
 class DotNetBlazorCompilerStrategy implements CompilerStrategyContract {
@@ -83,6 +103,12 @@ class DotNetBlazorCompilerStrategy implements CompilerStrategyContract {
             `${context.sourceDirectory}/${DOTNET_PROJECT_FILE_NAME}`,
             dotnetProjectText(await this.resolveTargetFramework(dotnetBinary)),
         );
+        if (!existingFiles.includes(DOTNET_HOST_SUPPORT_FILE_NAME)) {
+            await this.fileSystemOperations.writeTextFile(
+                `${context.sourceDirectory}/${DOTNET_HOST_SUPPORT_FILE_NAME}`,
+                dotnetHostSupportText(),
+            );
+        }
     }
     private async resolveTargetFramework(dotnetBinary: string): Promise<string> {
         try {
