@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ClientApplicationController } from "@clientTheatre/services/ClientApplicationController.ts";
 import { UploadCurtainView } from "@clientTheatre/components/UploadCurtainView.tsx";
+import { CodeProjectEditorView } from "@clientTheatre/components/CodeProjectEditorView.tsx";
 import { TerminalStageView } from "@clientTheatre/components/TerminalStageView.tsx";
 import { StatusRibbonView } from "@clientTheatre/components/StatusRibbonView.tsx";
 import { MarqueeHeadingView } from "@clientTheatre/components/MarqueeHeadingView.tsx";
@@ -31,6 +32,7 @@ function ClientApplicationView(): React.JSX.Element {
             ) : (
                 <>
                     <UploadCurtainView applicationController={applicationController} />
+                    <CodeProjectEditorView applicationController={applicationController} />
                     <LanguageGalleryView applicationController={applicationController} />
                 </>
             )}
