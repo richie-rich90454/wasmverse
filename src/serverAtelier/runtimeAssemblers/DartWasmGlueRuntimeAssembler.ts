@@ -11,7 +11,9 @@ class DartWasmGlueRuntimeAssembler implements RuntimeAssetAssemblerContract {
         await this.fileSystemOperations.writeTextFile(
             `${context.runtimeDirectory}/dart-loader.js`,
             'import { compile } from "./app.wasm.js";\n' +
-                "export async function loadDartApp(baseUrl){ const response = await fetch(`${baseUrl}/app.wasm`); if (!response.ok) { throw new Error(`app.wasm request failed with status ${response.status}`); } const compiled = await compile(await response.arrayBuffer()); return compiled.instantiate(); }\n",
+                "export async function loadDartApp(baseUrl){ const response = await fetch(`${baseUrl}/app.wasm`); if (!response.ok) { throw new Error(`app.wasm request failed with status ${response.status}`); } const compiled = await compile(await response.arrayBuffer()); return compiled.instantiate(); }\n" +
+                "export async function loadDartRuntime(baseUrl){ const response = await fetch(`${baseUrl}/app.wasm`); if (!response.ok) { throw new Error(`app.wasm request failed with status ${response.status}`); } const compiled = await compile(await response.arrayBuffer()); return { instantiateAttempt: async () => await compiled.instantiate() }; }\n" +
+                'export function installDartWasmHostBridge(bridge){ globalThis.dartPrint = (value) => bridge.writeText(String(value) + "\\n"); globalThis.WasmVerseHost = { readLine: () => bridge.readLine(), getArguments: () => [...bridge.applicationArguments], readFile: (path) => Object.prototype.hasOwnProperty.call(bridge.userFiles, String(path)) ? bridge.userFiles[String(path)] : null, listFiles: () => Object.keys(bridge.userFiles) }; }\n',
         );
     }
 }
