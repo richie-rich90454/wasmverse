@@ -101,6 +101,14 @@ describe("DotNetBlazorCompilerStrategy", () => {
         expect(projectText).toContain("<TargetFramework>net10.0</TargetFramework>");
         expect(projectText).toContain("<RuntimeIdentifier>browser-wasm</RuntimeIdentifier>");
         expect(projectText).toContain("<AllowUnsafeBlocks>true</AllowUnsafeBlocks>");
+        const hostText = await readFile(join(sourceDirectory, "WasmVerseHost.cs"), "utf8");
+        expect(hostText).toContain("using System.Runtime.InteropServices.JavaScript;");
+        expect(hostText).toContain("internal partial class WasmVerseHost");
+        expect(hostText).toContain('[JSImport("readLine", "WasmVerseHost")]');
+        expect(hostText).toContain("internal static partial string ReadLine();");
+        expect(hostText).toContain('[JSImport("getArguments", "WasmVerseHost")]');
+        expect(hostText).toContain('[JSImport("readFile", "WasmVerseHost")]');
+        expect(hostText).toContain('[JSImport("listFiles", "WasmVerseHost")]');
         expect(await readFile(join(runtimeDirectory, "dotnet.js"), "utf8")).toContain("dotnet");
         expect(existsSync(join(runtimeDirectory, "dotnet.boot.js"))).toBe(true);
         expect(await readFile(join(runtimeDirectory, "_nested", "child.bin"), "utf8")).toBe(
@@ -131,6 +139,7 @@ describe("DotNetBlazorCompilerStrategy", () => {
         );
         await strategy.compileSourceInto(buildContext(sourceDirectory, runtimeDirectory));
         expect(existsSync(join(sourceDirectory, "WasmVerseProgram.csproj"))).toBe(false);
+        expect(existsSync(join(sourceDirectory, "WasmVerseHost.cs"))).toBe(false);
         expect(processRunner.calls.some((call) => call.command.includes("--version"))).toBe(false);
         expect(existsSync(join(runtimeDirectory, "dotnet.js"))).toBe(true);
     });
