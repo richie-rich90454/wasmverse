@@ -11,6 +11,7 @@ class UserManifestWriter {
         userCodeDirectory: string,
         entryFileRelativePath: string,
         languageIdentifier: LanguageIdentifier,
+        programArguments: ReadonlyArray<string> = [],
     ): Promise<UserManifestRecord> {
         const everyFilePath =
             await this.fileSystemOperations.listFilesRecursively(userCodeDirectory);
@@ -20,6 +21,7 @@ class UserManifestWriter {
         const manifest: UserManifestRecord = {
             entryFileRelativePath,
             includedFileRelativePaths,
+            programArguments,
             runtimeType: languageIdentifier,
         };
         await this.fileSystemOperations.writeTextFile(
