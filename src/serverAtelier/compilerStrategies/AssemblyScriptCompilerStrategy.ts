@@ -4,6 +4,7 @@ import type { CompilerStrategyContract } from "@serverAtelier/compilerStrategies
 import { FileSystemOperations } from "@serverAtelier/utilities/FileSystemOperations.ts";
 import { ProcessRunner } from "@serverAtelier/utilities/ProcessRunner.ts";
 const ASSEMBLYSCRIPT_COMPILER_RELATIVE_PATH = "node_modules/assemblyscript/bin/asc.js";
+const ASSEMBLYSCRIPT_ENTRY_SUFFIX = ".ts";
 const ASSEMBLYSCRIPT_LOADER_TEXT =
     "let instance = null;\n" +
     "function forwardedWrite(pointer, length){ const text = new TextDecoder().decode(new Uint8Array(instance.exports.memory.buffer, pointer, length)); const hook = globalThis.__wasmverseWriteLine; if (typeof hook === 'function'){ hook(text); } }\n" +
@@ -21,23 +22,34 @@ class AssemblyScriptCompilerStrategy implements CompilerStrategyContract {
         this.fileSystemOperations = new FileSystemOperations();
     }
     async compileSourceInto(context: BuildContextRecord): Promise<void> {
-        const outcome = await this.processRunner.runToCompletion(
-            [
-                process.execPath,
-                resolve(process.cwd(), ASSEMBLYSCRIPT_COMPILER_RELATIVE_PATH),
-                context.entryFileRelativePath,
-                "--outFile",
-                `${context.runtimeDirectory}/app.wasm`,
-                "--optimize",
-            ],
-            { workingDirectory: context.sourceDirectory },
+        const stagedEntryRelativePath = `${context.entryFileRelativePath}${ASSEMBLYSCRIPT_ENTRY_SUFFIX}`;
+        const stagedEntryPath = `${context.sourceDirectory}/${stagedEntryRelativePath}`;
+        await this.fileSystemOperations.removeRecursively(stagedEntryPath);
+        await this.fileSystemOperations.copyFileInto(
+            `${context.sourceDirectory}/${context.entryFileRelativePath}`,
+            stagedEntryPath,
         );
-        if (outcome.exitCode !== 0) {
-            const detail =
-                outcome.standardError.trim().length > 0
-                    ? outcome.standardError
-                    : outcome.standardOutput;
-            throw new Error(`AssemblyScript compilation failed: ${detail}`);
+        try {
+            const outcome = await this.processRunner.runToCompletion(
+                [
+                    process.execPath,
+                    resolve(process.cwd(), ASSEMBLYSCRIPT_COMPILER_RELATIVE_PATH),
+                    stagedEntryRelativePath,
+                    "--outFile",
+                    `${context.runtimeDirectory}/app.wasm`,
+                    "--optimize",
+                ],
+                { workingDirectory: context.sourceDirectory },
+            );
+            if (outcome.exitCode !== 0) {
+                const detail =
+                    outcome.standardError.trim().length > 0
+                        ? outcome.standardError
+                        : outcome.standardOutput;
+                throw new Error(`AssemblyScript compilation failed: ${detail}`);
+            }
+        } finally {
+            await this.fileSystemOperations.removeRecursively(stagedEntryPath);
         }
         await this.fileSystemOperations.writeTextFile(
             `${context.runtimeDirectory}/app.js`,
