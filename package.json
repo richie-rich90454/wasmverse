@@ -38,16 +38,21 @@
         "@lezer/highlight": "^1.2.5",
         "@ruby/3.4-wasm-wasi": "^2.10.1",
         "@ruby/wasm-wasi": "^2.10.1",
+        "@sqlite.org/sqlite-wasm": "3.53.4-build2",
         "@xterm/addon-fit": "^0.11.0",
         "@xterm/xterm": "^6.0.0",
         "assemblyscript": "^0.28.20",
+        "biwascheme": "^0.8.3",
+        "cherry-cljs": "^0.6.38",
         "esbuild": "^0.28.2",
         "fflate": "^0.8.3",
         "php-wasm": "^0.1.0",
         "pyodide": "^314.0.7",
         "react": "^19.3.0",
         "react-dom": "^19.3.0",
-        "wasmoon": "^1.16.0"
+        "tau-prolog": "^0.3.4",
+        "wasmoon": "^1.16.0",
+        "webr": "^0.6.0"
     },
     "devDependencies": {
         "@types/node": "^26.6.2",

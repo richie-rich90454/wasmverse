@@ -15,10 +15,13 @@ import {
 } from "./FeatureProbeCatalog.ts";
 const scopedLogger = new ScopedLogger("VerifyStaticExports");
 const languageFilter = process.argv[2] ?? "";
-const APP_PORT = 3987;
-const HOST_PORT = 3988;
-const DEBUGGER_PORT = 9333;
-const VERIFICATION_ROOT = join(tmpdir(), "wasmverse-export-verification");
+const APP_PORT = Number(process.env.VERIFY_APP_PORT ?? 3987);
+const HOST_PORT = Number(process.env.VERIFY_HOST_PORT ?? 3988);
+const DEBUGGER_PORT = Number(process.env.VERIFY_DEBUGGER_PORT ?? 9333);
+const VERIFICATION_ROOT = join(
+    tmpdir(),
+    process.env.VERIFY_ROOT_NAME ?? "wasmverse-export-verification",
+);
 const CHROME_CANDIDATES = [
     join(process.cwd(), ".tools/chrome-for-testing/chrome.exe"),
     "C:/Program Files/Google/Chrome/Application/chrome.exe",
@@ -658,10 +661,17 @@ async function drainProcessOutput(stream: Readable | null): Promise<void> {
     }
     drainIntoLog(Buffer.concat(collectedChunks).toString("utf8"));
 }
-const applicationServer = spawn(process.execPath, ["dist/server/ServerEntryPoint.js"], {
-    env: { ...process.env, PORT: String(APP_PORT) } as Record<string, string>,
-    stdio: ["ignore", "pipe", "pipe"],
-});
+const applicationServerEntry = process.env.VERIFY_SERVER_ENTRY ?? "dist/server/ServerEntryPoint.js";
+const applicationServer = spawn(
+    process.execPath,
+    applicationServerEntry.endsWith(".ts")
+        ? ["node_modules/tsx/dist/cli.mjs", applicationServerEntry]
+        : [applicationServerEntry],
+    {
+        env: { ...process.env, PORT: String(APP_PORT) } as Record<string, string>,
+        stdio: ["ignore", "pipe", "pipe"],
+    },
+);
 const serverLogPump = Promise.all([
     drainProcessOutput(applicationServer.stdout),
     drainProcessOutput(applicationServer.stderr),
