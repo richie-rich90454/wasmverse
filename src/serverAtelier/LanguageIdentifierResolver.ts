@@ -21,10 +21,15 @@ class LanguageIdentifierResolver {
             [".dart", "dart"],
             [".java", "java"],
             [".cs", "csharp"],
-            [".ts", "assemblyscript"],
+            [".as", "assemblyscript"],
             [".ml", "ocaml"],
             [".mli", "ocaml"],
             [".hs", "haskell"],
+            [".js", "javascript"],
+            [".mjs", "javascript"],
+            [".ts", "typescript"],
+            [".mts", "typescript"],
+            [".sql", "sql"],
         ]);
     }
     resolveFromFileName(fileName: string): LanguageIdentifier {
