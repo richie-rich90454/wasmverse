@@ -15,33 +15,24 @@ interface EmscriptenModuleHandle {
 interface EmscriptenLoaderModule {
     loadEmscriptenModule(baseUrl: string, overrides?: Record<string, unknown>): Promise<unknown>;
 }
-class EmscriptenFedBytesCursor {
-    private readonly encodedLines: Array<Uint8Array> = [];
+class EmscriptenFedLineCursor {
+    private readonly fedLines: Array<string>;
     private lineIndex: number = 0;
-    private byteOffset: number = 0;
     private exhausted: boolean = false;
     constructor(fedLines: ReadonlyArray<string>) {
-        const textEncoder = new TextEncoder();
-        for (const fedLine of fedLines) {
-            this.encodedLines.push(textEncoder.encode(`${fedLine}\n`));
-        }
+        this.fedLines = [...fedLines];
     }
     get inputWasExhausted(): boolean {
         return this.exhausted;
     }
-    nextByte(): number | null {
-        while (this.lineIndex < this.encodedLines.length) {
-            const currentLine = this.encodedLines[this.lineIndex] as Uint8Array;
-            if (this.byteOffset < currentLine.length) {
-                const nextByte = currentLine[this.byteOffset] as number;
-                this.byteOffset++;
-                return nextByte;
-            }
-            this.lineIndex++;
-            this.byteOffset = 0;
+    nextLine(): string | null {
+        if (this.lineIndex >= this.fedLines.length) {
+            this.exhausted = true;
+            return null;
         }
-        this.exhausted = true;
-        return null;
+        const nextLine = this.fedLines[this.lineIndex] as string;
+        this.lineIndex += 1;
+        return nextLine;
     }
 }
 class EmscriptenGlueScriptLoader {
@@ -104,9 +95,11 @@ class EmscriptenPerformer implements TerminalPerformerContract {
     private readonly entryInvoker: EmscriptenEntryInvoker;
     private readonly outputTracker: ReplayOutputTracker;
     private readonly userFilesClient: SessionUserFilesClient;
+    private readonly sessionBaseUrl: string;
     private programArguments: ReadonlyArray<string> = [];
     private userFiles: Map<string, string> = new Map();
     constructor(sessionBaseUrl: string) {
+        this.sessionBaseUrl = sessionBaseUrl;
         this.glueScriptLoader = new EmscriptenGlueScriptLoader(sessionBaseUrl);
         this.userFileWriter = new EmscriptenUserFileWriter();
         this.entryInvoker = new EmscriptenEntryInvoker();
@@ -127,13 +120,13 @@ class EmscriptenPerformer implements TerminalPerformerContract {
                 throw new Error("Too many input prompts. Stopping to protect the session.");
             }
             this.outputTracker.beginRun();
-            const inputCursor = new EmscriptenFedBytesCursor(fedLines);
+            const inputCursor = new EmscriptenFedLineCursor(fedLines);
             try {
                 const moduleHandle = await this.glueScriptLoader.instantiateAttempt(
                     this.buildFactoryOverrides(inputCursor),
                 );
                 this.userFileWriter.writeUserFilesInto(moduleHandle, this.userFiles);
-                const exitCode = this.entryInvoker.invokeEntry(moduleHandle, this.programArguments);
+                const exitCode = this.invokeWithPromptOverride(moduleHandle, inputCursor);
                 if (typeof exitCode === "number" && exitCode !== 0) {
                     throw new Error(`Program exited with code ${exitCode}.`);
                 }
@@ -153,14 +146,44 @@ class EmscriptenPerformer implements TerminalPerformerContract {
         }
         this.outputTracker.flushShownInto(stage);
     }
-    private buildFactoryOverrides(inputCursor: EmscriptenFedBytesCursor): Record<string, unknown> {
+    private invokeWithPromptOverride(
+        moduleHandle: EmscriptenModuleHandle,
+        inputCursor: EmscriptenFedLineCursor,
+    ): number | undefined {
+        const sharedGlobals = globalThis as Record<string, unknown>;
+        const previousPrompt = sharedGlobals["prompt"];
+        sharedGlobals["prompt"] = () => inputCursor.nextLine();
+        try {
+            return this.entryInvoker.invokeEntry(moduleHandle, this.programArguments);
+        } finally {
+            if (previousPrompt === undefined) {
+                delete sharedGlobals["prompt"];
+            } else {
+                sharedGlobals["prompt"] = previousPrompt;
+            }
+        }
+    }
+    private buildFactoryOverrides(inputCursor: EmscriptenFedLineCursor): Record<string, unknown> {
+        const runtimeBaseUrl = this.sessionBaseUrl;
         return {
             print: (text: unknown) => this.appendShownText(inputCursor, text),
             printErr: (text: unknown) => this.appendShownText(inputCursor, text),
-            stdin: () => inputCursor.nextByte(),
+            instantiateWasm: (
+                importObject: WebAssembly.Imports,
+                successCallback: (
+                    instance: WebAssembly.Instance,
+                    module: WebAssembly.Module,
+                ) => void,
+            ) => {
+                void fetch(`${runtimeBaseUrl}/runtime/app.wasm`)
+                    .then((wasmResponse) => wasmResponse.arrayBuffer())
+                    .then((wasmBytes) => WebAssembly.instantiate(wasmBytes, importObject))
+                    .then(({ instance, module }) => successCallback(instance, module));
+                return {};
+            },
         };
     }
-    private appendShownText(inputCursor: EmscriptenFedBytesCursor, text: unknown): void {
+    private appendShownText(inputCursor: EmscriptenFedLineCursor, text: unknown): void {
         if (!inputCursor.inputWasExhausted) {
             this.outputTracker.appendText(`${text}\n`);
         }
@@ -175,4 +198,4 @@ class EmscriptenPerformer implements TerminalPerformerContract {
         return lastLine.length > 300 ? lastLine.slice(0, 300) : lastLine;
     }
 }
-export { EmscriptenFedBytesCursor, EmscriptenPerformer };
+export { EmscriptenFedLineCursor, EmscriptenPerformer };
