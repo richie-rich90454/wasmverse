@@ -1,6 +1,8 @@
 import { existsSync } from "node:fs";
+import { writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
+import { build } from "esbuild";
 import { zipSync } from "fflate";
 import type { LanguageIdentifier } from "@sharedKernel/LanguageIdentifier.ts";
 import type { SessionDescriptorRecord } from "@sharedKernel/SessionDescriptorRecord.ts";
@@ -71,7 +73,7 @@ function resolveProjectRoot(): string {
     if (cachedProjectRoot) {
         return cachedProjectRoot;
     }
-    let candidateDirectory = import.meta.dir;
+    let candidateDirectory = import.meta.dirname;
     for (;;) {
         if (existsSync(join(candidateDirectory, "package.json"))) {
             cachedProjectRoot = candidateDirectory;
@@ -151,24 +153,36 @@ class StaticSiteExporter {
             `runStaticExport(${JSON.stringify(languageIdentifier)}, (sessionBaseUrl) => new ${performerClassName}(sessionBaseUrl));`,
         ].join("\n");
         const generatedEntryPath = join(tmpdir(), `wasmverse-export-${languageIdentifier}.ts`);
-        await Bun.write(generatedEntryPath, generatedEntry);
-        const buildOutcome = await Bun.build({
-            entrypoints: [generatedEntryPath],
-            target: "browser",
-            format: "esm",
-            minify: true,
-            naming: { entry: EXPORT_BUNDLE_NAME },
-            external: NODE_ONLY_MODULE_SPECIFIERS,
-        });
-        if (!buildOutcome.success || buildOutcome.outputs.length !== 1) {
-            for (const buildMessage of buildOutcome.logs) {
-                this.scopedLogger.logError(buildMessage.message);
+        await writeFile(generatedEntryPath, generatedEntry);
+        let bundledText: string;
+        try {
+            const buildOutcome = await build({
+                entryPoints: [generatedEntryPath],
+                bundle: true,
+                write: false,
+                format: "esm",
+                platform: "browser",
+                target: "es2020",
+                minify: true,
+                external: [...NODE_ONLY_MODULE_SPECIFIERS],
+                tsconfig: join(projectRoot, "tsconfig.json"),
+                logLevel: "silent",
+            });
+            const primaryOutput = buildOutcome.outputFiles[0];
+            if (buildOutcome.outputFiles.length !== 1 || !primaryOutput) {
+                throw new Error(
+                    `Static export bundling for ${languageIdentifier} produced ${buildOutcome.outputFiles.length} outputs.`,
+                );
             }
+            bundledText = primaryOutput.text;
+        } catch (bundlingError) {
+            const bundlingMessage =
+                bundlingError instanceof Error ? bundlingError.message : String(bundlingError);
+            this.scopedLogger.logError(`Static export bundling failed: ${bundlingMessage}`);
             throw new Error(
-                `Static export bundling for ${languageIdentifier} produced ${buildOutcome.outputs.length} outputs. See server logs.`,
+                `Static export bundling for ${languageIdentifier} failed. See server logs.`,
             );
         }
-        const bundledText = await (buildOutcome.outputs[0] as Bun.BuildArtifact).text();
         const scrubbedText = scrubRemoteAssetOrigins(bundledText);
         this.assertNoRemoteAssetOrigins(EXPORT_BUNDLE_NAME, scrubbedText);
         return new TextEncoder().encode(scrubbedText);
