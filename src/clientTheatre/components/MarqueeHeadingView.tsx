@@ -40,7 +40,7 @@ function MarqueeHeadingView(): React.JSX.Element {
         <header className="marquee-heading">
             <h1 className="marquee-title">The Universal WASM Platform</h1>
             <p className="marquee-subtitle">
-                Seventeen languages. One terminal. Compiled to WebAssembly.
+                Twenty languages. One terminal. Compiled to WebAssembly.
             </p>
             <p
                 className={`marquee-health ${healthOk ? "marquee-health-ok" : "marquee-health-err"}`}
