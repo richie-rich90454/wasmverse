@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test } from "vitest";
 import { PathGuard } from "@serverAtelier/utilities/PathGuard.ts";
 describe("PathGuard", () => {
     test("allows a plain file inside the base directory", () => {
