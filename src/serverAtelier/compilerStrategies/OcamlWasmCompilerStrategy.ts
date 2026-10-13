@@ -19,7 +19,7 @@ class OcamlWasmCompilerStrategy implements CompilerStrategyContract {
         const toolchainExists = await this.fileSystemOperations.pathExists(this.ocamlCompilerPath);
         if (!toolchainExists) {
             throw new Error(
-                "OCaml WASM toolchain not found. Run bun run setup to provision ./.tools/ocaml-wasm/.",
+                "OCaml WASM toolchain not found. Run pnpm run setup to provision ./.tools/ocaml-wasm/.",
             );
         }
         const outcome = await this.processRunner.runToCompletion(
