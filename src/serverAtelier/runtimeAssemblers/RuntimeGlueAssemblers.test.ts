@@ -6,6 +6,7 @@ import { pathToFileURL } from "node:url";
 import type { BuildContextRecord } from "@sharedKernel/BuildContextRecord.ts";
 import { BlazorGlueRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/BlazorGlueRuntimeAssembler.ts";
 import { DartWasmGlueRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/DartWasmGlueRuntimeAssembler.ts";
+import { KotlinJsGlueRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/KotlinJsGlueRuntimeAssembler.ts";
 import { TeaVmGlueRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/TeaVmGlueRuntimeAssembler.ts";
 import { FileSystemOperations } from "@serverAtelier/utilities/FileSystemOperations.ts";
 const temporaryDirectories: Array<string> = [];
@@ -30,6 +31,20 @@ afterEach(async () => {
     while (temporaryDirectories.length > 0) {
         await rm(temporaryDirectories.pop() as string, { recursive: true, force: true });
     }
+});
+describe("KotlinJsGlueRuntimeAssembler", () => {
+    test("writes a loader that imports the compiled module with per-attempt cache busting", async () => {
+        const runtimeDirectory = await createRuntimeDirectory();
+        const assembler = new KotlinJsGlueRuntimeAssembler(new FileSystemOperations());
+        await assembler.assembleRuntimeInto(buildContext(runtimeDirectory));
+        const glueText = await readFile(`${runtimeDirectory}/kotlin-loader.js`, "utf8");
+        expect(glueText).toContain("loadKotlinModule(baseUrl, attemptIdentifier)");
+        expect(glueText).toContain("app.js?attempt=${encodeURIComponent(attemptIdentifier)}");
+        const glueModule = (await import(
+            pathToFileURL(`${runtimeDirectory}/kotlin-loader.js`).href
+        )) as { loadKotlinModule?: unknown };
+        expect(typeof glueModule.loadKotlinModule).toBe("function");
+    });
 });
 describe("TeaVmGlueRuntimeAssembler", () => {
     test("keeps the line sink and adds a raw text sink with per-attempt cache busting", async () => {
