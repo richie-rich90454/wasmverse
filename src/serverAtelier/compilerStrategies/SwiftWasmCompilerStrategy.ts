@@ -19,7 +19,7 @@ class SwiftWasmCompilerStrategy implements CompilerStrategyContract {
         const toolchainExists = await this.fileSystemOperations.pathExists(this.swiftCompilerPath);
         if (!toolchainExists) {
             throw new Error(
-                "SwiftWasm toolchain not found. Run bun run setup to provision ./.tools/swift-wasm/.",
+                "SwiftWasm toolchain not found. Run pnpm run setup to provision ./.tools/swift-wasm/.",
             );
         }
         const outcome = await this.processRunner.runToCompletion(
