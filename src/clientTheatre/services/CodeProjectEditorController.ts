@@ -193,7 +193,18 @@ const CODE_EDITOR_LANGUAGE_TABLE: ReadonlyArray<CodeEditorLanguageEntry> = [
         ),
     },
     {
-        extensions: [".ts"],
+        extensions: [".js", ".mjs"],
+        languageLabel: "JavaScript",
+        loadLanguageSupport: async () => (await import("@codemirror/lang-javascript")).javascript(),
+    },
+    {
+        extensions: [".ts", ".mts"],
+        languageLabel: "TypeScript",
+        loadLanguageSupport: async () =>
+            (await import("@codemirror/lang-javascript")).javascript({ typescript: true }),
+    },
+    {
+        extensions: [".as"],
         languageLabel: "AssemblyScript",
         loadLanguageSupport: async () =>
             (await import("@codemirror/lang-javascript")).javascript({ typescript: true }),
