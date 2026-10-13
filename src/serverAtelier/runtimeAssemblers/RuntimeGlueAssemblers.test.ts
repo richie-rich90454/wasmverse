@@ -38,15 +38,55 @@ describe("TeaVmGlueRuntimeAssembler", () => {
         await assembler.assembleRuntimeInto(buildContext(runtimeDirectory));
         const glueText = await readFile(`${runtimeDirectory}/teavm-loader.js`, "utf8");
         expect(glueText).toContain(
-            "loadTeaVmModule(baseUrl, writeLine, writeText, attemptIdentifier)",
+            "loadTeaVmModule(baseUrl, writeLine, writeText, attemptIdentifier, readLine)",
         );
         expect(glueText).toContain("$rt_putStdoutCustom");
+        expect(glueText).toContain("$rt_putStderrCustom");
         expect(glueText).toContain("?attempt=${attemptIdentifier}");
         expect(glueText).toContain("lines.pop()");
         const glueModule = (await import(
             pathToFileURL(`${runtimeDirectory}/teavm-loader.js`).href
         )) as { loadTeaVmModule?: unknown };
         expect(typeof glueModule.loadTeaVmModule).toBe("function");
+    });
+    test("installs the stdin hook only when a readLine feeder is provided", async () => {
+        const runtimeDirectory = await createRuntimeDirectory();
+        const assembler = new TeaVmGlueRuntimeAssembler(new FileSystemOperations());
+        await assembler.assembleRuntimeInto(buildContext(runtimeDirectory));
+        const glueText = await readFile(`${runtimeDirectory}/teavm-loader.js`, "utf8");
+        expect(glueText).toContain('typeof readLine === "function"');
+        expect(glueText).toContain("$wasmverseReadByte");
+        expect(glueText).toContain("TextEncoder");
+        expect(glueText).toContain("delete globalThis.$wasmverseReadByte");
+        const glueModule = (await import(
+            pathToFileURL(`${runtimeDirectory}/teavm-loader.js`).href
+        )) as {
+            loadTeaVmModule?: (
+                baseUrl: string,
+                writeLine: (line: string) => void,
+                writeText?: (text: string) => void,
+                attempt?: number,
+                readLine?: () => string,
+            ) => Promise<unknown>;
+        };
+        await writeFile(`${runtimeDirectory}/classes.js`, "export function main() {}\n");
+        await glueModule.loadTeaVmModule?.(
+            pathToFileURL(runtimeDirectory).href,
+            () => {},
+            undefined,
+            undefined,
+            () => "fed-line",
+        );
+        const readByte = (globalThis as Record<string, unknown>)["$wasmverseReadByte"] as
+            | (() => number)
+            | undefined;
+        expect(typeof readByte).toBe("function");
+        const byteValues: Array<number> = [];
+        for (let index = 0; index < 9; index++) {
+            byteValues.push(readByte?.() as number);
+        }
+        expect(byteValues).toEqual([102, 101, 100, 45, 108, 105, 110, 101, 10]);
+        delete (globalThis as Record<string, unknown>)["$wasmverseReadByte"];
     });
 });
 describe("BlazorGlueRuntimeAssembler", () => {
