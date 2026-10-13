@@ -30,5 +30,6 @@ export default defineConfig({
         include: ["src/**/*.test.ts"],
         environment: "node",
         testTimeout: 60_000,
+        execArgv: ["--experimental-wasm-exnref"],
     },
 });
