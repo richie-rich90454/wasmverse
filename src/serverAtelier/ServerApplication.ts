@@ -32,6 +32,7 @@ import { GhcWasmCompilerStrategy } from "@serverAtelier/compilerStrategies/GhcWa
 import { PyodideRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/PyodideRuntimeAssembler.ts";
 import { NullRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/NullRuntimeAssembler.ts";
 import { TypeScriptLoaderRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/TypeScriptLoaderRuntimeAssembler.ts";
+import { KotlinJsGlueRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/KotlinJsGlueRuntimeAssembler.ts";
 import { SqliteWasmRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/SqliteWasmRuntimeAssembler.ts";
 import { RubyWasmRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/RubyWasmRuntimeAssembler.ts";
 import { LuaWasmRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/LuaWasmRuntimeAssembler.ts";
@@ -135,7 +136,12 @@ class ServerApplication {
                 manifestWriter,
             ),
             new CppLanguagePlugin(
-                emscriptenCompilerStrategy,
+                new EmscriptenCompilerStrategy(
+                    processRunner,
+                    this.fileSystemOperations,
+                    undefined,
+                    true,
+                ),
                 new EmscriptenGlueRuntimeAssembler(this.fileSystemOperations),
                 sourceFileCopier,
                 manifestWriter,
@@ -160,7 +166,7 @@ class ServerApplication {
             ),
             new KotlinLanguagePlugin(
                 new KotlinWasmCompilerStrategy(processRunner, this.fileSystemOperations),
-                new WasiWasmGlueRuntimeAssembler(this.fileSystemOperations),
+                new KotlinJsGlueRuntimeAssembler(this.fileSystemOperations),
                 sourceFileCopier,
                 manifestWriter,
             ),
