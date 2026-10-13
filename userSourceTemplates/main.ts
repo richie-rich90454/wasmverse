@@ -1,28 +1,25 @@
-@external("env", "write")
-declare function write(pointer: usize, length: usize): void;
+declare function print(...values: Array<unknown>): void;
 
-function emit(line: string): void {
-    const encoded = String.UTF8.encode(line);
-    const view = Uint8Array.wrap(encoded);
-    write(view.dataStart, view.length);
+interface WindowSummary {
+    label: string;
+    count: number;
+    largest: number;
 }
 
-function sieve(limit: i32): Array<i32> {
-    const flags = new Array<boolean>(limit + 1);
-    for (let index = 0; index <= limit; index++) {
-        flags[index] = true;
-    }
+function sieve(limit: number): Array<number> {
+    const flags: Array<boolean> = new Array(limit + 1).fill(true);
     flags[0] = false;
     flags[1] = false;
-    for (let number = 2; number * number <= limit; number++) {
-        if (flags[number]) {
-            for (let multiple = number * number; multiple <= limit; multiple += number) {
-                flags[multiple] = false;
-            }
+    for (let number = 2; number * number <= limit; number += 1) {
+        if (!flags[number]) {
+            continue;
+        }
+        for (let multiple = number * number; multiple <= limit; multiple += number) {
+            flags[multiple] = false;
         }
     }
-    const primes = new Array<i32>();
-    for (let index = 2; index <= limit; index++) {
+    const primes: Array<number> = [];
+    for (let index = 2; index <= limit; index += 1) {
         if (flags[index]) {
             primes.push(index);
         }
@@ -30,30 +27,50 @@ function sieve(limit: i32): Array<i32> {
     return primes;
 }
 
-export function main(): void {
-    emit("WASMVerse AssemblyScript showcase\n");
-    emit("Stage one: typed sieve over linear memory\n");
-    const primes = sieve(300);
-    const head = primes.slice(0, 6);
-    emit("prime count up to 300: " + primes.length.toString() + "\n");
-    emit("largest prime: " + primes[primes.length - 1].toString() + "\n");
-    emit("first primes: " + head.join(", ") + "\n");
-    emit("Stage two: heap allocation and string building\n");
-    const words = new Array<string>();
-    words.push("parse");
-    words.push("lower");
-    words.push("render");
-    const upper = words.map<string>((word: string): string => word.toUpperCase());
-    emit("labels: " + upper.join(" -> ") + "\n");
-    emit("Stage three: integer arithmetic on typed arrays\n");
-    const table = new Int32Array(8);
-    for (let index = 0; index < 8; index++) {
-        table[index] = (index + 1) * (index + 1);
-    }
-    let total = 0;
-    for (let index = 0; index < table.length; index++) {
-        total += table[index];
-    }
-    emit("sum of squares: " + total.toString() + "\n");
-    emit("Showcase complete.\n");
+function summarize(label: string, values: Array<number>): WindowSummary {
+    return {
+        label,
+        count: values.length,
+        largest: values[values.length - 1] ?? 0,
+    };
 }
+
+function rank<T>(values: Array<T>, score: (value: T) => number): Array<T> {
+    return [...values].sort((left, right) => score(right) - score(left));
+}
+
+class Counter {
+    private total: number = 0;
+    add(amount: number): number {
+        this.total += amount;
+        return this.total;
+    }
+    get value(): number {
+        return this.total;
+    }
+}
+
+print("WASMVerse TypeScript showcase");
+print("Stage one: typed sieve over prime windows");
+const shards: Array<WindowSummary> = [250, 500, 750].map((limit, index) =>
+    summarize(`shard-${index + 1}`, sieve(limit)),
+);
+for (const shard of shards) {
+    print(`${shard.label}: ${shard.count} primes, largest ${shard.largest}`);
+}
+print("Stage two: generics ranked by a score function");
+const words = ["parse", "lower", "render", "tokenize"].map((word) => ({
+    word,
+    weight: word.length * 3 - (word.charCodeAt(0) % 7),
+}));
+const ranked = rank(words, (entry) => entry.weight).map(
+    (entry) => `${entry.word}(${entry.weight})`,
+);
+print(`ranking: ${ranked.join(" > ")}`);
+print("Stage three: class state with accessors");
+const counter = new Counter();
+for (const shard of shards) {
+    counter.add(shard.count);
+}
+print(`total primes counted: ${counter.value}`);
+print("Showcase complete.");
