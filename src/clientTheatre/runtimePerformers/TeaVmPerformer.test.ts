@@ -54,6 +54,17 @@ const FAKE_CLASSES_SOURCE = [
     "    if (globalThis.$teaVmNeedsInput === true && globalThis.$teaVmAttemptCount === 1) {",
     "        throw new Error('TERMINAL_INPUT_NEEDED');",
     "    }",
+    "    if (globalThis.$teaVmReadsInput === true) {",
+    "        writeOut('before-input\\n');",
+    "        let typedText = '';",
+    "        while (true) {",
+    "            const byteValue = globalThis.$wasmverseReadByte();",
+    "            if (byteValue === 10) { break; }",
+    "            if (byteValue === -1) { throw new Error('unexpected-eof'); }",
+    "            typedText += String.fromCharCode(byteValue);",
+    "        }",
+    "        writeOut('typed:' + typedText + '\\n');",
+    "    }",
     "    writeOut('finished\\n');",
     "}",
     "",
@@ -102,6 +113,8 @@ afterEach(async () => {
     delete (globalThis as Record<string, unknown>)["$teaVmAttemptCount"];
     delete (globalThis as Record<string, unknown>)["$teaVmBoom"];
     delete (globalThis as Record<string, unknown>)["$teaVmNeedsInput"];
+    delete (globalThis as Record<string, unknown>)["$teaVmReadsInput"];
+    delete (globalThis as Record<string, unknown>)["$wasmverseReadByte"];
     while (temporaryDirectories.length > 0) {
         await rm(temporaryDirectories.pop() as string, { recursive: true, force: true });
     }
@@ -128,6 +141,20 @@ describe("TeaVmPerformer", () => {
         expect(stage.readPrompts).toEqual([""]);
         expect((globalThis as Record<string, unknown>)["$teaVmAttemptCount"]).toBe(2);
         expect(stage.shownOutput()).toBe("args:Program.java\nfinished\n");
+    });
+    test("feeds the fed line through the stdin hook when the program reads input", async () => {
+        (globalThis as Record<string, unknown>)["$teaVmReadsInput"] = true;
+        const { stage, performer } = await createSessionLayout({
+            fedAnswers: ["typed-answer"],
+            programArguments: [],
+        });
+        await performer.loadInto(stage as unknown as TerminalStageController);
+        await performer.performOn(stage as unknown as TerminalStageController);
+        expect(stage.readPrompts).toEqual([""]);
+        expect((globalThis as Record<string, unknown>)["$teaVmAttemptCount"]).toBe(2);
+        expect(stage.shownOutput()).toBe(
+            "args:Program.java\nbefore-input\ntyped:typed-answer\nfinished\n",
+        );
     });
     test("surfaces a one line error for an uncaught runtime failure", async () => {
         (globalThis as Record<string, unknown>)["$teaVmBoom"] = true;
