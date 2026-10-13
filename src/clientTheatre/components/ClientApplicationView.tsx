@@ -7,6 +7,7 @@ import { StatusRibbonView } from "@clientTheatre/components/StatusRibbonView.tsx
 import { MarqueeHeadingView } from "@clientTheatre/components/MarqueeHeadingView.tsx";
 import { SiteFooterView } from "@clientTheatre/components/SiteFooterView.tsx";
 import { LanguageGalleryView } from "@clientTheatre/components/LanguageGalleryView.tsx";
+import { CompatibilityMatrixView } from "@clientTheatre/components/CompatibilityMatrixView.tsx";
 function ClientApplicationView(): React.JSX.Element {
     const controllerReference = useRef<ClientApplicationController | null>(null);
     if (!controllerReference.current) {
@@ -34,6 +35,7 @@ function ClientApplicationView(): React.JSX.Element {
                     <UploadCurtainView applicationController={applicationController} />
                     <CodeProjectEditorView applicationController={applicationController} />
                     <LanguageGalleryView applicationController={applicationController} />
+                    <CompatibilityMatrixView />
                 </>
             )}
             {(finishedSession || isFinished) && (
