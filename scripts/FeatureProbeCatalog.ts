@@ -46,7 +46,7 @@ const FEATURE_PROBES: ReadonlyArray<FeatureProbeDefinition> = [
         sourceFiles: {
             "main.rb":
                 "require_relative 'helper'\n" +
-                "name = gets&.chomp\n" +
+                "name = $stdin.gets&.chomp\n" +
                 'puts "greet:#{Helper.label}:#{name}"\n' +
                 "puts \"arg0:#{ARGV[0] || 'none'}\"\n" +
                 "File.write('out.txt', 'written')\n" +
@@ -204,6 +204,7 @@ const FEATURE_PROBES: ReadonlyArray<FeatureProbeDefinition> = [
         sourceFiles: {
             "main.cpp":
                 "#include <iostream>\n" +
+                "#include <fstream>\n" +
                 "#include <string>\n" +
                 '#include "helper.hpp"\n' +
                 "\n" +
@@ -282,23 +283,25 @@ const FEATURE_PROBES: ReadonlyArray<FeatureProbeDefinition> = [
                 'const std = @import("std");\n' +
                 'const helper = @import("helper.zig");\n' +
                 "\n" +
-                "pub fn main() void {\n" +
-                "    const stdin = std.io.getStdIn().reader();\n" +
-                "    var name_buffer: [128]u8 = undefined;\n" +
-                "    const name = stdin.readUntilDelimiter(&name_buffer, '\\n') catch \"\";\n" +
+                "pub fn main(init: std.process.Init) !void {\n" +
+                "    var stdin_buffer: [1024]u8 = undefined;\n" +
+                "    var stdin_reader = std.Io.File.stdin().reader(init.io, &stdin_buffer);\n" +
+                "    const name = stdin_reader.interface.takeDelimiterExclusive('\\n') catch \"\";\n" +
                 '    std.debug.print("greet:{s}:{s}\\n", .{ helper.label, name });\n' +
-                "    var arguments = std.process.args();\n" +
-                "    _ = arguments.next();\n" +
+                "    var arguments = try std.process.Args.Iterator.initAllocator(init.minimal.args, init.gpa);\n" +
+                "    defer arguments.deinit();\n" +
+                "    _ = arguments.skip();\n" +
                 '    const first_argument = arguments.next() orelse "none";\n' +
                 '    std.debug.print("arg0:{s}\\n", .{first_argument});\n' +
-                '    const out = std.fs.cwd().createFile("out.txt", .{}) catch null;\n' +
+                "    const cwd = std.Io.Dir.cwd();\n" +
+                '    const out = cwd.createFile(init.io, "out.txt", .{}) catch null;\n' +
                 "    if (out) |handle| {\n" +
-                '        handle.writeAll("written") catch {};\n' +
-                "        handle.close();\n" +
+                '        handle.writeStreamingAll(init.io, "written") catch {};\n' +
+                "        handle.close(init.io);\n" +
                 "    }\n" +
                 "    var read_buffer: [64]u8 = undefined;\n" +
-                '    const read_length = std.fs.cwd().readFile("out.txt", &read_buffer) catch 0;\n' +
-                '    std.debug.print("file:{s}\\n", .{read_buffer[0..read_length]});\n' +
+                '    const read_contents = cwd.readFile(init.io, "out.txt", &read_buffer) catch "";\n' +
+                '    std.debug.print("file:{s}\\n", .{read_contents});\n' +
                 '    std.debug.print("PROBE-DONE\\n", .{});\n' +
                 "}\n",
             "helper.zig": 'pub const label = "helper";\n',
@@ -345,29 +348,26 @@ const FEATURE_PROBES: ReadonlyArray<FeatureProbeDefinition> = [
         entryFileName: "main.kt",
         sourceFiles: {
             "main.kt":
-                'fun helperLabel(): String = "helper"\n' +
+                "external fun wasmversePrint(text: String)\n" +
+                "external fun wasmverseReadLine(): String\n" +
+                "external val wasmverseProgramArguments: Array<String>\n" +
+                "external fun wasmverseReadFile(path: String): String\n" +
                 "\n" +
-                "fun main(args: Array<String>) {\n" +
-                '    val name = readLine() ?: ""\n' +
-                '    println("greet:${helperLabel()}:$name")\n' +
-                '    println("arg0:${if (args.isNotEmpty()) args[0] else "none"}")\n' +
-                '    println("PROBE-DONE")\n' +
+                "fun main() {\n" +
+                "    val name = wasmverseReadLine()\n" +
+                '    wasmversePrint("greet:${helperLabel()}:$name")\n' +
+                '    wasmversePrint("arg0:${if (wasmverseProgramArguments.isNotEmpty()) wasmverseProgramArguments[0] else "none"}")\n' +
+                '    wasmversePrint("file:${wasmverseReadFile("data.txt")}")\n' +
+                '    wasmversePrint("PROBE-DONE")\n' +
                 "}\n",
+            "helper.kt": 'fun helperLabel(): String = "helper"\n',
+            "data.txt": "probe-data",
         },
         programArguments: PROBE_ARGUMENTS,
         terminalAnswers: PROBE_ANSWERS,
-        expectedLines: ["greet:helper:Ada", "arg0:alpha", "PROBE-DONE"],
-        exercisedFeatures: ["stdin", "arguments"],
-        unsupportedFeatures: [
-            {
-                feature: "fileIo",
-                reason: "the kotlin/wasm stdlib exposes no filesystem",
-            },
-            {
-                feature: "multiFile",
-                reason: "the compiler strategy builds only the entry file",
-            },
-        ],
+        expectedLines: ["greet:helper:Ada", "arg0:alpha", "file:probe-data", "PROBE-DONE"],
+        exercisedFeatures: ["stdin", "arguments", "fileIo", "multiFile"],
+        unsupportedFeatures: [],
     },
     {
         languageIdentifier: "ocaml",
@@ -501,13 +501,6 @@ const FEATURE_PROBES: ReadonlyArray<FeatureProbeDefinition> = [
             "Program.cs":
                 "using System;\n" +
                 "using System.IO;\n" +
-                "using System.Runtime.InteropServices.JavaScript;\n" +
-                "\n" +
-                "public partial class WasmVerseHost\n" +
-                "{\n" +
-                '    [JSImport("readLine", "WasmVerseHost")]\n' +
-                "    internal static partial string ReadLine();\n" +
-                "}\n" +
                 "\n" +
                 "public static class Program\n" +
                 "{\n" +
@@ -519,6 +512,14 @@ const FEATURE_PROBES: ReadonlyArray<FeatureProbeDefinition> = [
                 '        Console.WriteLine($"file:{File.ReadAllText("data.txt")}");\n' +
                 '        Console.WriteLine("PROBE-DONE");\n' +
                 "    }\n" +
+                "}\n",
+            "WasmVerseHost.cs":
+                "using System.Runtime.InteropServices.JavaScript;\n" +
+                "\n" +
+                "public partial class WasmVerseHost\n" +
+                "{\n" +
+                '    [JSImport("readLine", "WasmVerseHost")]\n' +
+                "    internal static partial string ReadLine();\n" +
                 "}\n",
             "Helper.cs":
                 "public static class Helper\n" +
