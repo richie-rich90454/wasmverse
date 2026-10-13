@@ -18,5 +18,10 @@ type LanguageIdentifier =
     | "haskell"
     | "javascript"
     | "typescript"
-    | "sql";
+    | "sql"
+    | "duckdb"
+    | "pglite"
+    | "awk"
+    | "jq"
+    | "bash";
 export type { LanguageIdentifier };
