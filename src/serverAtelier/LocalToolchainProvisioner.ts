@@ -61,6 +61,16 @@ const SWIFT_COMPILER_PATH = `${SWIFT_WASM_DIRECTORY}/usr/bin/swiftc`;
 const OCAML_DIRECTORY = "./.tools/ocaml-wasm";
 const OCAML_COMPILER_PATH = `${OCAML_DIRECTORY}/bin/ocamlopt`;
 const TEAVM_DIRECTORY = "./.tools/teavm";
+const WASI_SH_VERSION = "0.11.0";
+const WASI_SH_DIRECTORY = "./.tools/wasi-sh";
+const WASI_SH_BUSYBOX_PATH = `${WASI_SH_DIRECTORY}/dist/busybox.wasm`;
+const WASI_SH_ARCHIVE_URL = `https://registry.npmjs.org/wasi-sh/-/wasi-sh-${WASI_SH_VERSION}.tgz`;
+const JQ_WASM_RELEASE_BASE_URL = "https://github.com/paolosimone/jq-wasm/releases/download/v0.2.3";
+const JQ_WASM_DIRECTORY = "./.tools/jq-wasm";
+const JQ_WASM_BINARY_PATH = `${JQ_WASM_DIRECTORY}/jq.wasm`;
+const JQ_WASM_BINARY_URL = `${JQ_WASM_RELEASE_BASE_URL}/jq.wasm`;
+const JQ_WASM_GLUE_FILE_NAME = "jq-runtime.mjs";
+const JQ_WASM_GLUE_URL = `${JQ_WASM_RELEASE_BASE_URL}/jq.wasm.mjs`;
 const WINDOWS_EXECUTABLE_EXTENSIONS: ReadonlyArray<string> = [".exe", ".bat", ".cmd"];
 interface ArchiveToolchainSpec {
     toolchainName: string;
@@ -400,6 +410,42 @@ class LocalToolchainProvisioner {
             supportedPlatforms: ["linux", "darwin"],
         });
     }
+    async provisionWasiShellRuntime(): Promise<void> {
+        await this.installArchiveToolchain({
+            toolchainName: "wasi-sh busybox shell",
+            archiveUrl: WASI_SH_ARCHIVE_URL,
+            archiveFileName: `wasi-sh-${WASI_SH_VERSION}.tgz`,
+            targetDirectory: WASI_SH_DIRECTORY,
+            probePath: WASI_SH_BUSYBOX_PATH,
+        });
+    }
+    async provisionJqWasmRuntime(): Promise<void> {
+        if (await this.isToolchainPresent(JQ_WASM_BINARY_PATH)) {
+            this.scopedLogger.logInformation("jq wasm runtime already provisioned, skipping.");
+            return;
+        }
+        try {
+            this.scopedLogger.logInformation(
+                `Downloading jq wasm runtime from ${JQ_WASM_BINARY_URL}.`,
+            );
+            const binaryBytes = await this.fetchArchiveContent(JQ_WASM_BINARY_URL);
+            await this.fileSystemOperations.writeBinaryFile(JQ_WASM_BINARY_PATH, binaryBytes);
+            await this.fileSystemOperations.writeTextFile(
+                `${JQ_WASM_DIRECTORY}/${JQ_WASM_GLUE_FILE_NAME}`,
+                await this.fetchTextContent(JQ_WASM_GLUE_URL),
+            );
+            this.scopedLogger.logSuccess(`jq wasm runtime provisioned at ${JQ_WASM_DIRECTORY}.`);
+        } catch (error) {
+            this.scopedLogger.logWarning(`jq wasm provisioning failed: ${messageOf(error)}`);
+        }
+    }
+    private async fetchTextContent(sourceUrl: string): Promise<string> {
+        const response = await fetch(sourceUrl);
+        if (!response.ok) {
+            throw new Error(`download from ${sourceUrl} failed with HTTP ${response.status}`);
+        }
+        return await response.text();
+    }
     async provisionAllToolchains(): Promise<void> {
         await this.provisionEmscriptenSdk();
         await this.provisionGoToolchain();
@@ -416,6 +462,8 @@ class LocalToolchainProvisioner {
         await this.provisionTeaVmToolchain();
         await this.provisionOcamlWasmToolchain();
         await this.provisionGhcWasmToolchain();
+        await this.provisionWasiShellRuntime();
+        await this.provisionJqWasmRuntime();
     }
     private async installArchiveToolchain(spec: ArchiveToolchainSpec): Promise<void> {
         if (await this.isToolchainPresent(spec.probePath)) {
