@@ -6,6 +6,7 @@ class ServerConfiguration {
     readonly sessionTimeToLiveMilliseconds: number;
     readonly maximumUploadSizeInBytes: number;
     readonly requestIdleTimeoutSeconds: number;
+    readonly sessionUploadsPerMinute: number;
     constructor() {
         this.port = Number(process.env.PORT ?? 3000);
         this.host = process.env.HOST ?? "0.0.0.0";
@@ -16,6 +17,7 @@ class ServerConfiguration {
         );
         this.maximumUploadSizeInBytes = Number(process.env.MAX_UPLOAD_BYTES ?? 25 * 1024 * 1024);
         this.requestIdleTimeoutSeconds = Number(process.env.REQUEST_IDLE_TIMEOUT_SECONDS ?? 255);
+        this.sessionUploadsPerMinute = Number(process.env.SESSION_UPLOADS_PER_MINUTE ?? 10);
     }
 }
 export { ServerConfiguration };
