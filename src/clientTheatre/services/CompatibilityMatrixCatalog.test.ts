@@ -95,7 +95,7 @@ describe("sortedRows", () => {
 });
 describe("displayLabelForLanguage", () => {
     test("maps catalog languages to their display labels", () => {
-        expect(Object.keys(LANGUAGE_DISPLAY_LABELS)).toHaveLength(20);
+        expect(Object.keys(LANGUAGE_DISPLAY_LABELS)).toHaveLength(25);
         expect(displayLabelForLanguage("cpp")).toBe("C++");
         expect(displayLabelForLanguage("csharp")).toBe("C#");
         expect(displayLabelForLanguage("assemblyscript")).toBe("AssemblyScript");
