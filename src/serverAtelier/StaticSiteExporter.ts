@@ -41,6 +41,11 @@ const PERFORMER_CLASS_BY_LANGUAGE: Record<LanguageIdentifier, string> = {
     javascript: "JavaScriptPerformer",
     typescript: "TypeScriptPerformer",
     sql: "SqliteWasmPerformer",
+    duckdb: "DuckDbWasmPerformer",
+    pglite: "PglitePerformer",
+    awk: "BusyboxAwkPerformer",
+    jq: "JqWasmPerformer",
+    bash: "BusyboxShellPerformer",
 };
 const UNSHIPPED_RUNTIME_FILE_PATTERNS: ReadonlyArray<RegExp> = [
     /\.ts$/,
