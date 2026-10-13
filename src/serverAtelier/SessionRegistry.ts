@@ -31,12 +31,14 @@ class SessionRegistry {
     async allocateSession(
         languageIdentifier: LanguageIdentifier,
         entryFileRelativePath: string,
+        programArguments: ReadonlyArray<string> = [],
     ): Promise<SessionLifecycleRecord> {
         const sessionIdentifier = this.identifierGenerator.generateSessionIdentifier();
         const sessionRecord = new SessionLifecycleRecord(
             sessionIdentifier,
             languageIdentifier,
             entryFileRelativePath,
+            programArguments,
             this.sessionsDirectory,
             this.fileSystemOperations,
         );
