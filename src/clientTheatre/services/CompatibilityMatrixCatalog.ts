@@ -52,6 +52,9 @@ const LANGUAGE_DISPLAY_LABELS: Readonly<Record<string, string>> = {
     assemblyscript: "AssemblyScript",
     ocaml: "OCaml",
     haskell: "Haskell",
+    javascript: "JavaScript",
+    typescript: "TypeScript",
+    sql: "SQL",
 };
 function displayLabelForLanguage(languageIdentifier: string): string {
     return LANGUAGE_DISPLAY_LABELS[languageIdentifier] ?? languageIdentifier;
