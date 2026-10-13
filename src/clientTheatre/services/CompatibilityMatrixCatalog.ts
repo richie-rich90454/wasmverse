@@ -55,6 +55,11 @@ const LANGUAGE_DISPLAY_LABELS: Readonly<Record<string, string>> = {
     javascript: "JavaScript",
     typescript: "TypeScript",
     sql: "SQL",
+    duckdb: "DuckDB",
+    pglite: "PGlite",
+    awk: "AWK",
+    jq: "jq",
+    bash: "Bash",
 };
 function displayLabelForLanguage(languageIdentifier: string): string {
     return LANGUAGE_DISPLAY_LABELS[languageIdentifier] ?? languageIdentifier;
