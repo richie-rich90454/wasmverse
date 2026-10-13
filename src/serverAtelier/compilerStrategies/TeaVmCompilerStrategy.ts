@@ -7,8 +7,99 @@ const TEAVM_VERSION = "0.15.0";
 const TEAVM_OUTPUT_RELATIVE_PATH = "target/wasmverse";
 const JDK_DIRECTORY = "./.tools/jdk";
 const MAVEN_REPOSITORY_DIRECTORY = "./.tools/maven-repo";
+const SUPPORT_SOURCE_DIRECTORY = "src/main/java/wasmverse/support";
+const INPUT_TRANSFORMER_CLASS_NAME = "wasmverse.support.WasmVerseInputTransformer";
 function mavenBinaryPathForPlatform(platformName: NodeJS.Platform): string {
     return platformName === "win32" ? "./.tools/maven/bin/mvn.cmd" : "./.tools/maven/bin/mvn";
+}
+function mainClassNameFor(entrySource: string, entryBaseName: string): string {
+    const packageMatch = /^\s*package\s+([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)\s*;/m.exec(
+        entrySource,
+    );
+    return packageMatch ? `${packageMatch[1]}.${entryBaseName}` : entryBaseName;
+}
+function wasmVerseInputSourceText(): string {
+    return [
+        "package wasmverse.support;",
+        "",
+        "import java.io.IOException;",
+        "import java.io.InputStream;",
+        "import org.teavm.jso.JSBody;",
+        "",
+        "public final class WasmVerseInput {",
+        "    private static InputStream cachedStream;",
+        "",
+        "    private WasmVerseInput() {",
+        "    }",
+        "",
+        "    public static InputStream open() {",
+        "        if (cachedStream == null) {",
+        "            cachedStream = new HostInputStream();",
+        "        }",
+        "        return cachedStream;",
+        "    }",
+        "",
+        "    private static final class HostInputStream extends InputStream {",
+        "        @Override",
+        "        public int read() throws IOException {",
+        "            return readByteFromHost();",
+        "        }",
+        "    }",
+        "",
+        "    @JSBody(script = \"return typeof globalThis.$wasmverseReadByte === 'function' ? globalThis.$wasmverseReadByte() : -1;\")",
+        "    private static native int readByteFromHost();",
+        "}",
+        "",
+    ].join("\n");
+}
+function wasmVerseInputTransformerSourceText(): string {
+    return [
+        "package wasmverse.support;",
+        "",
+        "import org.teavm.model.BasicBlock;",
+        "import org.teavm.model.ClassHolder;",
+        "import org.teavm.model.ClassHolderTransformer;",
+        "import org.teavm.model.ClassHolderTransformerContext;",
+        "import org.teavm.model.MethodDescriptor;",
+        "import org.teavm.model.MethodHolder;",
+        "import org.teavm.model.MethodReference;",
+        "import org.teavm.model.Program;",
+        "import org.teavm.model.ValueType;",
+        "import org.teavm.model.instructions.ExitInstruction;",
+        "import org.teavm.model.instructions.InvokeInstruction;",
+        "import org.teavm.model.instructions.InvocationType;",
+        "",
+        "public class WasmVerseInputTransformer implements ClassHolderTransformer {",
+        '    private static final MethodDescriptor SYSTEM_IN_DESCRIPTOR = new MethodDescriptor("in",',
+        '            ValueType.object("java.io.InputStream"));',
+        "",
+        "    @Override",
+        "    public void transformClass(ClassHolder cls, ClassHolderTransformerContext context) {",
+        '        if (!"java.lang.System".equals(cls.getName())) {',
+        "            return;",
+        "        }",
+        "        MethodHolder inputMethod = cls.getMethod(SYSTEM_IN_DESCRIPTOR);",
+        "        if (inputMethod == null) {",
+        "            return;",
+        "        }",
+        "        Program program = new Program();",
+        "        program.createVariable();",
+        "        BasicBlock block = program.createBasicBlock();",
+        "        var streamVariable = program.createVariable();",
+        "        InvokeInstruction openInvocation = new InvokeInstruction();",
+        "        openInvocation.setType(InvocationType.SPECIAL);",
+        '        openInvocation.setMethod(new MethodReference("wasmverse.support.WasmVerseInput", "open",',
+        '                ValueType.object("java.io.InputStream")));',
+        "        openInvocation.setReceiver(streamVariable);",
+        "        block.add(openInvocation);",
+        "        ExitInstruction exitInstruction = new ExitInstruction();",
+        "        exitInstruction.setValueToReturn(streamVariable);",
+        "        block.add(exitInstruction);",
+        "        inputMethod.setProgram(program);",
+        "    }",
+        "}",
+        "",
+    ].join("\n");
 }
 function mavenProjectText(
     artifactId: string,
@@ -54,6 +145,9 @@ function mavenProjectText(
         "                            <jsModuleType>ES2015</jsModuleType>\n" +
         "                            <minifying>false</minifying>\n" +
         "                            <optimizationLevel>SIMPLE</optimizationLevel>\n" +
+        "                            <transformers>\n" +
+        `                                <transformer>${INPUT_TRANSFORMER_CLASS_NAME}</transformer>\n` +
+        "                            </transformers>\n" +
         "                        </configuration>\n" +
         "                    </execution>\n" +
         "                </executions>\n" +
@@ -78,12 +172,13 @@ class TeaVmCompilerStrategy implements CompilerStrategyContract {
         fileSystemOperations: FileSystemOperations,
         teaVmDirectory: string = "./.tools/teavm",
         platformName: NodeJS.Platform = process.platform,
+        mavenBinaryPath: string = mavenBinaryPathForPlatform(platformName),
     ) {
         this.processRunner = processRunner;
         this.fileSystemOperations = fileSystemOperations;
         this.teaVmDirectory = teaVmDirectory;
         this.platformName = platformName;
-        this.mavenBinaryPath = mavenBinaryPathForPlatform(platformName);
+        this.mavenBinaryPath = mavenBinaryPath;
     }
     async compileSourceInto(context: BuildContextRecord): Promise<void> {
         const toolchainExists = await this.fileSystemOperations.pathExists(this.teaVmDirectory);
@@ -140,25 +235,49 @@ class TeaVmCompilerStrategy implements CompilerStrategyContract {
         if (await this.fileSystemOperations.pathExists(projectFile)) {
             return;
         }
-        const baseName = (context.entryFileRelativePath.split("/").pop() as string).replace(
+        const entryBaseName = (context.entryFileRelativePath.split("/").pop() as string).replace(
             /\.java$/i,
             "",
-        );
-        await this.fileSystemOperations.writeTextFile(
-            projectFile,
-            mavenProjectText(
-                artifactIdForSession(context.sessionIdentifier),
-                baseName,
-                TEAVM_OUTPUT_RELATIVE_PATH,
-            ),
         );
         const entrySource = await this.fileSystemOperations.readTextFile(
             `${context.sourceDirectory}/${context.entryFileRelativePath}`,
         );
         await this.fileSystemOperations.writeTextFile(
-            `${context.sourceDirectory}/src/main/java/${baseName}.java`,
-            entrySource,
+            projectFile,
+            mavenProjectText(
+                artifactIdForSession(context.sessionIdentifier),
+                mainClassNameFor(entrySource, entryBaseName),
+                TEAVM_OUTPUT_RELATIVE_PATH,
+            ),
         );
+        await this.copyJavaSourcesInto(context, entryBaseName);
+        await this.fileSystemOperations.writeTextFile(
+            `${context.sourceDirectory}/${SUPPORT_SOURCE_DIRECTORY}/WasmVerseInput.java`,
+            wasmVerseInputSourceText(),
+        );
+        await this.fileSystemOperations.writeTextFile(
+            `${context.sourceDirectory}/${SUPPORT_SOURCE_DIRECTORY}/WasmVerseInputTransformer.java`,
+            wasmVerseInputTransformerSourceText(),
+        );
+    }
+    private async copyJavaSourcesInto(
+        context: BuildContextRecord,
+        entryBaseName: string,
+    ): Promise<void> {
+        const javaFileRelativePaths = (
+            await this.fileSystemOperations.listFilesRecursively(context.sourceDirectory)
+        ).filter((relativePath) => /\.java$/i.test(relativePath));
+        for (const relativePath of javaFileRelativePaths) {
+            const targetRelativePath =
+                javaFileRelativePaths.length === 1 ? `${entryBaseName}.java` : relativePath;
+            if (relativePath === `src/main/java/${targetRelativePath}`) {
+                continue;
+            }
+            await this.fileSystemOperations.copyFileInto(
+                `${context.sourceDirectory}/${relativePath}`,
+                `${context.sourceDirectory}/src/main/java/${targetRelativePath}`,
+            );
+        }
     }
 }
 export { TeaVmCompilerStrategy };
