@@ -14,6 +14,7 @@ import { BlazorPerformer } from "@clientTheatre/runtimePerformers/BlazorPerforme
 import { TeaVmPerformer } from "@clientTheatre/runtimePerformers/TeaVmPerformer.ts";
 import { JavaScriptPerformer } from "@clientTheatre/runtimePerformers/JavaScriptPerformer.ts";
 import { TypeScriptPerformer } from "@clientTheatre/runtimePerformers/TypeScriptPerformer.ts";
+import { KotlinJsPerformer } from "@clientTheatre/runtimePerformers/KotlinJsPerformer.ts";
 import { SqliteWasmPerformer } from "@clientTheatre/runtimePerformers/SqliteWasmPerformer.ts";
 class TerminalPerformerFactory {
     private readonly creatorClosures: Map<
@@ -34,7 +35,7 @@ class TerminalPerformerFactory {
             ["go", (sessionBaseUrl) => new GoWasmPerformer(sessionBaseUrl)],
             ["zig", (sessionBaseUrl) => new WasiWasmPerformer(sessionBaseUrl)],
             ["swift", (sessionBaseUrl) => new WasiWasmPerformer(sessionBaseUrl)],
-            ["kotlin", (sessionBaseUrl) => new WasiWasmPerformer(sessionBaseUrl)],
+            ["kotlin", (sessionBaseUrl) => new KotlinJsPerformer(sessionBaseUrl)],
             ["dart", (sessionBaseUrl) => new DartWasmPerformer(sessionBaseUrl)],
             ["java", (sessionBaseUrl) => new TeaVmPerformer(sessionBaseUrl)],
             ["csharp", (sessionBaseUrl) => new BlazorPerformer(sessionBaseUrl)],
