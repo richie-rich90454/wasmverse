@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import type { TerminalStageController } from "@clientTheatre/services/TerminalStageController.ts";
 import {
-    EmscriptenFedBytesCursor,
+    EmscriptenFedLineCursor,
     EmscriptenPerformer,
 } from "@clientTheatre/runtimePerformers/EmscriptenPerformer.ts";
 const FAKE_EMSCRIPTEN_LOADER_TEXT = [
@@ -112,50 +112,26 @@ function interactiveNameFactory(
         callMain: (programArguments: Array<string>) => {
             fixture.callMainArguments.push(programArguments);
             const print = overrides.print as (text: string) => void;
-            const stdin = overrides.stdin as () => number | null;
             print("Enter your name:");
-            let name = "";
-            let characterCode = stdin();
-            while (characterCode !== null && characterCode !== 10) {
-                name += String.fromCharCode(characterCode);
-                characterCode = stdin();
-            }
-            if (characterCode === null) {
+            const name = (globalThis as Record<string, unknown>).prompt as () => string | null;
+            const answer = name();
+            if (answer === null) {
                 print("Reached end of input");
                 return 0;
             }
-            print(`Hello ${name}`);
+            print(`Hello ${answer}`);
             return 0;
         },
     });
 }
-describe("EmscriptenFedBytesCursor", () => {
-    test("feeds utf-8 bytes with a trailing newline per line", () => {
-        const cursor = new EmscriptenFedBytesCursor(["aé"]);
-        expect(cursor.nextByte()).toBe(97);
-        expect(cursor.nextByte()).toBe(195);
-        expect(cursor.nextByte()).toBe(169);
-        expect(cursor.nextByte()).toBe(10);
-        expect(cursor.nextByte()).toBeNull();
-        expect(cursor.inputWasExhausted).toBe(true);
-    });
-    test("keeps line order and reports exhaustion only at the end", () => {
-        const cursor = new EmscriptenFedBytesCursor(["one", "two"]);
-        const bytes: Array<number> = [];
-        for (;;) {
-            const next = cursor.nextByte();
-            if (next === null) {
-                break;
-            }
-            bytes.push(next);
-        }
-        expect(new TextDecoder().decode(Uint8Array.from(bytes))).toBe("one\ntwo\n");
-        expect(cursor.inputWasExhausted).toBe(true);
-    });
-    test("does not flag exhaustion while fed bytes remain", () => {
-        const cursor = new EmscriptenFedBytesCursor(["x"]);
-        expect(cursor.nextByte()).toBe(120);
+describe("EmscriptenFedLineCursor", () => {
+    test("serves fed lines in order and reports exhaustion once", () => {
+        const cursor = new EmscriptenFedLineCursor(["one", "two"]);
+        expect(cursor.nextLine()).toBe("one");
         expect(cursor.inputWasExhausted).toBe(false);
+        expect(cursor.nextLine()).toBe("two");
+        expect(cursor.nextLine()).toBeNull();
+        expect(cursor.inputWasExhausted).toBe(true);
     });
 });
 describe("EmscriptenPerformer", () => {
@@ -171,7 +147,7 @@ describe("EmscriptenPerformer", () => {
             expect(fixture.callMainArguments[0]).toEqual(["--verbose", "7"]);
             expect(fixture.writtenFiles.get("/main.c")).toBe(USER_SOURCE_TEXT);
             expect(fixture.writtenFiles.get("/data.txt")).toBe("alpha");
-            expect(fixture.createdDirectories).toEqual(["/", "/", "/", "/"]);
+            expect((globalThis as Record<string, unknown>).prompt).toBeUndefined();
         } finally {
             await fixture.dispose();
         }
@@ -215,10 +191,12 @@ describe("EmscriptenPerformer", () => {
     test("stops when the program keeps asking for input", async () => {
         const fixture = await createFixture();
         try {
-            fixture.state.factory = (overrides) => ({
+            fixture.state.factory = () => ({
                 callMain: () => {
-                    const stdin = overrides.stdin as () => number | null;
-                    while (stdin() !== null) {
+                    const prompt = (globalThis as Record<string, unknown>).prompt as () =>
+                        | string
+                        | null;
+                    while (prompt() !== null) {
                         continue;
                     }
                     return 0;
