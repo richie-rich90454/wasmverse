@@ -31,7 +31,7 @@ const PERFORMER_CLASS_BY_LANGUAGE: Record<LanguageIdentifier, string> = {
     go: "GoWasmPerformer",
     zig: "WasiWasmPerformer",
     swift: "WasiWasmPerformer",
-    kotlin: "WasiWasmPerformer",
+    kotlin: "KotlinJsPerformer",
     dart: "DartWasmPerformer",
     java: "TeaVmPerformer",
     csharp: "BlazorPerformer",
