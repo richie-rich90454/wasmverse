@@ -224,9 +224,34 @@ const CODE_EDITOR_LANGUAGE_TABLE: ReadonlyArray<CodeEditorLanguageEntry> = [
         ),
     },
     {
+        extensions: [".duckdb.sql"],
+        languageLabel: "DuckDB",
+        loadLanguageSupport: async () => (await import("@codemirror/lang-sql")).sql(),
+    },
+    {
+        extensions: [".pglite.sql"],
+        languageLabel: "PGlite",
+        loadLanguageSupport: async () => (await import("@codemirror/lang-sql")).sql(),
+    },
+    {
         extensions: [".sql"],
         languageLabel: "SQL",
         loadLanguageSupport: async () => (await import("@codemirror/lang-sql")).sql(),
+    },
+    {
+        extensions: [".awk"],
+        languageLabel: "AWK",
+    },
+    {
+        extensions: [".jq"],
+        languageLabel: "jq",
+    },
+    {
+        extensions: [".sh"],
+        languageLabel: "Bash",
+        loadLanguageSupport: loadStreamLanguageFrom(
+            async () => (await import("@codemirror/legacy-modes/mode/shell")).shell,
+        ),
     },
 ];
 function codeEditorLanguageEntryForPath(relativePath: string): CodeEditorLanguageEntry | undefined {
