@@ -197,6 +197,51 @@ const SAMPLE_PLATES: ReadonlyArray<SamplePlate> = [
             "A SQLite ledger is aggregated, ranked, and totaled with window functions in memory.",
         sourceText: sourceTextFor("main.sql"),
     },
+    {
+        languageIdentifier: "duckdb",
+        languageLabel: "DuckDB",
+        entryFileName: "main.duckdb.sql",
+        programTitle: "OLAP windows over an analytics ledger",
+        description:
+            "A DuckDB column store is grouped, ranked, and trended with CTEs and window functions.",
+        sourceText: sourceTextFor("main.duckdb.sql"),
+    },
+    {
+        languageIdentifier: "pglite",
+        languageLabel: "PGlite",
+        entryFileName: "main.pglite.sql",
+        programTitle: "Postgres analytics in WebAssembly",
+        description:
+            "A full Postgres engine aggregates a ledger with generate_series, CTEs, and windows.",
+        sourceText: sourceTextFor("main.pglite.sql"),
+    },
+    {
+        languageIdentifier: "awk",
+        languageLabel: "AWK",
+        entryFileName: "main.awk",
+        programTitle: "Records, arrays, and number crunching",
+        description:
+            "Associative arrays, computed fields, and formatted reports run through busybox awk.",
+        sourceText: sourceTextFor("main.awk"),
+    },
+    {
+        languageIdentifier: "jq",
+        languageLabel: "jq",
+        entryFileName: "main.jq",
+        programTitle: "A JSON transformation pipeline",
+        description:
+            "Definitions, reductions, and group_by shape a computed JSON document into a report.",
+        sourceText: sourceTextFor("main.jq"),
+    },
+    {
+        languageIdentifier: "bash",
+        languageLabel: "Bash",
+        entryFileName: "main.sh",
+        programTitle: "Functions and arithmetic in a real shell",
+        description:
+            "Shell functions, loops, command substitution, and pipelines run on busybox ash.",
+        sourceText: sourceTextFor("main.sh"),
+    },
 ];
 async function buildSampleArchive(plate: SamplePlate): Promise<File> {
     const archiveBytes = zipSync({ [plate.entryFileName]: strToU8(plate.sourceText) });
