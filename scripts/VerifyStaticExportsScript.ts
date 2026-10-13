@@ -1,7 +1,11 @@
+import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
-import { mkdir, rm, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { createServer } from "node:http";
+import type { IncomingMessage, Server, ServerResponse } from "node:http";
+import { isAbsolute, join, relative, resolve } from "node:path";
 import { tmpdir } from "node:os";
+import type { Readable } from "node:stream";
 import { unzipSync, zipSync } from "fflate";
 import { ScopedLogger } from "@serverAtelier/ScopedLogger.ts";
 const scopedLogger = new ScopedLogger("VerifyStaticExports");
@@ -11,6 +15,7 @@ const HOST_PORT = 3988;
 const DEBUGGER_PORT = 9333;
 const VERIFICATION_ROOT = join(tmpdir(), "wasmverse-export-verification");
 const CHROME_CANDIDATES = [
+    join(process.cwd(), ".tools/chrome-for-testing/chrome.exe"),
     "C:/Program Files/Google/Chrome/Application/chrome.exe",
     "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe",
     "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe",
@@ -236,7 +241,7 @@ async function waitForHealth(): Promise<void> {
         } catch {
             // The server is still binding its port.
         }
-        await Bun.sleep(500);
+        await new Promise((resolve) => setTimeout(resolve, 500));
     }
     throw new Error("The application server never became healthy.");
 }
@@ -251,14 +256,12 @@ async function waitForDebugger(): Promise<string> {
         } catch {
             // The browser is still opening its debugging port.
         }
-        await Bun.sleep(500);
+        await new Promise((resolve) => setTimeout(resolve, 500));
     }
     throw new Error("The browser never opened its debugging port.");
 }
 async function buildSessionFor(showcase: ShowcaseUnderTest): Promise<string> {
-    const templateBytes = await Bun.file(
-        `./userSourceTemplates/${showcase.entryFileName}`,
-    ).arrayBuffer();
+    const templateBytes = await readFile(`./userSourceTemplates/${showcase.entryFileName}`);
     const archiveBytes = zipSync({ [showcase.entryFileName]: new Uint8Array(templateBytes) });
     const formData = new FormData();
     formData.append(
@@ -357,7 +360,7 @@ async function verifyShowcaseInBrowser(
     let lastTerminalText = "";
     let lastChangeAt = Date.now();
     while (Date.now() < deadline) {
-        await Bun.sleep(400);
+        await new Promise((resolve) => setTimeout(resolve, 400));
         terminalText = await readTerminalText(devTools, sessionId);
         if (terminalText.includes("Showcase complete.")) {
             break;
@@ -397,29 +400,48 @@ function firstMeaningfulLine(terminalText: string): string {
         .find((line) => line.startsWith("Error:"));
     return errorLine ?? "unknown error";
 }
-function startHostileStaticHost(): ReturnType<typeof Bun.serve<unknown>> {
-    return Bun.serve({
-        port: HOST_PORT,
-        async fetch(request: Request): Promise<Response> {
-            const requestUrl = new URL(request.url);
-            const relativePath = decodeURIComponent(requestUrl.pathname).replace(/^\/+/, "");
-            const resolvedPath = relativePath.length === 0 ? "index.html" : relativePath;
-            const absolutePath = join(VERIFICATION_ROOT, resolvedPath);
-            if (!absolutePath.startsWith(VERIFICATION_ROOT)) {
-                return new Response("Forbidden", { status: 403 });
-            }
-            const assetFile = Bun.file(absolutePath);
-            if (!(await assetFile.exists())) {
-                return new Response("Not found", { status: 404 });
-            }
-            return new Response(assetFile, {
-                headers: {
-                    "content-type": contentTypeFor(resolvedPath),
-                    "x-content-type-options": "nosniff",
-                },
-            });
-        },
-    });
+class HostileStaticHost {
+    private readonly server: Server;
+    private constructor(server: Server) {
+        this.server = server;
+    }
+    static async start(port: number): Promise<HostileStaticHost> {
+        const staticHost = new HostileStaticHost(createServer());
+        staticHost.server.on("request", (request, response) => {
+            void staticHost.respond(request, response);
+        });
+        await new Promise<void>((resolveListening, rejectListening) => {
+            staticHost.server.once("listening", () => resolveListening());
+            staticHost.server.once("error", (listenError: Error) => rejectListening(listenError));
+            staticHost.server.listen(port);
+        });
+        return staticHost;
+    }
+    stop(): void {
+        this.server.close();
+        this.server.closeAllConnections();
+    }
+    private async respond(request: IncomingMessage, response: ServerResponse): Promise<void> {
+        const requestUrl = new URL(request.url ?? "/", "http://127.0.0.1");
+        const relativePath = decodeURIComponent(requestUrl.pathname).replace(/^\/+/, "");
+        const resolvedPath = relativePath.length === 0 ? "index.html" : relativePath;
+        const absolutePath = resolve(VERIFICATION_ROOT, resolvedPath);
+        const pathFromRoot = relative(VERIFICATION_ROOT, absolutePath);
+        if (pathFromRoot.startsWith("..") || isAbsolute(pathFromRoot)) {
+            response.writeHead(403).end("Forbidden");
+            return;
+        }
+        const assetBytes = await readFile(absolutePath).catch(() => undefined);
+        if (!assetBytes) {
+            response.writeHead(404).end("Not found");
+            return;
+        }
+        response.writeHead(200, {
+            "content-type": contentTypeFor(resolvedPath),
+            "x-content-type-options": "nosniff",
+        });
+        response.end(assetBytes);
+    }
 }
 const chromeBinary = resolveChromeBinary();
 if (!chromeBinary) {
@@ -442,25 +464,28 @@ function drainIntoLog(text: string): void {
         }
     }
 }
-async function drainProcessOutput(stream: ReadableStream<Uint8Array> | undefined): Promise<void> {
+async function drainProcessOutput(stream: Readable | null): Promise<void> {
     if (!stream) {
         return;
     }
-    drainIntoLog(await new Response(stream).text());
+    const collectedChunks: Array<Buffer> = [];
+    for await (const chunk of stream) {
+        collectedChunks.push(chunk as Buffer);
+    }
+    drainIntoLog(Buffer.concat(collectedChunks).toString("utf8"));
 }
-const applicationServer = Bun.spawn(["bun", "dist/server/ServerEntryPoint.js"], {
+const applicationServer = spawn(process.execPath, ["dist/server/ServerEntryPoint.js"], {
     env: { ...process.env, PORT: String(APP_PORT) } as Record<string, string>,
-    stdout: "pipe",
-    stderr: "pipe",
+    stdio: ["ignore", "pipe", "pipe"],
 });
 const serverLogPump = Promise.all([
     drainProcessOutput(applicationServer.stdout),
     drainProcessOutput(applicationServer.stderr),
 ]);
-const staticHost = startHostileStaticHost();
-const browser = Bun.spawn(
+const staticHost = await HostileStaticHost.start(HOST_PORT);
+const browser = spawn(
+    chromeBinary,
     [
-        chromeBinary,
         "--headless=new",
         "--disable-gpu",
         "--no-first-run",
@@ -470,7 +495,7 @@ const browser = Bun.spawn(
         `--remote-debugging-port=${DEBUGGER_PORT}`,
         "about:blank",
     ],
-    { stdout: "pipe", stderr: "pipe" },
+    { stdio: ["ignore", "pipe", "pipe"] },
 );
 const outcomes: Array<VerificationOutcome> = [];
 try {
@@ -506,7 +531,7 @@ try {
 } finally {
     applicationServer.kill();
     browser.kill();
-    staticHost.stop(true);
+    staticHost.stop();
     await serverLogPump.catch(() => undefined);
 }
 let failureCount = 0;
