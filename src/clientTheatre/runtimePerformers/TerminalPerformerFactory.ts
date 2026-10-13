@@ -12,6 +12,9 @@ import { WasiWasmPerformer } from "@clientTheatre/runtimePerformers/WasiWasmPerf
 import { DartWasmPerformer } from "@clientTheatre/runtimePerformers/DartWasmPerformer.ts";
 import { BlazorPerformer } from "@clientTheatre/runtimePerformers/BlazorPerformer.ts";
 import { TeaVmPerformer } from "@clientTheatre/runtimePerformers/TeaVmPerformer.ts";
+import { JavaScriptPerformer } from "@clientTheatre/runtimePerformers/JavaScriptPerformer.ts";
+import { TypeScriptPerformer } from "@clientTheatre/runtimePerformers/TypeScriptPerformer.ts";
+import { SqliteWasmPerformer } from "@clientTheatre/runtimePerformers/SqliteWasmPerformer.ts";
 class TerminalPerformerFactory {
     private readonly creatorClosures: Map<
         LanguageIdentifier,
@@ -38,6 +41,9 @@ class TerminalPerformerFactory {
             ["assemblyscript", (sessionBaseUrl) => new WasmPackPerformer(sessionBaseUrl)],
             ["ocaml", (sessionBaseUrl) => new WasiWasmPerformer(sessionBaseUrl)],
             ["haskell", (sessionBaseUrl) => new WasiWasmPerformer(sessionBaseUrl)],
+            ["javascript", (sessionBaseUrl) => new JavaScriptPerformer(sessionBaseUrl)],
+            ["typescript", (sessionBaseUrl) => new TypeScriptPerformer(sessionBaseUrl)],
+            ["sql", (sessionBaseUrl) => new SqliteWasmPerformer(sessionBaseUrl)],
         ];
         this.creatorClosures = new Map(performerEntries);
     }
