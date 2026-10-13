@@ -73,7 +73,10 @@ class HttpRequestRouter {
         this.serverConfiguration = serverConfiguration;
         this.scopedLogger = scopedLogger;
         this.pathGuard = pathGuard;
-        this.sessionUploadRateGuard = new RateLimitGuard(10, 60_000);
+        this.sessionUploadRateGuard = new RateLimitGuard(
+            serverConfiguration.sessionUploadsPerMinute,
+            60_000,
+        );
     }
     async routeRequest(request: Request): Promise<Response> {
         const requestUrl = new URL(request.url);
