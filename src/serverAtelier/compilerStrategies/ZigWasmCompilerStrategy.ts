@@ -19,7 +19,7 @@ class ZigWasmCompilerStrategy implements CompilerStrategyContract {
         const toolchainExists = await this.fileSystemOperations.pathExists(this.zigBinaryPath);
         if (!toolchainExists) {
             throw new Error(
-                "Zig toolchain not found. Run bun run setup to provision ./.tools/zig/.",
+                "Zig toolchain not found. Run pnpm run setup to provision ./.tools/zig/.",
             );
         }
         const outcome = await this.processRunner.runToCompletion(
@@ -27,14 +27,11 @@ class ZigWasmCompilerStrategy implements CompilerStrategyContract {
                 this.zigBinaryPath,
                 "build-exe",
                 "-target",
-                "wasm32-freestanding",
+                "wasm32-wasi",
                 "-O",
                 "ReleaseSmall",
-                "-fno-entry",
-                "--export=main",
+                `-femit-bin=${context.runtimeDirectory}/app.wasm`,
                 context.entryFileRelativePath,
-                "-femit-bin",
-                `${context.runtimeDirectory}/app.wasm`,
             ],
             { workingDirectory: context.sourceDirectory },
         );
