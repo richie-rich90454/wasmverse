@@ -1,4 +1,5 @@
 import { unzipSync } from "fflate";
+import { resolve } from "node:path";
 import { FileSystemOperations } from "@serverAtelier/utilities/FileSystemOperations.ts";
 import { ProcessRunner } from "@serverAtelier/utilities/ProcessRunner.ts";
 import { ScopedLogger } from "@serverAtelier/ScopedLogger.ts";
@@ -22,6 +23,11 @@ const WASM_PACK_VERSION = "0.15.0";
 const WASM_PACK_DIRECTORY = "./.tools/wasm-pack";
 const WASM_PACK_BINARY_PATH = `${WASM_PACK_DIRECTORY}/wasm-pack.exe`;
 const WASM_PACK_WINDOWS_X64_ARCHIVE_URL = `https://github.com/wasm-bindgen/wasm-pack/releases/download/v${WASM_PACK_VERSION}/wasm-pack-v${WASM_PACK_VERSION}-x86_64-pc-windows-msvc.tar.gz`;
+const RUSTUP_INIT_URL =
+    "https://static.rust-lang.org/rustup/dist/x86_64-pc-windows-msvc/rustup-init.exe";
+const RUST_CARGO_DIRECTORY = "./.tools/cargo";
+const RUST_CARGO_BINARY_PATH = `${RUST_CARGO_DIRECTORY}/bin/cargo.exe`;
+const RUST_RUSTUP_DIRECTORY = "./.tools/rustup";
 const JDK_DIRECTORY = "./.tools/jdk";
 const JDK_BINARY_PATH = `${JDK_DIRECTORY}/bin/java.exe`;
 const JDK_WINDOWS_X64_ARCHIVE_URL =
@@ -171,6 +177,59 @@ class LocalToolchainProvisioner {
             probePath: WASM_PACK_BINARY_PATH,
             supportedPlatforms: ["win32"],
         });
+    }
+    async provisionRustToolchain(): Promise<void> {
+        if (await this.isToolchainPresent(RUST_CARGO_BINARY_PATH)) {
+            this.scopedLogger.logInformation("Rust toolchain already provisioned, skipping.");
+            return;
+        }
+        if (this.platformName !== "win32") {
+            this.scopedLogger.logWarning(
+                "Rust automatic provisioning is available for win32 only; install rustup manually.",
+            );
+            return;
+        }
+        const stagingDirectory = `${RUST_CARGO_DIRECTORY}-staging`;
+        try {
+            this.scopedLogger.logInformation(`Downloading rustup-init from ${RUSTUP_INIT_URL}.`);
+            const installerBytes = await this.fetchArchiveContent(RUSTUP_INIT_URL);
+            await this.fileSystemOperations.ensureDirectoryExists(stagingDirectory);
+            const installerPath = `${stagingDirectory}/rustup-init.exe`;
+            await this.fileSystemOperations.writeBinaryFile(installerPath, installerBytes);
+            const cargoHomeDirectory = resolve(process.cwd(), RUST_CARGO_DIRECTORY);
+            const outcome = await this.processRunner.runToCompletion(
+                [
+                    installerPath,
+                    "-y",
+                    "--no-modify-path",
+                    "--default-toolchain",
+                    "stable",
+                    "--profile",
+                    "minimal",
+                    "--target",
+                    "wasm32-unknown-unknown",
+                ],
+                {
+                    environmentOverrides: {
+                        CARGO_HOME: cargoHomeDirectory,
+                        RUSTUP_HOME: resolve(process.cwd(), RUST_RUSTUP_DIRECTORY),
+                    },
+                },
+            );
+            if (outcome.exitCode !== 0) {
+                this.scopedLogger.logWarning(
+                    `rustup-init failed: ${outcome.standardError.trim() || outcome.standardOutput.trim()}`,
+                );
+                return;
+            }
+            this.scopedLogger.logSuccess(`Rust toolchain provisioned at ${RUST_CARGO_DIRECTORY}.`);
+        } catch (error) {
+            this.scopedLogger.logWarning(`Rust provisioning failed: ${messageOf(error)}`);
+        } finally {
+            try {
+                await this.fileSystemOperations.removeRecursively(stagingDirectory);
+            } catch {}
+        }
     }
     async provisionJdkToolchain(): Promise<void> {
         await this.installArchiveToolchain({
@@ -346,6 +405,7 @@ class LocalToolchainProvisioner {
         await this.provisionGoToolchain();
         await this.provisionZigToolchain();
         await this.provisionWasmPackToolchain();
+        await this.provisionRustToolchain();
         await this.provisionJdkToolchain();
         await this.provisionMavenToolchain();
         await this.provisionChromeForTesting();
