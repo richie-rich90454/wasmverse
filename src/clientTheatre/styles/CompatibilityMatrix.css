@@ -1,0 +1,100 @@
+.compatibility-matrix {
+    margin-bottom: 64px;
+}
+.matrix-summary {
+    color: var(--ink);
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+    margin: 0 0 16px 0;
+}
+.matrix-table-scroll {
+    background-color: var(--cream);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    overflow-x: auto;
+}
+.matrix-table {
+    border-collapse: collapse;
+    font-size: 13px;
+    min-width: 720px;
+    width: 100%;
+}
+.matrix-table th,
+.matrix-table td {
+    border-bottom: 1px solid var(--rule);
+    padding: 8px 12px;
+    text-align: left;
+}
+.matrix-table thead th {
+    border-bottom: 1px solid var(--rule-strong);
+    color: var(--ink-muted);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+.matrix-table tbody tr {
+    transition: background-color 100ms linear;
+}
+.matrix-table tbody tr:hover {
+    background-color: #f1eee5;
+}
+.matrix-table tbody tr:last-child th,
+.matrix-table tbody tr:last-child td {
+    border-bottom: none;
+}
+.matrix-language {
+    color: var(--ink);
+    font-family: "EB Garamond", Georgia, "Times New Roman", serif;
+    font-size: 17px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+.matrix-status {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+.matrix-status-ready,
+.matrix-status-pass {
+    color: var(--success-green);
+}
+.matrix-status-fail {
+    color: var(--error-red);
+}
+.matrix-status-pending {
+    color: var(--ink-muted);
+}
+.matrix-feature {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+.matrix-feature-pass {
+    color: var(--success-green);
+}
+.matrix-feature-fail {
+    color: var(--error-red);
+}
+.matrix-feature-unsupported,
+.matrix-feature-pending {
+    color: var(--ink-muted);
+}
+.matrix-export {
+    color: var(--ink-muted);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+.matrix-caption {
+    color: var(--ink-muted);
+    font-size: 12px;
+    margin: 8px 0 0 0;
+}
+.matrix-caption code {
+    font-family: Menlo, Consolas, "Courier New", monospace;
+    font-size: 12px;
+}
+@media (max-width: 639px) {
+    .compatibility-matrix {
+        margin-bottom: 40px;
+    }
+}
