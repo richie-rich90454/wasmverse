@@ -19,6 +19,7 @@ import { NullCompilerStrategy } from "@serverAtelier/compilerStrategies/NullComp
 import { EmscriptenCompilerStrategy } from "@serverAtelier/compilerStrategies/EmscriptenCompilerStrategy.ts";
 import { WasmPackCompilerStrategy } from "@serverAtelier/compilerStrategies/WasmPackCompilerStrategy.ts";
 import { GoWasmCompilerStrategy } from "@serverAtelier/compilerStrategies/GoWasmCompilerStrategy.ts";
+import { TypeScriptCompilerStrategy } from "@serverAtelier/compilerStrategies/TypeScriptCompilerStrategy.ts";
 import { ZigWasmCompilerStrategy } from "@serverAtelier/compilerStrategies/ZigWasmCompilerStrategy.ts";
 import { SwiftWasmCompilerStrategy } from "@serverAtelier/compilerStrategies/SwiftWasmCompilerStrategy.ts";
 import { KotlinWasmCompilerStrategy } from "@serverAtelier/compilerStrategies/KotlinWasmCompilerStrategy.ts";
@@ -29,6 +30,9 @@ import { AssemblyScriptCompilerStrategy } from "@serverAtelier/compilerStrategie
 import { OcamlWasmCompilerStrategy } from "@serverAtelier/compilerStrategies/OcamlWasmCompilerStrategy.ts";
 import { GhcWasmCompilerStrategy } from "@serverAtelier/compilerStrategies/GhcWasmCompilerStrategy.ts";
 import { PyodideRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/PyodideRuntimeAssembler.ts";
+import { NullRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/NullRuntimeAssembler.ts";
+import { TypeScriptLoaderRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/TypeScriptLoaderRuntimeAssembler.ts";
+import { SqliteWasmRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/SqliteWasmRuntimeAssembler.ts";
 import { RubyWasmRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/RubyWasmRuntimeAssembler.ts";
 import { LuaWasmRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/LuaWasmRuntimeAssembler.ts";
 import { PhpWasmRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/PhpWasmRuntimeAssembler.ts";
@@ -56,6 +60,9 @@ import { CSharpLanguagePlugin } from "@serverAtelier/languagePlugins/CSharpLangu
 import { AssemblyScriptLanguagePlugin } from "@serverAtelier/languagePlugins/AssemblyScriptLanguagePlugin.ts";
 import { OcamlLanguagePlugin } from "@serverAtelier/languagePlugins/OcamlLanguagePlugin.ts";
 import { HaskellLanguagePlugin } from "@serverAtelier/languagePlugins/HaskellLanguagePlugin.ts";
+import { JavaScriptLanguagePlugin } from "@serverAtelier/languagePlugins/JavaScriptLanguagePlugin.ts";
+import { TypeScriptLanguagePlugin } from "@serverAtelier/languagePlugins/TypeScriptLanguagePlugin.ts";
+import { SqlLanguagePlugin } from "@serverAtelier/languagePlugins/SqlLanguagePlugin.ts";
 class ServerApplication {
     private readonly serverConfiguration: ServerConfiguration;
     private readonly scopedLogger: ScopedLogger;
@@ -190,6 +197,24 @@ class ServerApplication {
             new HaskellLanguagePlugin(
                 new GhcWasmCompilerStrategy(processRunner, this.fileSystemOperations),
                 new WasiWasmGlueRuntimeAssembler(this.fileSystemOperations),
+                sourceFileCopier,
+                manifestWriter,
+            ),
+            new JavaScriptLanguagePlugin(
+                nullCompilerStrategy,
+                new NullRuntimeAssembler(),
+                sourceFileCopier,
+                manifestWriter,
+            ),
+            new TypeScriptLanguagePlugin(
+                new TypeScriptCompilerStrategy(),
+                new TypeScriptLoaderRuntimeAssembler(this.fileSystemOperations),
+                sourceFileCopier,
+                manifestWriter,
+            ),
+            new SqlLanguagePlugin(
+                nullCompilerStrategy,
+                new SqliteWasmRuntimeAssembler(this.fileSystemOperations),
                 sourceFileCopier,
                 manifestWriter,
             ),
