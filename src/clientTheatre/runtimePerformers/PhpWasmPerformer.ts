@@ -2,16 +2,17 @@ import type { TerminalStageController } from "@clientTheatre/services/TerminalSt
 import type { TerminalPerformerContract } from "@clientTheatre/runtimePerformers/TerminalPerformerContract.ts";
 import { SessionUserFilesClient } from "@clientTheatre/runtimePerformers/SessionUserFilesClient.ts";
 import { ReplayOutputTracker } from "@clientTheatre/runtimePerformers/ReplayOutputTracker.ts";
+const MAXIMUM_REPLAY_INPUTS = 1000;
 interface PhpWebModule {
     PhpWeb: new (args: Record<string, unknown>) => unknown;
 }
 interface PhpRuntime {
     onoutput: ((event: { detail: Array<string> }) => void) | undefined;
     onerror: ((event: { detail: Array<string> }) => void) | undefined;
-    inputString(byteString: string): void;
     writeFile(path: string, data: string): Promise<void>;
     mkdir(path: string): Promise<void>;
     run(code: string): Promise<unknown>;
+    refresh(): Promise<void>;
     flush(): void;
 }
 const LEADING_STRICT_TYPES_DECLARE =
@@ -62,6 +63,37 @@ class PhpEvalSourcePreparer {
         ].join("\n");
     }
 }
+class PhpStdinCursor {
+    private pendingBytes: Array<number> = [];
+    private byteIndex: number = 0;
+    private servedByteSinceLastNull: boolean = false;
+    exhausted: boolean = false;
+    loadLines(fedLines: ReadonlyArray<string>): void {
+        const textEncoder = new TextEncoder();
+        this.pendingBytes = [];
+        for (const fedLine of fedLines) {
+            for (const byte of textEncoder.encode(`${fedLine}\n`)) {
+                this.pendingBytes.push(byte);
+            }
+        }
+        this.byteIndex = 0;
+        this.servedByteSinceLastNull = false;
+        this.exhausted = false;
+    }
+    nextByte(): number | null {
+        if (this.byteIndex >= this.pendingBytes.length) {
+            if (!this.servedByteSinceLastNull) {
+                this.exhausted = true;
+            }
+            this.servedByteSinceLastNull = false;
+            return null;
+        }
+        const nextByte = this.pendingBytes[this.byteIndex] as number;
+        this.byteIndex += 1;
+        this.servedByteSinceLastNull = true;
+        return nextByte;
+    }
+}
 class PhpWasmLoader {
     private readonly sessionBaseUrl: string;
     constructor(sessionBaseUrl: string) {
@@ -70,6 +102,7 @@ class PhpWasmLoader {
     async loadRuntime(
         stage: TerminalStageController,
         outputTracker: ReplayOutputTracker,
+        stdinCursor: PhpStdinCursor,
     ): Promise<PhpRuntime> {
         stage.writeLine("Loading PHP runtime.");
         if (typeof navigator === "undefined" || !navigator.locks) {
@@ -84,6 +117,7 @@ class PhpWasmLoader {
             )) as PhpWebModule;
             const phpRuntime = new phpWebModule.PhpWeb({
                 version: "8.4",
+                stdin: () => stdinCursor.nextByte(),
                 locateFile: (path: string) => {
                     if (String(path).endsWith(".wasm")) {
                         const fileName = String(path).split("/").pop() as string;
@@ -93,10 +127,14 @@ class PhpWasmLoader {
                 },
             }) as unknown as PhpRuntime;
             phpRuntime.onoutput = (event: { detail: Array<string> }) => {
-                outputTracker.appendText(event.detail[0] ?? "");
+                if (!stdinCursor.exhausted) {
+                    outputTracker.appendText(event.detail[0] ?? "");
+                }
             };
             phpRuntime.onerror = (event: { detail: Array<string> }) => {
-                outputTracker.appendText(event.detail[0] ?? "");
+                if (!stdinCursor.exhausted) {
+                    outputTracker.appendText(event.detail[0] ?? "");
+                }
             };
             return phpRuntime;
         } catch (loadError) {
@@ -106,20 +144,11 @@ class PhpWasmLoader {
         }
     }
 }
-class PhpWasmStdinFeeder {
-    feedLines(phpRuntime: PhpRuntime, fedLines: ReadonlyArray<string>): void {
-        for (const fedLine of fedLines) {
-            phpRuntime.inputString(`${fedLine}\n`);
-        }
-    }
-}
 class PhpWasmEntryExecutor {
     private readonly outputTracker: ReplayOutputTracker;
-    private readonly stdinFeeder: PhpWasmStdinFeeder;
     private readonly sourcePreparer: PhpEvalSourcePreparer;
     constructor(outputTracker: ReplayOutputTracker) {
         this.outputTracker = outputTracker;
-        this.stdinFeeder = new PhpWasmStdinFeeder();
         this.sourcePreparer = new PhpEvalSourcePreparer();
     }
     async executeEntry(
@@ -127,7 +156,6 @@ class PhpWasmEntryExecutor {
         entryRelativePath: string,
         programArguments: ReadonlyArray<string>,
         userFiles: ReadonlyMap<string, string>,
-        fedLines: ReadonlyArray<string>,
         stage: TerminalStageController,
     ): Promise<void> {
         stage.writeLine("Running PHP entry script.");
@@ -142,7 +170,6 @@ class PhpWasmEntryExecutor {
             if (entrySource === undefined) {
                 throw new Error(`Entry file ${entryRelativePath} is missing from the session.`);
             }
-            this.stdinFeeder.feedLines(phpRuntime, fedLines);
             await phpRuntime.run(
                 this.sourcePreparer.prepare(entrySource, entryFileName, programArguments),
             );
@@ -172,18 +199,24 @@ class PhpWasmPerformer implements TerminalPerformerContract {
     private readonly userFilesClient: SessionUserFilesClient;
     private readonly entryExecutor: PhpWasmEntryExecutor;
     private readonly outputTracker: ReplayOutputTracker;
+    private readonly stdinCursor: PhpStdinCursor;
     private loadedRuntime: PhpRuntime | undefined;
     private entryRelativePath: string = "";
     private programArguments: ReadonlyArray<string> = [];
     private userFiles: Map<string, string> = new Map();
     constructor(sessionBaseUrl: string) {
         this.outputTracker = new ReplayOutputTracker();
+        this.stdinCursor = new PhpStdinCursor();
         this.runtimeLoader = new PhpWasmLoader(sessionBaseUrl);
         this.userFilesClient = new SessionUserFilesClient(sessionBaseUrl);
         this.entryExecutor = new PhpWasmEntryExecutor(this.outputTracker);
     }
     async loadInto(stage: TerminalStageController): Promise<void> {
-        this.loadedRuntime = await this.runtimeLoader.loadRuntime(stage, this.outputTracker);
+        this.loadedRuntime = await this.runtimeLoader.loadRuntime(
+            stage,
+            this.outputTracker,
+            this.stdinCursor,
+        );
         const fetchedFiles = await this.userFilesClient.fetchUserFiles();
         this.entryRelativePath = fetchedFiles.entryRelativePath;
         this.programArguments = fetchedFiles.programArguments;
@@ -191,17 +224,36 @@ class PhpWasmPerformer implements TerminalPerformerContract {
         stage.writeLine("PHP runtime ready.");
     }
     async performOn(stage: TerminalStageController): Promise<void> {
-        if (!this.loadedRuntime) {
+        const phpRuntime = this.loadedRuntime;
+        if (!phpRuntime) {
             throw new Error("PHP runtime not loaded. Call loadInto first.");
         }
-        await this.entryExecutor.executeEntry(
-            this.loadedRuntime,
-            this.entryRelativePath,
-            this.programArguments,
-            this.userFiles,
-            [],
-            stage,
-        );
+        const fedLines: Array<string> = [];
+        for (let attempt = 0; ; attempt++) {
+            if (attempt > MAXIMUM_REPLAY_INPUTS) {
+                throw new Error("Too many input prompts. Stopping to protect the session.");
+            }
+            this.stdinCursor.loadLines(fedLines);
+            try {
+                await this.entryExecutor.executeEntry(
+                    phpRuntime,
+                    this.entryRelativePath,
+                    this.programArguments,
+                    this.userFiles,
+                    stage,
+                );
+            } catch (runError) {
+                if (!this.stdinCursor.exhausted) {
+                    throw runError;
+                }
+            }
+            if (!this.stdinCursor.exhausted) {
+                break;
+            }
+            const fedLine = await stage.readLine("");
+            fedLines.push(fedLine);
+            await phpRuntime.refresh();
+        }
     }
 }
-export { PhpEvalSourcePreparer, PhpWasmEntryExecutor, PhpWasmPerformer };
+export { PhpEvalSourcePreparer, PhpWasmEntryExecutor, PhpStdinCursor, PhpWasmPerformer };
