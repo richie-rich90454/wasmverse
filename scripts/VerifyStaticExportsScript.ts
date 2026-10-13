@@ -527,7 +527,14 @@ function firstMeaningfulLine(terminalText: string): string {
 }
 async function sendText(devTools: DevToolsSession, sessionId: string, text: string): Promise<void> {
     for (const character of text) {
-        await devTools.call("Input.dispatchKeyEvent", { type: "char", text: character }, sessionId);
+        const keyEvent = {
+            key: character,
+            code: "",
+            text: character,
+            unmodifiedText: character,
+        };
+        await devTools.call("Input.dispatchKeyEvent", { type: "keyDown", ...keyEvent }, sessionId);
+        await devTools.call("Input.dispatchKeyEvent", { type: "keyUp", ...keyEvent }, sessionId);
     }
 }
 async function verifyProbeInBrowser(
