@@ -21,13 +21,23 @@ class GoWasmCompilerStrategy implements CompilerStrategyContract {
                 "Go toolchain not found. Run pnpm run setup to provision ./.tools/go/.",
             );
         }
+        const moduleFilePath = `${context.sourceDirectory}/go.mod`;
+        if (!(await this.fileSystemOperations.pathExists(moduleFilePath))) {
+            await this.fileSystemOperations.writeTextFile(
+                moduleFilePath,
+                "module wasmverse\n\ngo 1.22\n",
+            );
+        }
+        const entryDirectory = context.entryFileRelativePath.includes("/")
+            ? context.entryFileRelativePath.split("/").slice(0, -1).join("/")
+            : ".";
         const outcome = await this.processRunner.runToCompletion(
             [
                 this.goBinaryPath,
                 "build",
                 "-o",
                 `${context.runtimeDirectory}/app.wasm`,
-                context.entryFileRelativePath,
+                entryDirectory === "." ? "." : `./${entryDirectory}`,
             ],
             {
                 workingDirectory: context.sourceDirectory,
@@ -35,6 +45,7 @@ class GoWasmCompilerStrategy implements CompilerStrategyContract {
                     GOOS: "js",
                     GOARCH: "wasm",
                     GO111MODULE: "on",
+                    GOFLAGS: "-mod=mod",
                     GOROOT: resolve(process.cwd(), GO_TOOLCHAIN_DIRECTORY),
                     GOPATH: resolve(process.cwd(), "./.tools/gopath"),
                     GOCACHE: resolve(process.cwd(), "./.tools/go-cache"),
