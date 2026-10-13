@@ -1,8 +1,13 @@
+import { delimiter, resolve } from "node:path";
 import type { BuildContextRecord } from "@sharedKernel/BuildContextRecord.ts";
 import type { CompilerStrategyContract } from "@serverAtelier/compilerStrategies/CompilerStrategyContract.ts";
 import { FileSystemOperations } from "@serverAtelier/utilities/FileSystemOperations.ts";
 import { ProcessRunner } from "@serverAtelier/utilities/ProcessRunner.ts";
 const WASM_PACK_BINARY_PATH = "./.tools/wasm-pack/wasm-pack.exe";
+const RUST_CARGO_BINARY_PATH = "./.tools/cargo/bin/cargo.exe";
+const RUST_CARGO_DIRECTORY = "./.tools/cargo";
+const RUST_RUSTUP_DIRECTORY = "./.tools/rustup";
+const WASM_PACK_CACHE_DIRECTORY = "./.tools/wasm-pack-cache";
 function cargoManifestText(packageName: string): string {
     return (
         "[package]\n" +
@@ -34,7 +39,13 @@ class WasmPackCompilerStrategy implements CompilerStrategyContract {
                 "wasm-pack not found. Run pnpm run setup to provision ./.tools/wasm-pack/.",
             );
         }
+        if (!(await this.fileSystemOperations.pathExists(RUST_CARGO_BINARY_PATH))) {
+            throw new Error(
+                "Rust toolchain not found. Run pnpm run setup to provision ./.tools/cargo/.",
+            );
+        }
         await this.ensureCargoProject(context);
+        const cargoHomeDirectory = resolve(process.cwd(), RUST_CARGO_DIRECTORY);
         const outcome = await this.processRunner.runToCompletion(
             [
                 WASM_PACK_BINARY_PATH,
@@ -47,7 +58,15 @@ class WasmPackCompilerStrategy implements CompilerStrategyContract {
                 "--out-name",
                 "app",
             ],
-            { workingDirectory: context.sourceDirectory },
+            {
+                workingDirectory: context.sourceDirectory,
+                environmentOverrides: {
+                    CARGO_HOME: cargoHomeDirectory,
+                    RUSTUP_HOME: resolve(process.cwd(), RUST_RUSTUP_DIRECTORY),
+                    WASM_PACK_CACHE: resolve(process.cwd(), WASM_PACK_CACHE_DIRECTORY),
+                    PATH: `${resolve(cargoHomeDirectory, "bin")}${delimiter}${process.env.PATH ?? ""}`,
+                },
+            },
         );
         if (outcome.exitCode !== 0) {
             const detail =
