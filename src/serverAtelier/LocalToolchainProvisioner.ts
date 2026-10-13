@@ -50,8 +50,8 @@ const DOTNET_BINARY_PATH = `${DOTNET_DIRECTORY}/dotnet`;
 const DOTNET_WINDOWS_X64_ARCHIVE_URL = `https://builds.dotnet.microsoft.com/dotnet/Sdk/${DOTNET_SDK_VERSION}/dotnet-sdk-${DOTNET_SDK_VERSION}-win-x64.zip`;
 const KOTLIN_VERSION = "2.4.21";
 const KOTLIN_DIRECTORY = "./.tools/kotlin-wasm";
-const KOTLIN_COMPILER_PATH = `${KOTLIN_DIRECTORY}/bin/kotlinc`;
-const KOTLIN_WINDOWS_X64_ARCHIVE_URL = `https://github.com/JetBrains/kotlin/releases/download/v${KOTLIN_VERSION}/kotlin-native-prebuilt-windows-x86_64-${KOTLIN_VERSION}.zip`;
+const KOTLIN_COMPILER_PATH = `${KOTLIN_DIRECTORY}/bin/kotlinc-js`;
+const KOTLIN_WINDOWS_X64_ARCHIVE_URL = `https://github.com/JetBrains/kotlin/releases/download/v${KOTLIN_VERSION}/kotlin-compiler-${KOTLIN_VERSION}.zip`;
 const GHC_WASM_DIRECTORY = "./.tools/ghc-wasm";
 const GHC_WASM_COMPILER_PATH = `${GHC_WASM_DIRECTORY}/bin/wasm32-wasi-ghc`;
 const GHC_WASM_GMP_BINDIST_URL =
@@ -307,9 +307,9 @@ class LocalToolchainProvisioner {
     }
     async provisionKotlinWasmToolchain(): Promise<void> {
         await this.installArchiveToolchain({
-            toolchainName: "Kotlin/Wasm",
+            toolchainName: "Kotlin/JS",
             archiveUrl: KOTLIN_WINDOWS_X64_ARCHIVE_URL,
-            archiveFileName: `kotlin-native-prebuilt-windows-x86_64-${KOTLIN_VERSION}.zip`,
+            archiveFileName: `kotlin-compiler-${KOTLIN_VERSION}.zip`,
             targetDirectory: KOTLIN_DIRECTORY,
             probePath: KOTLIN_COMPILER_PATH,
             supportedPlatforms: ["win32"],
