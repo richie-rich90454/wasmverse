@@ -15,5 +15,8 @@ type LanguageIdentifier =
     | "csharp"
     | "assemblyscript"
     | "ocaml"
-    | "haskell";
+    | "haskell"
+    | "javascript"
+    | "typescript"
+    | "sql";
 export type { LanguageIdentifier };
