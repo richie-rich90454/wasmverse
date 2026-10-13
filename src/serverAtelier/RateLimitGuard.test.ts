@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test } from "vitest";
 import { RateLimitGuard } from "@serverAtelier/RateLimitGuard.ts";
 describe("RateLimitGuard", () => {
     test("allows requests up to the maximum then denies", () => {
