@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test } from "vitest";
 import type { LanguageIdentifier } from "@sharedKernel/LanguageIdentifier.ts";
 import { LanguageIdentifierResolver } from "@serverAtelier/LanguageIdentifierResolver.ts";
 describe("LanguageIdentifierResolver", () => {
