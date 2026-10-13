@@ -16,6 +16,11 @@ import { JavaScriptPerformer } from "@clientTheatre/runtimePerformers/JavaScript
 import { TypeScriptPerformer } from "@clientTheatre/runtimePerformers/TypeScriptPerformer.ts";
 import { KotlinJsPerformer } from "@clientTheatre/runtimePerformers/KotlinJsPerformer.ts";
 import { SqliteWasmPerformer } from "@clientTheatre/runtimePerformers/SqliteWasmPerformer.ts";
+import { DuckDbWasmPerformer } from "@clientTheatre/runtimePerformers/DuckDbWasmPerformer.ts";
+import { PglitePerformer } from "@clientTheatre/runtimePerformers/PglitePerformer.ts";
+import { BusyboxAwkPerformer } from "@clientTheatre/runtimePerformers/BusyboxAwkPerformer.ts";
+import { JqWasmPerformer } from "@clientTheatre/runtimePerformers/JqWasmPerformer.ts";
+import { BusyboxShellPerformer } from "@clientTheatre/runtimePerformers/BusyboxShellPerformer.ts";
 class TerminalPerformerFactory {
     private readonly creatorClosures: Map<
         LanguageIdentifier,
@@ -45,6 +50,11 @@ class TerminalPerformerFactory {
             ["javascript", (sessionBaseUrl) => new JavaScriptPerformer(sessionBaseUrl)],
             ["typescript", (sessionBaseUrl) => new TypeScriptPerformer(sessionBaseUrl)],
             ["sql", (sessionBaseUrl) => new SqliteWasmPerformer(sessionBaseUrl)],
+            ["duckdb", (sessionBaseUrl) => new DuckDbWasmPerformer(sessionBaseUrl)],
+            ["pglite", (sessionBaseUrl) => new PglitePerformer(sessionBaseUrl)],
+            ["awk", (sessionBaseUrl) => new BusyboxAwkPerformer(sessionBaseUrl)],
+            ["jq", (sessionBaseUrl) => new JqWasmPerformer(sessionBaseUrl)],
+            ["bash", (sessionBaseUrl) => new BusyboxShellPerformer(sessionBaseUrl)],
         ];
         this.creatorClosures = new Map(performerEntries);
     }
