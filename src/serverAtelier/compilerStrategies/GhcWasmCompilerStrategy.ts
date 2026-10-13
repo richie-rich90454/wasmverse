@@ -19,7 +19,7 @@ class GhcWasmCompilerStrategy implements CompilerStrategyContract {
         const toolchainExists = await this.fileSystemOperations.pathExists(this.ghcCompilerPath);
         if (!toolchainExists) {
             throw new Error(
-                "GHC WASM toolchain not found. Run bun run setup to provision ./.tools/ghc-wasm/.",
+                "GHC WASM toolchain not found. Run pnpm run setup to provision ./.tools/ghc-wasm/.",
             );
         }
         const outcome = await this.processRunner.runToCompletion(
