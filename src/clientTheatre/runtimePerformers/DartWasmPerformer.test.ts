@@ -120,7 +120,10 @@ describe("DartWasmPerformer", () => {
     test("passes arguments and hosts user files through the bridge", async () => {
         const { stage, performer } = await createSessionLayout();
         await performer.loadInto(stage as unknown as TerminalStageController);
+        const originalLog = console.log;
         await performer.performOn(stage as unknown as TerminalStageController);
+        expect(console.log).toBe(originalLog);
+        expect(typeof (globalThis as Record<string, unknown>)["dartPrint"]).toBe("function");
         expect(stage.shownLines).toContain("Dart WASM runtime ready.");
         expect(stage.shownLines).toContain("Running Dart main.");
         expect(stage.shownOutput()).toBe(
