@@ -538,9 +538,9 @@ const FEATURE_PROBES: ReadonlyArray<FeatureProbeDefinition> = [
     },
     {
         languageIdentifier: "assemblyscript",
-        entryFileName: "main.ts",
+        entryFileName: "main.as",
         sourceFiles: {
-            "main.ts":
+            "main.as":
                 '@external("env", "write")\n' +
                 "declare function write(pointer: usize, length: usize): void;\n" +
                 "\n" +
@@ -561,11 +561,11 @@ const FEATURE_PROBES: ReadonlyArray<FeatureProbeDefinition> = [
                 "export function main(): void {\n" +
                 "    const nameBuffer = new ArrayBuffer(256);\n" +
                 "    const nameLength = read(changetype<usize>(nameBuffer), 256);\n" +
-                '    const name = nameLength > 0 ? String.UTF8.decode(nameBuffer, nameLength).trim() : "";\n' +
+                '    const name = nameLength > 0 ? String.UTF8.decode(nameBuffer.slice(0, <i32>nameLength)).trim() : "";\n' +
                 '    emit("greet:" + helperLabel() + ":" + name + "\\n");\n' +
                 "    const argumentBuffer = new ArrayBuffer(256);\n" +
                 "    const argumentLength = programArgument(0, changetype<usize>(argumentBuffer), 256);\n" +
-                '    const firstArgument = argumentLength > 0 ? String.UTF8.decode(argumentBuffer, argumentLength) : "none";\n' +
+                '    const firstArgument = argumentLength > 0 ? String.UTF8.decode(argumentBuffer.slice(0, argumentLength)) : "none";\n' +
                 '    emit("arg0:" + firstArgument + "\\n");\n' +
                 '    emit("PROBE-DONE\\n");\n' +
                 "}\n",
@@ -579,6 +579,83 @@ const FEATURE_PROBES: ReadonlyArray<FeatureProbeDefinition> = [
             {
                 feature: "fileIo",
                 reason: "assemblyscript programs have no host filesystem",
+            },
+        ],
+    },
+    {
+        languageIdentifier: "javascript",
+        entryFileName: "main.js",
+        sourceFiles: {
+            "main.js":
+                'const { helperLabel } = require("./helper.js");\n' +
+                'const name = readLine("name? ");\n' +
+                'print("greet:" + helperLabel() + ":" + name);\n' +
+                'print("arg0:" + (programArguments[0] ?? "none"));\n' +
+                'print("file:" + readFile("data.txt"));\n' +
+                'print("PROBE-DONE");\n',
+            "helper.js": 'exports.helperLabel = () => "helper";\n',
+            "data.txt": "probe-data",
+        },
+        programArguments: PROBE_ARGUMENTS,
+        terminalAnswers: PROBE_ANSWERS,
+        expectedLines: ["greet:helper:Ada", "arg0:alpha", "file:probe-data", "PROBE-DONE"],
+        exercisedFeatures: ["stdin", "arguments", "fileIo", "multiFile"],
+        unsupportedFeatures: [],
+    },
+    {
+        languageIdentifier: "typescript",
+        entryFileName: "main.ts",
+        sourceFiles: {
+            "main.ts":
+                'import { helperLabel } from "./helper";\n' +
+                "declare const programArguments: ReadonlyArray<string>;\n" +
+                "declare function print(message: string): void;\n" +
+                "declare function readLine(promptText: string): string;\n" +
+                "declare function readFile(path: string): string;\n" +
+                'const name = readLine("name? ");\n' +
+                'print("greet:" + helperLabel() + ":" + name);\n' +
+                'print("arg0:" + (programArguments[0] ?? "none"));\n' +
+                'print("file:" + readFile("data.txt"));\n' +
+                'print("PROBE-DONE");\n',
+            "helper.ts": 'export function helperLabel(): string {\n    return "helper";\n}\n',
+            "data.txt": "probe-data",
+        },
+        programArguments: PROBE_ARGUMENTS,
+        terminalAnswers: PROBE_ANSWERS,
+        expectedLines: ["greet:helper:Ada", "arg0:alpha", "file:probe-data", "PROBE-DONE"],
+        exercisedFeatures: ["stdin", "arguments", "fileIo", "multiFile"],
+        unsupportedFeatures: [],
+    },
+    {
+        languageIdentifier: "sql",
+        entryFileName: "main.sql",
+        sourceFiles: {
+            "main.sql":
+                "CREATE TABLE probe (label TEXT NOT NULL, amount INTEGER NOT NULL);\n" +
+                "INSERT INTO probe (label, amount) VALUES ('alpha', 7), ('beta', 12);\n" +
+                "SELECT label || ':' || amount AS reading FROM probe ORDER BY label ASC;\n" +
+                "SELECT 'PROBE-DONE' AS marker;\n",
+        },
+        programArguments: [],
+        terminalAnswers: [],
+        expectedLines: ["alpha:7", "beta:12", "PROBE-DONE"],
+        exercisedFeatures: [],
+        unsupportedFeatures: [
+            {
+                feature: "stdin",
+                reason: "SQLite scripts have no stdin in this runtime",
+            },
+            {
+                feature: "arguments",
+                reason: "SQLite scripts have no argv in this runtime",
+            },
+            {
+                feature: "fileIo",
+                reason: "scripts run against an in-memory database with no host files",
+            },
+            {
+                feature: "multiFile",
+                reason: "scripts run against an in-memory database with no host files",
             },
         ],
     },
