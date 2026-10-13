@@ -29,6 +29,11 @@ class LanguageIdentifierResolver {
             [".mjs", "javascript"],
             [".ts", "typescript"],
             [".mts", "typescript"],
+            [".duckdb.sql", "duckdb"],
+            [".pglite.sql", "pglite"],
+            [".awk", "awk"],
+            [".jq", "jq"],
+            [".sh", "bash"],
             [".sql", "sql"],
         ]);
     }
