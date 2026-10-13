@@ -19,9 +19,14 @@ describe("LanguageIdentifierResolver", () => {
             ["main.dart", "dart"],
             ["Main.java", "java"],
             ["Program.cs", "csharp"],
-            ["main.ts", "assemblyscript"],
+            ["main.as", "assemblyscript"],
             ["main.ml", "ocaml"],
             ["main.hs", "haskell"],
+            ["main.js", "javascript"],
+            ["main.mjs", "javascript"],
+            ["main.ts", "typescript"],
+            ["main.mts", "typescript"],
+            ["main.sql", "sql"],
         ];
         for (const [fileName, language] of expectedPairs) {
             expect(resolver.resolveFromFileName(fileName)).toBe(language);
