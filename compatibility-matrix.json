@@ -1,7 +1,59 @@
 {
-    "generatedAt": "2026-10-13T09:35:41.476Z",
+    "generatedAt": "2026-10-13T10:22:34.991Z",
     "source": "verify:export",
     "languages": [
+        {
+            "languageIdentifier": "assemblyscript",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "unsupported"
+            },
+            "exportBytes": 109223,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "sql",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "unsupported",
+                "multiFile": "unsupported",
+                "arguments": "unsupported",
+                "fileIo": "unsupported"
+            },
+            "exportBytes": 691670,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "typescript",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "pass"
+            },
+            "exportBytes": 101863,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "javascript",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "pass"
+            },
+            "exportBytes": 100544,
+            "problems": []
+        },
         {
             "languageIdentifier": "python",
             "toolchain": "ready",
@@ -13,6 +65,225 @@
                 "fileIo": "pass"
             },
             "exportBytes": 6556501,
+            "problems": [
+                "probe: missing expected line: greet:helper:Ada"
+            ]
+        },
+        {
+            "languageIdentifier": "ruby",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "fail",
+                "multiFile": "fail",
+                "arguments": "fail",
+                "fileIo": "fail"
+            },
+            "exportBytes": 9343325,
+            "problems": [
+                "probe: the probe never reached its final line",
+                "probe: the terminal reported an error: Error:",
+                "probe: missing expected line: greet:helper:Ada",
+                "probe: missing expected line: arg0:alpha",
+                "probe: missing expected line: file:written",
+                "probe: missing expected line: PROBE-DONE"
+            ]
+        },
+        {
+            "languageIdentifier": "lua",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "pass"
+            },
+            "exportBytes": 251896,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "php",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "pass"
+            },
+            "exportBytes": 3847461,
+            "problems": [
+                "probe: missing expected line: greet:helper:Ada"
+            ]
+        },
+        {
+            "languageIdentifier": "rust",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "unsupported",
+                "arguments": "pass",
+                "fileIo": "unsupported"
+            },
+            "exportBytes": 116429,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "c",
+            "toolchain": "pending",
+            "showcase": "pending",
+            "features": {
+                "stdin": "pending",
+                "arguments": "pending",
+                "fileIo": "pending",
+                "multiFile": "pending"
+            },
+            "exportBytes": 0,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "cpp",
+            "toolchain": "pending",
+            "showcase": "pending",
+            "features": {
+                "stdin": "pending",
+                "arguments": "pending",
+                "fileIo": "pending",
+                "multiFile": "pending"
+            },
+            "exportBytes": 0,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "go",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pending",
+                "arguments": "pending",
+                "fileIo": "pending",
+                "multiFile": "pending"
+            },
+            "exportBytes": 887518,
+            "problems": [
+                "probe upload step failed: Go WASM build failed: # command-line-arguments\n.\\main.go:14:33: undefined: helperLabel\n"
+            ]
+        },
+        {
+            "languageIdentifier": "zig",
+            "toolchain": "ready",
+            "showcase": "fail",
+            "features": {
+                "stdin": "pending",
+                "arguments": "pending",
+                "fileIo": "pending",
+                "multiFile": "pending"
+            },
+            "exportBytes": 124260,
+            "problems": [
+                "the showcase never reached its final line",
+                "the terminal reported an error: Error:",
+                "probe upload step failed: Zig WASM build failed: main.zig:5:23: error: root source file struct 'std' has no member named 'io'\n    const stdin = std.io.getStdIn().reader();\n                      ^~\nC:\\Users\\rjian\\Desktop\\wasmverse\\.tools\\zig\\lib\\std\\std.zig:1:1: note: struct declared here\npub const AutoHashMap = hash_map.AutoHashMap;\n^~~\nreferenced by:\n    callMain [inlined]: C:\\Users\\rjian\\Desktop\\wasmverse\\.tools\\zig\\lib\\std\\start.zig:788:64\n    startWasi: C:\\Users\\rjian\\Desktop\\wasmverse\\.tools\\zig\\lib\\std\\start.zig:128:43\n    2 reference(s) hidden; use '-freference-trace=4' to see all references\n"
+            ]
+        },
+        {
+            "languageIdentifier": "swift",
+            "toolchain": "pending",
+            "showcase": "pending",
+            "features": {
+                "stdin": "pending",
+                "arguments": "pending",
+                "fileIo": "pending",
+                "multiFile": "pending"
+            },
+            "exportBytes": 0,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "kotlin",
+            "toolchain": "pending",
+            "showcase": "pending",
+            "features": {
+                "stdin": "pending",
+                "arguments": "pending",
+                "fileIo": "pending",
+                "multiFile": "pending"
+            },
+            "exportBytes": 0,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "dart",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "pass"
+            },
+            "exportBytes": 123999,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "java",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "fail",
+                "multiFile": "fail",
+                "arguments": "fail",
+                "fileIo": "unsupported"
+            },
+            "exportBytes": 129703,
+            "problems": [
+                "probe: the probe never reached its final line",
+                "probe: missing expected line: greet:helper:Ada",
+                "probe: missing expected line: arg0:alpha",
+                "probe: missing expected line: PROBE-DONE"
+            ]
+        },
+        {
+            "languageIdentifier": "csharp",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pending",
+                "arguments": "pending",
+                "fileIo": "pending",
+                "multiFile": "pending"
+            },
+            "exportBytes": 2868730,
+            "problems": [
+                "probe upload step failed: dotnet publish failed:   正在确定要还原的项目…\r\n  已还原 C:\\Users\\rjian\\Desktop\\wasmverse\\sessions\\898f4d220118\\source\\WasmVerseProgram.csproj (用时 257 毫秒)。\r\nC:\\Users\\rjian\\Desktop\\wasmverse\\sessions\\898f4d220118\\source\\Program.cs(5,22): error CS0262: “WasmVerseHost”的分部声明包含冲突的可访问性修饰符 [C:\\Users\\rjian\\Desktop\\wasmverse\\sessions\\898f4d220118\\source\\WasmVerseProgram.csproj]\r\nC:\\Users\\rjian\\Desktop\\wasmverse\\sessions\\898f4d220118\\source\\WasmVerseHost.cs(5,36): error CS0756: 分部方法不能有多个定义声明 [C:\\Users\\rjian\\Desktop\\wasmverse\\sessions\\898f4d220118\\source\\WasmVerseProgram.csproj]\r\nC:\\Users\\rjian\\Desktop\\wasmverse\\sessions\\898f4d220118\\source\\obj\\Release\\net10.0\\browser-wasm\\Microsoft.Interop.JavaScript.JSImportGenerator\\Microsoft.Interop.JavaScript.JSImportGenerator\\JSImports.g.cs(45,36): error CS0757: 分部方法不能有多个实现声明 [C:\\Users\\rjian\\Desktop\\wasmverse\\sessions\\898f4d220118\\source\\WasmVerseProgram.csproj]\r\nC:\\Users\\rjian\\Desktop\\wasmverse\\sessions\\898f4d220118\\source\\WasmVerseHost.cs(5,36): error CS0111: 类型“WasmVerseHost”已定义了一个名为“ReadLine”的具有相同参数类型的成员 [C:\\Users\\rjian\\Desktop\\wasmverse\\sessions\\898f4d220118\\source\\WasmVerseProgram.csproj]\r\nC:\\Users\\rjian\\Desktop\\wasmverse\\sessions\\898f4d220118\\source\\obj\\Release\\net10.0\\browser-wasm\\Microsoft.Interop.JavaScript.JSImportGenerator\\Microsoft.Interop.JavaScript.JSImportGenerator\\JSImports.g.cs(80,80): error CS0102: 类型“WasmVerseHost”已经包含“__signature_ReadLine_1310674786”的定义 [C:\\Users\\rjian\\Desktop\\wasmverse\\sessions\\898f4d220118\\source\\WasmVerseProgram.csproj]\r\n"
+            ]
+        },
+        {
+            "languageIdentifier": "ocaml",
+            "toolchain": "pending",
+            "showcase": "pending",
+            "features": {
+                "stdin": "pending",
+                "arguments": "pending",
+                "fileIo": "pending",
+                "multiFile": "pending"
+            },
+            "exportBytes": 0,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "haskell",
+            "toolchain": "pending",
+            "showcase": "pending",
+            "features": {
+                "stdin": "pending",
+                "arguments": "pending",
+                "fileIo": "pending",
+                "multiFile": "pending"
+            },
+            "exportBytes": 0,
             "problems": []
         }
     ]
