@@ -8,6 +8,11 @@ import { tmpdir } from "node:os";
 import type { Readable } from "node:stream";
 import { unzipSync, zipSync } from "fflate";
 import { ScopedLogger } from "@serverAtelier/ScopedLogger.ts";
+import {
+    FEATURE_PROBES,
+    type FeatureName,
+    type FeatureProbeDefinition,
+} from "./FeatureProbeCatalog.ts";
 const scopedLogger = new ScopedLogger("VerifyStaticExports");
 const languageFilter = process.argv[2] ?? "";
 const APP_PORT = 3987;
@@ -37,15 +42,10 @@ interface ShowcaseUnderTest {
     entryFileName: string;
     budgetMilliseconds: number;
 }
-const TOOLCHAIN_PENDING_LANGUAGES: ReadonlyArray<[string, string]> = [
-    ["c", "Emscripten is not provisioned under ./.emsdk/"],
-    ["cpp", "Emscripten is not provisioned under ./.emsdk/"],
-    ["zig", "no zig toolchain under ./.tools/"],
-    ["swift", "no swift toolchain under ./.tools/"],
-    ["kotlin", "no kotlin toolchain under ./.tools/"],
-    ["csharp", "the dotnet browser-wasm workload is not installed"],
-    ["ocaml", "no ocaml toolchain under ./.tools/"],
-    ["haskell", "no ghc toolchain under ./.tools/"],
+const TOOLCHAIN_PENDING_PATTERNS: ReadonlyArray<RegExp> = [
+    /Run pnpm run setup/,
+    /browser-wasm workload is not installed/,
+    /no local toolchain/,
 ];
 const SHOWCASES: ReadonlyArray<ShowcaseUnderTest> = [
     {
@@ -74,9 +74,34 @@ const SHOWCASES: ReadonlyArray<ShowcaseUnderTest> = [
         budgetMilliseconds: 180_000,
     },
     {
+        languageIdentifier: "c",
+        entryFileName: "main.c",
+        budgetMilliseconds: 150_000,
+    },
+    {
+        languageIdentifier: "cpp",
+        entryFileName: "main.cpp",
+        budgetMilliseconds: 150_000,
+    },
+    {
         languageIdentifier: "go",
         entryFileName: "main.go",
         budgetMilliseconds: 90_000,
+    },
+    {
+        languageIdentifier: "zig",
+        entryFileName: "main.zig",
+        budgetMilliseconds: 90_000,
+    },
+    {
+        languageIdentifier: "swift",
+        entryFileName: "main.swift",
+        budgetMilliseconds: 120_000,
+    },
+    {
+        languageIdentifier: "kotlin",
+        entryFileName: "main.kt",
+        budgetMilliseconds: 150_000,
     },
     {
         languageIdentifier: "dart",
@@ -89,11 +114,66 @@ const SHOWCASES: ReadonlyArray<ShowcaseUnderTest> = [
         budgetMilliseconds: 180_000,
     },
     {
+        languageIdentifier: "csharp",
+        entryFileName: "Program.cs",
+        budgetMilliseconds: 240_000,
+    },
+    {
         languageIdentifier: "assemblyscript",
         entryFileName: "main.ts",
         budgetMilliseconds: 90_000,
     },
+    {
+        languageIdentifier: "ocaml",
+        entryFileName: "main.ml",
+        budgetMilliseconds: 150_000,
+    },
+    {
+        languageIdentifier: "haskell",
+        entryFileName: "main.hs",
+        budgetMilliseconds: 150_000,
+    },
 ];
+function isToolchainPendingMessage(message: string): boolean {
+    return TOOLCHAIN_PENDING_PATTERNS.some((pattern) => pattern.test(message));
+}
+type FeatureStatus = "pass" | "fail" | "unsupported" | "pending";
+interface CompatibilityMatrixRow {
+    languageIdentifier: string;
+    toolchain: "ready" | "pending";
+    showcase: "pass" | "fail" | "pending";
+    features: Record<string, FeatureStatus>;
+    exportBytes: number;
+    problems: Array<string>;
+}
+interface CompatibilityMatrixDocument {
+    generatedAt: string;
+    source: string;
+    languages: ReadonlyArray<CompatibilityMatrixRow>;
+}
+function probeFeatureStatuses(
+    probe: FeatureProbeDefinition,
+    terminalText: string,
+): Record<string, FeatureStatus> {
+    const featureStatuses: Record<string, FeatureStatus> = {};
+    const featureLineMarkers: ReadonlyArray<[FeatureName, string]> = [
+        ["stdin", "greet:"],
+        ["multiFile", "greet:"],
+        ["arguments", "arg0:"],
+        ["fileIo", "file:"],
+    ];
+    for (const [featureName, lineMarker] of featureLineMarkers) {
+        if (probe.unsupportedFeatures.some((entry) => entry.feature === featureName)) {
+            featureStatuses[featureName] = "unsupported";
+            continue;
+        }
+        if (!probe.exercisedFeatures.includes(featureName)) {
+            continue;
+        }
+        featureStatuses[featureName] = terminalText.includes(lineMarker) ? "pass" : "fail";
+    }
+    return featureStatuses;
+}
 interface VerificationOutcome {
     languageIdentifier: string;
     zipBytes: number;
@@ -283,6 +363,36 @@ async function buildSessionFor(showcase: ShowcaseUnderTest): Promise<string> {
     }
     return payload.sessionIdentifier;
 }
+async function buildProbeSession(probe: FeatureProbeDefinition): Promise<string> {
+    const archiveEntries: Record<string, Uint8Array> = {};
+    const textEncoder = new TextEncoder();
+    for (const [relativePath, fileContent] of Object.entries(probe.sourceFiles)) {
+        archiveEntries[relativePath] = textEncoder.encode(fileContent);
+    }
+    const archiveBytes = zipSync(archiveEntries);
+    const formData = new FormData();
+    formData.append(
+        "archive",
+        new File([archiveBytes], `${probe.entryFileName}.zip`, { type: "application/zip" }),
+    );
+    formData.append("entry", probe.entryFileName);
+    if (probe.programArguments.length > 0) {
+        formData.append("args", probe.programArguments.join("\n"));
+    }
+    const response = await fetch(`http://127.0.0.1:${APP_PORT}/api/session`, {
+        method: "POST",
+        body: formData,
+        signal: AbortSignal.timeout(600_000),
+    });
+    const payload = (await response.json()) as {
+        sessionIdentifier?: string;
+        errorMessage?: string;
+    };
+    if (!payload.sessionIdentifier) {
+        throw new Error(payload.errorMessage ?? "The probe upload failed without an identifier.");
+    }
+    return payload.sessionIdentifier;
+}
 async function fetchExportArchive(sessionIdentifier: string): Promise<Uint8Array> {
     const response = await fetch(`http://127.0.0.1:${APP_PORT}/api/export/${sessionIdentifier}`, {
         signal: AbortSignal.timeout(600_000),
@@ -293,11 +403,8 @@ async function fetchExportArchive(sessionIdentifier: string): Promise<Uint8Array
     }
     return new Uint8Array(await response.arrayBuffer());
 }
-async function stageExportArchive(
-    showcase: ShowcaseUnderTest,
-    archiveBytes: Uint8Array,
-): Promise<void> {
-    const languageDirectory = join(VERIFICATION_ROOT, showcase.languageIdentifier);
+async function stageExportArchive(directoryName: string, archiveBytes: Uint8Array): Promise<void> {
+    const languageDirectory = join(VERIFICATION_ROOT, directoryName);
     await rm(languageDirectory, { recursive: true, force: true });
     await mkdir(languageDirectory, { recursive: true });
     const entries = unzipSync(archiveBytes);
@@ -400,6 +507,83 @@ function firstMeaningfulLine(terminalText: string): string {
         .find((line) => line.startsWith("Error:"));
     return errorLine ?? "unknown error";
 }
+async function sendText(devTools: DevToolsSession, sessionId: string, text: string): Promise<void> {
+    for (const character of text) {
+        await devTools.call("Input.dispatchKeyEvent", { type: "char", text: character }, sessionId);
+    }
+}
+async function verifyProbeInBrowser(
+    devTools: DevToolsSession,
+    probe: FeatureProbeDefinition,
+    directoryName: string,
+    budgetMilliseconds: number,
+): Promise<{ terminalText: string; problems: Array<string> }> {
+    const problems: Array<string> = [];
+    const targetCreation = (await devTools.call("Target.createTarget", {
+        url: "about:blank",
+    })) as { targetId: string };
+    const attachment = (await devTools.call("Target.attachToTarget", {
+        targetId: targetCreation.targetId,
+        flatten: true,
+    })) as { sessionId: string };
+    const sessionId = attachment.sessionId;
+    await devTools.call("Page.enable", {}, sessionId);
+    await devTools.call("Runtime.enable", {}, sessionId);
+    await devTools.call("Log.enable", {}, sessionId);
+    await devTools.call("Network.enable", {}, sessionId);
+    const problemBaseline = devTools.browserProblems.length;
+    await devTools.call(
+        "Page.navigate",
+        { url: `http://127.0.0.1:${HOST_PORT}/${directoryName}/index.html` },
+        sessionId,
+    );
+    const deadline = Date.now() + budgetMilliseconds;
+    let terminalText = "";
+    let lastTerminalText = "";
+    let lastChangeAt = Date.now();
+    let answersSent = 0;
+    while (Date.now() < deadline) {
+        await new Promise((resolve) => setTimeout(resolve, 400));
+        terminalText = await readTerminalText(devTools, sessionId);
+        if (terminalText.includes("PROBE-DONE")) {
+            break;
+        }
+        if (terminalText !== lastTerminalText) {
+            lastTerminalText = terminalText;
+            lastChangeAt = Date.now();
+            continue;
+        }
+        if (Date.now() - lastChangeAt > 1500) {
+            if (answersSent < probe.terminalAnswers.length) {
+                await sendText(devTools, sessionId, probe.terminalAnswers[answersSent] as string);
+                answersSent += 1;
+                await sendEnterKey(devTools, sessionId);
+            } else if (answersSent < probe.terminalAnswers.length + 2) {
+                answersSent += 1;
+                await sendEnterKey(devTools, sessionId);
+            } else {
+                break;
+            }
+            lastChangeAt = Date.now();
+        }
+    }
+    if (!terminalText.includes("PROBE-DONE")) {
+        problems.push("the probe never reached its final line");
+    }
+    if (terminalText.includes("Error:")) {
+        problems.push(`the terminal reported an error: ${firstMeaningfulLine(terminalText)}`);
+    }
+    for (const expectedLine of probe.expectedLines) {
+        if (!terminalText.includes(expectedLine)) {
+            problems.push(`missing expected line: ${expectedLine}`);
+        }
+    }
+    for (const problem of devTools.browserProblems.slice(problemBaseline)) {
+        problems.push(problem);
+    }
+    await devTools.call("Target.closeTarget", { targetId: targetCreation.targetId });
+    return { terminalText, problems };
+}
 class HostileStaticHost {
     private readonly server: Server;
     private constructor(server: Server) {
@@ -498,34 +682,101 @@ const browser = spawn(
     { stdio: ["ignore", "pipe", "pipe"] },
 );
 const outcomes: Array<VerificationOutcome> = [];
+const matrixRows: Array<CompatibilityMatrixRow> = [];
 try {
     await waitForHealth();
     const devTools = await DevToolsSession.connect(await waitForDebugger());
     for (const showcase of SHOWCASES.filter((candidate) =>
         languageFilter.length === 0 ? true : candidate.languageIdentifier === languageFilter,
     )) {
+        const probe = FEATURE_PROBES.find(
+            (candidate) => candidate.languageIdentifier === showcase.languageIdentifier,
+        );
+        const matrixRow: CompatibilityMatrixRow = {
+            languageIdentifier: showcase.languageIdentifier,
+            toolchain: "ready",
+            showcase: "fail",
+            features: {},
+            exportBytes: 0,
+            problems: [],
+        };
+        if (probe) {
+            for (const featureName of ["stdin", "arguments", "fileIo", "multiFile"] as const) {
+                matrixRow.features[featureName] = "pending";
+            }
+        }
         let activeStep = "upload";
         try {
             const sessionIdentifier = await buildSessionFor(showcase);
             activeStep = "export";
             const archiveBytes = await fetchExportArchive(sessionIdentifier);
+            matrixRow.exportBytes = archiveBytes.byteLength;
             activeStep = "stage";
-            await stageExportArchive(showcase, archiveBytes);
+            await stageExportArchive(showcase.languageIdentifier, archiveBytes);
             activeStep = "browser";
             const outcome = await verifyShowcaseInBrowser(devTools, showcase);
             outcome.zipBytes = archiveBytes.byteLength;
             outcomes.push(outcome);
+            matrixRow.showcase = outcome.problems.length === 0 ? "pass" : "fail";
+            matrixRow.problems = [...outcome.problems];
+            if (probe) {
+                const probeDirectoryName = `${showcase.languageIdentifier}-probe`;
+                activeStep = "probe upload";
+                const probeSessionIdentifier = await buildProbeSession(probe);
+                activeStep = "probe export";
+                const probeArchiveBytes = await fetchExportArchive(probeSessionIdentifier);
+                activeStep = "probe stage";
+                await stageExportArchive(probeDirectoryName, probeArchiveBytes);
+                activeStep = "probe browser";
+                const probeResult = await verifyProbeInBrowser(
+                    devTools,
+                    probe,
+                    probeDirectoryName,
+                    showcase.budgetMilliseconds,
+                );
+                matrixRow.features = probeFeatureStatuses(probe, probeResult.terminalText);
+                for (const problem of probeResult.problems) {
+                    matrixRow.problems.push(`probe: ${problem}`);
+                }
+                if (probeResult.problems.length > 0) {
+                    outcomes.push({
+                        languageIdentifier: `${showcase.languageIdentifier} probe`,
+                        zipBytes: probeArchiveBytes.byteLength,
+                        finished: probeResult.terminalText.includes("PROBE-DONE"),
+                        problems: probeResult.problems,
+                        terminalText: probeResult.terminalText,
+                    });
+                }
+            }
         } catch (verificationError) {
-            outcomes.push({
-                languageIdentifier: showcase.languageIdentifier,
-                zipBytes: 0,
-                finished: false,
-                problems: [
-                    `${activeStep} step failed: ${verificationError instanceof Error ? verificationError.message : String(verificationError)}`,
-                ],
-                terminalText: "",
-            });
+            const errorMessage =
+                verificationError instanceof Error
+                    ? verificationError.message
+                    : String(verificationError);
+            if (isToolchainPendingMessage(errorMessage)) {
+                matrixRow.toolchain = "pending";
+                matrixRow.showcase = "pending";
+                matrixRow.features = {
+                    stdin: "pending",
+                    arguments: "pending",
+                    fileIo: "pending",
+                    multiFile: "pending",
+                };
+                scopedLogger.logSuccess(
+                    `${showcase.languageIdentifier}: toolchain pending, skipped (${errorMessage.slice(0, 140)}).`,
+                );
+            } else {
+                matrixRow.problems.push(`${activeStep} step failed: ${errorMessage}`);
+                outcomes.push({
+                    languageIdentifier: showcase.languageIdentifier,
+                    zipBytes: 0,
+                    finished: false,
+                    problems: [...matrixRow.problems],
+                    terminalText: "",
+                });
+            }
         }
+        matrixRows.push(matrixRow);
     }
     devTools.close();
 } finally {
@@ -534,6 +785,15 @@ try {
     staticHost.stop();
     await serverLogPump.catch(() => undefined);
 }
+const matrixDocument: CompatibilityMatrixDocument = {
+    generatedAt: new Date().toISOString(),
+    source: "verify:export",
+    languages: matrixRows,
+};
+await writeFile(
+    join(process.cwd(), "compatibility-matrix.json"),
+    JSON.stringify(matrixDocument, null, 4) + "\n",
+);
 let failureCount = 0;
 for (const outcome of outcomes) {
     const sizeInKilobytes = Math.round(outcome.zipBytes / 1024);
@@ -566,6 +826,12 @@ if (failureCount > 0) {
     process.exit(1);
 }
 scopedLogger.logSuccess("Every verified export ran clean on a hostile static host.");
-for (const [languageIdentifier, reason] of TOOLCHAIN_PENDING_LANGUAGES) {
-    scopedLogger.logSuccess(`not covered: ${languageIdentifier} because ${reason}.`);
+for (const matrixRow of matrixRows) {
+    const featureSummary = Object.entries(matrixRow.features)
+        .map(([featureName, featureStatus]) => `${featureName}:${featureStatus}`)
+        .join(" ");
+    scopedLogger.logInformation(
+        `${matrixRow.languageIdentifier}: showcase ${matrixRow.showcase} (${Math.round(matrixRow.exportBytes / 1024)} KB) ${featureSummary}`,
+    );
 }
+scopedLogger.logSuccess("Compatibility matrix written to compatibility-matrix.json.");
