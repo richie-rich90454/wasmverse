@@ -1,22 +1,9 @@
 {
-    "generatedAt": "2026-10-13T11:45:49.626Z",
+    "generatedAt": "2026-10-13T13:13:11.969Z",
     "source": "verify:export",
     "languages": [
         {
-            "languageIdentifier": "java",
-            "toolchain": "ready",
-            "showcase": "pass",
-            "features": {
-                "stdin": "pass",
-                "multiFile": "pass",
-                "arguments": "pass",
-                "fileIo": "unsupported"
-            },
-            "exportBytes": 130025,
-            "problems": []
-        },
-        {
-            "languageIdentifier": "cpp",
+            "languageIdentifier": "python",
             "toolchain": "ready",
             "showcase": "pass",
             "features": {
@@ -25,7 +12,126 @@
                 "arguments": "pass",
                 "fileIo": "pass"
             },
-            "exportBytes": 175369,
+            "exportBytes": 6556500,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "duckdb",
+            "toolchain": "ready",
+            "showcase": "fail",
+            "features": {
+                "stdin": "pending",
+                "arguments": "pending",
+                "fileIo": "pending",
+                "multiFile": "pending"
+            },
+            "exportBytes": 0,
+            "problems": [
+                "upload step failed: DuckDB runtime file flatbuffers/flatbuffers.js is missing. Run pnpm install."
+            ]
+        },
+        {
+            "languageIdentifier": "pglite",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "unsupported",
+                "multiFile": "unsupported",
+                "arguments": "unsupported",
+                "fileIo": "unsupported"
+            },
+            "exportBytes": 5807839,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "jq",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "unsupported",
+                "multiFile": "unsupported",
+                "arguments": "pass",
+                "fileIo": "unsupported"
+            },
+            "exportBytes": 639677,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "awk",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "unsupported",
+                "arguments": "pass",
+                "fileIo": "pass"
+            },
+            "exportBytes": 303115,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "bash",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "pass"
+            },
+            "exportBytes": 303218,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "ruby",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "pass"
+            },
+            "exportBytes": 9343323,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "lua",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "pass"
+            },
+            "exportBytes": 251895,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "php",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "pass"
+            },
+            "exportBytes": 3847714,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "rust",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "unsupported",
+                "arguments": "pass",
+                "fileIo": "unsupported"
+            },
+            "exportBytes": 116427,
             "problems": []
         },
         {
@@ -42,7 +148,7 @@
             "problems": []
         },
         {
-            "languageIdentifier": "php",
+            "languageIdentifier": "cpp",
             "toolchain": "ready",
             "showcase": "pass",
             "features": {
@@ -51,7 +157,7 @@
                 "arguments": "pass",
                 "fileIo": "pass"
             },
-            "exportBytes": 3847715,
+            "exportBytes": 175370,
             "problems": []
         },
         {
@@ -64,20 +170,7 @@
                 "arguments": "pass",
                 "fileIo": "pass"
             },
-            "exportBytes": 887836,
-            "problems": []
-        },
-        {
-            "languageIdentifier": "csharp",
-            "toolchain": "ready",
-            "showcase": "pass",
-            "features": {
-                "stdin": "pass",
-                "multiFile": "pass",
-                "arguments": "pass",
-                "fileIo": "pass"
-            },
-            "exportBytes": 2868734,
+            "exportBytes": 887832,
             "problems": []
         },
         {
@@ -90,125 +183,10 @@
                 "arguments": "pass",
                 "fileIo": "pass"
             },
-            "exportBytes": 124280,
-            "problems": ["probe: missing expected line: greet:helper:Ada"]
-        },
-        {
-            "languageIdentifier": "ruby",
-            "toolchain": "ready",
-            "showcase": "pass",
-            "features": {
-                "stdin": "pass",
-                "multiFile": "pass",
-                "arguments": "pass",
-                "fileIo": "pass"
-            },
-            "exportBytes": 9343324,
-            "problems": []
-        },
-        {
-            "languageIdentifier": "python",
-            "toolchain": "ready",
-            "showcase": "pass",
-            "features": {
-                "stdin": "pass",
-                "multiFile": "pass",
-                "arguments": "pass",
-                "fileIo": "pass"
-            },
-            "exportBytes": 6556500,
-            "problems": []
-        },
-        {
-            "languageIdentifier": "kotlin",
-            "toolchain": "ready",
-            "showcase": "pass",
-            "features": {
-                "stdin": "pass",
-                "multiFile": "pass",
-                "arguments": "pass",
-                "fileIo": "pass"
-            },
-            "exportBytes": 192646,
-            "problems": []
-        },
-        {
-            "languageIdentifier": "assemblyscript",
-            "toolchain": "ready",
-            "showcase": "pass",
-            "features": {
-                "stdin": "pass",
-                "multiFile": "pass",
-                "arguments": "pass",
-                "fileIo": "unsupported"
-            },
-            "exportBytes": 109223,
-            "problems": []
-        },
-        {
-            "languageIdentifier": "sql",
-            "toolchain": "ready",
-            "showcase": "pass",
-            "features": {
-                "stdin": "unsupported",
-                "multiFile": "unsupported",
-                "arguments": "unsupported",
-                "fileIo": "unsupported"
-            },
-            "exportBytes": 691670,
-            "problems": []
-        },
-        {
-            "languageIdentifier": "typescript",
-            "toolchain": "ready",
-            "showcase": "pass",
-            "features": {
-                "stdin": "pass",
-                "multiFile": "pass",
-                "arguments": "pass",
-                "fileIo": "pass"
-            },
-            "exportBytes": 101863,
-            "problems": []
-        },
-        {
-            "languageIdentifier": "javascript",
-            "toolchain": "ready",
-            "showcase": "pass",
-            "features": {
-                "stdin": "pass",
-                "multiFile": "pass",
-                "arguments": "pass",
-                "fileIo": "pass"
-            },
-            "exportBytes": 100544,
-            "problems": []
-        },
-        {
-            "languageIdentifier": "lua",
-            "toolchain": "ready",
-            "showcase": "pass",
-            "features": {
-                "stdin": "pass",
-                "multiFile": "pass",
-                "arguments": "pass",
-                "fileIo": "pass"
-            },
-            "exportBytes": 251896,
-            "problems": []
-        },
-        {
-            "languageIdentifier": "rust",
-            "toolchain": "ready",
-            "showcase": "pass",
-            "features": {
-                "stdin": "pass",
-                "multiFile": "unsupported",
-                "arguments": "pass",
-                "fileIo": "unsupported"
-            },
-            "exportBytes": 116429,
-            "problems": []
+            "exportBytes": 124279,
+            "problems": [
+                "probe: missing expected line: greet:helper:Ada"
+            ]
         },
         {
             "languageIdentifier": "swift",
@@ -224,22 +202,84 @@
             "problems": []
         },
         {
-            "languageIdentifier": "dart",
+            "languageIdentifier": "kotlin",
             "toolchain": "ready",
             "showcase": "pass",
             "features": {
-                "stdin": "pass",
-                "multiFile": "pass",
-                "arguments": "pass",
-                "fileIo": "pass"
+                "stdin": "pending",
+                "arguments": "pending",
+                "fileIo": "pending",
+                "multiFile": "pending"
             },
-            "exportBytes": 123999,
-            "problems": []
+            "exportBytes": 192646,
+            "problems": [
+                "probe upload step failed: Too many uploads. Wait one minute and try again."
+            ]
+        },
+        {
+            "languageIdentifier": "dart",
+            "toolchain": "ready",
+            "showcase": "fail",
+            "features": {
+                "stdin": "pending",
+                "arguments": "pending",
+                "fileIo": "pending",
+                "multiFile": "pending"
+            },
+            "exportBytes": 0,
+            "problems": [
+                "upload step failed: Too many uploads. Wait one minute and try again."
+            ]
+        },
+        {
+            "languageIdentifier": "java",
+            "toolchain": "ready",
+            "showcase": "fail",
+            "features": {
+                "stdin": "pending",
+                "arguments": "pending",
+                "fileIo": "pending",
+                "multiFile": "pending"
+            },
+            "exportBytes": 0,
+            "problems": [
+                "upload step failed: Too many uploads. Wait one minute and try again."
+            ]
+        },
+        {
+            "languageIdentifier": "csharp",
+            "toolchain": "ready",
+            "showcase": "fail",
+            "features": {
+                "stdin": "pending",
+                "arguments": "pending",
+                "fileIo": "pending",
+                "multiFile": "pending"
+            },
+            "exportBytes": 0,
+            "problems": [
+                "upload step failed: Too many uploads. Wait one minute and try again."
+            ]
+        },
+        {
+            "languageIdentifier": "assemblyscript",
+            "toolchain": "ready",
+            "showcase": "fail",
+            "features": {
+                "stdin": "pending",
+                "arguments": "pending",
+                "fileIo": "pending",
+                "multiFile": "pending"
+            },
+            "exportBytes": 0,
+            "problems": [
+                "upload step failed: Too many uploads. Wait one minute and try again."
+            ]
         },
         {
             "languageIdentifier": "ocaml",
-            "toolchain": "pending",
-            "showcase": "pending",
+            "toolchain": "ready",
+            "showcase": "fail",
             "features": {
                 "stdin": "pending",
                 "arguments": "pending",
@@ -247,12 +287,14 @@
                 "multiFile": "pending"
             },
             "exportBytes": 0,
-            "problems": []
+            "problems": [
+                "upload step failed: Too many uploads. Wait one minute and try again."
+            ]
         },
         {
             "languageIdentifier": "haskell",
-            "toolchain": "pending",
-            "showcase": "pending",
+            "toolchain": "ready",
+            "showcase": "fail",
             "features": {
                 "stdin": "pending",
                 "arguments": "pending",
@@ -260,7 +302,54 @@
                 "multiFile": "pending"
             },
             "exportBytes": 0,
-            "problems": []
+            "problems": [
+                "upload step failed: Too many uploads. Wait one minute and try again."
+            ]
+        },
+        {
+            "languageIdentifier": "javascript",
+            "toolchain": "ready",
+            "showcase": "fail",
+            "features": {
+                "stdin": "pending",
+                "arguments": "pending",
+                "fileIo": "pending",
+                "multiFile": "pending"
+            },
+            "exportBytes": 0,
+            "problems": [
+                "upload step failed: Too many uploads. Wait one minute and try again."
+            ]
+        },
+        {
+            "languageIdentifier": "typescript",
+            "toolchain": "ready",
+            "showcase": "fail",
+            "features": {
+                "stdin": "pending",
+                "arguments": "pending",
+                "fileIo": "pending",
+                "multiFile": "pending"
+            },
+            "exportBytes": 0,
+            "problems": [
+                "upload step failed: Too many uploads. Wait one minute and try again."
+            ]
+        },
+        {
+            "languageIdentifier": "sql",
+            "toolchain": "ready",
+            "showcase": "fail",
+            "features": {
+                "stdin": "pending",
+                "arguments": "pending",
+                "fileIo": "pending",
+                "multiFile": "pending"
+            },
+            "exportBytes": 0,
+            "problems": [
+                "upload step failed: Too many uploads. Wait one minute and try again."
+            ]
         }
     ]
 }
