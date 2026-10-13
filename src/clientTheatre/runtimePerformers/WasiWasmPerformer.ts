@@ -53,10 +53,9 @@ class WasiWasmModuleLoader {
             [stdinFile, stdoutFile, stderrFile, rootDirectory],
             { debug: false },
         );
-        const instance = (await WebAssembly.instantiate(
-            this.compiledModule,
-            wasiInstance.wasiImport as unknown as WebAssembly.Imports,
-        )) as WebAssembly.Instance;
+        const instance = (await WebAssembly.instantiate(this.compiledModule, {
+            wasi_snapshot_preview1: wasiInstance.wasiImport,
+        } as unknown as WebAssembly.Imports)) as WebAssembly.Instance;
         return { instance, wasiInstance };
     }
 }
