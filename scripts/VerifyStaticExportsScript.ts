@@ -123,7 +123,7 @@ const SHOWCASES: ReadonlyArray<ShowcaseUnderTest> = [
     },
     {
         languageIdentifier: "assemblyscript",
-        entryFileName: "main.ts",
+        entryFileName: "main.as",
         budgetMilliseconds: 90_000,
     },
     {
@@ -135,6 +135,21 @@ const SHOWCASES: ReadonlyArray<ShowcaseUnderTest> = [
         languageIdentifier: "haskell",
         entryFileName: "main.hs",
         budgetMilliseconds: 150_000,
+    },
+    {
+        languageIdentifier: "javascript",
+        entryFileName: "main.js",
+        budgetMilliseconds: 120_000,
+    },
+    {
+        languageIdentifier: "typescript",
+        entryFileName: "main.ts",
+        budgetMilliseconds: 120_000,
+    },
+    {
+        languageIdentifier: "sql",
+        entryFileName: "main.sql",
+        budgetMilliseconds: 120_000,
     },
 ];
 function isToolchainPendingMessage(message: string): boolean {
