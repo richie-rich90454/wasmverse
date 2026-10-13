@@ -473,16 +473,16 @@ describe("LocalToolchainProvisioner", () => {
         });
     });
     describe("provisionKotlinWasmToolchain", () => {
-        test("treats kotlinc.bat as present and mirrors it to the probed path", async () => {
+        test("treats kotlinc-js.bat as present and mirrors it to the probed path", async () => {
             const harness = createHarness("win32");
-            harness.fileSystemOperations.markExisting("./.tools/kotlin-wasm/bin/kotlinc.bat");
+            harness.fileSystemOperations.markExisting("./.tools/kotlin-wasm/bin/kotlinc-js.bat");
             await harness.provisioner.provisionKotlinWasmToolchain();
             expect(harness.processRunner.commandHistory).toEqual([]);
             expect(harness.fileSystemOperations.copiedPairs).toEqual([
-                ["./.tools/kotlin-wasm/bin/kotlinc.bat", "./.tools/kotlin-wasm/bin/kotlinc"],
+                ["./.tools/kotlin-wasm/bin/kotlinc-js.bat", "./.tools/kotlin-wasm/bin/kotlinc-js"],
             ]);
             expect(harness.scopedLogger.informations).toContain(
-                "Kotlin/Wasm already provisioned, skipping.",
+                "Kotlin/JS already provisioned, skipping.",
             );
         });
     });
