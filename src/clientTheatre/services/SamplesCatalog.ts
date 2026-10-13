@@ -148,10 +148,10 @@ const SAMPLE_PLATES: ReadonlyArray<SamplePlate> = [
     {
         languageIdentifier: "assemblyscript",
         languageLabel: "AssemblyScript",
-        entryFileName: "main.ts",
+        entryFileName: "main.as",
         programTitle: "Typed WebAssembly memory",
         description: "Static types, heap allocation, and arithmetic run directly on linear memory.",
-        sourceText: sourceTextFor("main.ts"),
+        sourceText: sourceTextFor("main.as"),
     },
     {
         languageIdentifier: "ocaml",
@@ -169,6 +169,33 @@ const SAMPLE_PLATES: ReadonlyArray<SamplePlate> = [
         description:
             "Infinite lazy lists meet type-class polymorphism in a short proof by computation.",
         sourceText: sourceTextFor("main.hs"),
+    },
+    {
+        languageIdentifier: "javascript",
+        languageLabel: "JavaScript",
+        entryFileName: "main.js",
+        programTitle: "Closures, classes, and Map pipelines",
+        description:
+            "Reduce chains, rolling windows, and a Map-backed ledger run in the browser tab.",
+        sourceText: sourceTextFor("main.js"),
+    },
+    {
+        languageIdentifier: "typescript",
+        languageLabel: "TypeScript",
+        entryFileName: "main.ts",
+        programTitle: "Typed pipelines and generics",
+        description:
+            "Typed interfaces, a generic ranking function, and class accessors bundle for the browser.",
+        sourceText: sourceTextFor("main.ts"),
+    },
+    {
+        languageIdentifier: "sql",
+        languageLabel: "SQL",
+        entryFileName: "main.sql",
+        programTitle: "SQLite windows and aggregates",
+        description:
+            "A SQLite ledger is aggregated, ranked, and totaled with window functions in memory.",
+        sourceText: sourceTextFor("main.sql"),
     },
 ];
 async function buildSampleArchive(plate: SamplePlate): Promise<File> {
