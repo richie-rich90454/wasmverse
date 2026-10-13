@@ -111,7 +111,9 @@ class TeaVmPerformer implements TerminalPerformerContract {
                     readLine,
                 );
                 await this.mainInvoker.invokeMain(module, applicationArguments);
-                break;
+                if (!this.attemptInputWasExhausted()) {
+                    break;
+                }
             } catch (runError) {
                 this.outputTracker.flushShownInto(stage);
                 if (terminalInputRaised || isTerminalInputNeeded(runError)) {
@@ -123,8 +125,16 @@ class TeaVmPerformer implements TerminalPerformerContract {
             } finally {
                 this.outputTracker.flushShownInto(stage);
             }
+            const fedLine = await stage.readLine("");
+            fedLines.push(fedLine);
         }
         this.outputTracker.flushShownInto(stage);
+    }
+    private attemptInputWasExhausted(): boolean {
+        const attemptState = (globalThis as Record<string, unknown>)["$wasmverseAttemptState"] as
+            | { exhausted?: boolean }
+            | undefined;
+        return attemptState?.exhausted === true;
     }
     private describeTeaVmError(runError: unknown): string {
         const rawMessage = runError instanceof Error ? runError.message : String(runError);
