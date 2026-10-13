@@ -64,6 +64,15 @@ import { HaskellLanguagePlugin } from "@serverAtelier/languagePlugins/HaskellLan
 import { JavaScriptLanguagePlugin } from "@serverAtelier/languagePlugins/JavaScriptLanguagePlugin.ts";
 import { TypeScriptLanguagePlugin } from "@serverAtelier/languagePlugins/TypeScriptLanguagePlugin.ts";
 import { SqlLanguagePlugin } from "@serverAtelier/languagePlugins/SqlLanguagePlugin.ts";
+import { DuckDbLanguagePlugin } from "@serverAtelier/languagePlugins/DuckDbLanguagePlugin.ts";
+import { PgliteLanguagePlugin } from "@serverAtelier/languagePlugins/PgliteLanguagePlugin.ts";
+import { AwkLanguagePlugin } from "@serverAtelier/languagePlugins/AwkLanguagePlugin.ts";
+import { JqLanguagePlugin } from "@serverAtelier/languagePlugins/JqLanguagePlugin.ts";
+import { BashLanguagePlugin } from "@serverAtelier/languagePlugins/BashLanguagePlugin.ts";
+import { DuckDbWasmRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/DuckDbWasmRuntimeAssembler.ts";
+import { PgliteRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/PgliteRuntimeAssembler.ts";
+import { BusyboxWasiRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/BusyboxWasiRuntimeAssembler.ts";
+import { JqWasmRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/JqWasmRuntimeAssembler.ts";
 class ServerApplication {
     private readonly serverConfiguration: ServerConfiguration;
     private readonly scopedLogger: ScopedLogger;
@@ -221,6 +230,36 @@ class ServerApplication {
             new SqlLanguagePlugin(
                 nullCompilerStrategy,
                 new SqliteWasmRuntimeAssembler(this.fileSystemOperations),
+                sourceFileCopier,
+                manifestWriter,
+            ),
+            new DuckDbLanguagePlugin(
+                nullCompilerStrategy,
+                new DuckDbWasmRuntimeAssembler(this.fileSystemOperations),
+                sourceFileCopier,
+                manifestWriter,
+            ),
+            new PgliteLanguagePlugin(
+                nullCompilerStrategy,
+                new PgliteRuntimeAssembler(this.fileSystemOperations),
+                sourceFileCopier,
+                manifestWriter,
+            ),
+            new AwkLanguagePlugin(
+                nullCompilerStrategy,
+                new BusyboxWasiRuntimeAssembler(this.fileSystemOperations),
+                sourceFileCopier,
+                manifestWriter,
+            ),
+            new JqLanguagePlugin(
+                nullCompilerStrategy,
+                new JqWasmRuntimeAssembler(this.fileSystemOperations),
+                sourceFileCopier,
+                manifestWriter,
+            ),
+            new BashLanguagePlugin(
+                nullCompilerStrategy,
+                new BusyboxWasiRuntimeAssembler(this.fileSystemOperations),
                 sourceFileCopier,
                 manifestWriter,
             ),
