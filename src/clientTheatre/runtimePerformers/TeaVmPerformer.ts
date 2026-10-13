@@ -1,7 +1,10 @@
 import type { TerminalStageController } from "@clientTheatre/services/TerminalStageController.ts";
 import type { TerminalPerformerContract } from "@clientTheatre/runtimePerformers/TerminalPerformerContract.ts";
 import { SessionUserFilesClient } from "@clientTheatre/runtimePerformers/SessionUserFilesClient.ts";
-import { isTerminalInputNeeded } from "@clientTheatre/runtimePerformers/ReplayableStdinFile.ts";
+import {
+    TerminalInputNeededSignal,
+    isTerminalInputNeeded,
+} from "@clientTheatre/runtimePerformers/ReplayableStdinFile.ts";
 import { ReplayOutputTracker } from "@clientTheatre/runtimePerformers/ReplayOutputTracker.ts";
 const MAXIMUM_REPLAY_INPUTS = 1000;
 type TeaVmExportedMain = (
@@ -13,6 +16,7 @@ interface TeaVmGlueModule {
         writeLine: (line: string) => void,
         writeText?: (text: string) => void,
         attempt?: number,
+        readLine?: () => string,
     ): Promise<Record<string, unknown>>;
 }
 class TeaVmGlueModuleLoader {
@@ -34,12 +38,14 @@ class TeaVmGlueModuleLoader {
         glueModule: TeaVmGlueModule,
         attempt: number,
         outputTracker: ReplayOutputTracker,
+        readLine?: () => string,
     ): Promise<Record<string, unknown>> {
         return glueModule.loadTeaVmModule(
             `${this.sessionBaseUrl}/runtime`,
             (line) => outputTracker.appendText(line + "\n"),
             (text) => outputTracker.appendText(text),
             attempt,
+            readLine,
         );
     }
 }
@@ -86,17 +92,29 @@ class TeaVmPerformer implements TerminalPerformerContract {
                 throw new Error("Too many input prompts. Stopping to protect the session.");
             }
             this.outputTracker.beginRun();
+            let attemptLineIndex = 0;
+            let terminalInputRaised = false;
+            const readLine = (): string => {
+                if (attemptLineIndex >= fedLines.length) {
+                    terminalInputRaised = true;
+                    throw new TerminalInputNeededSignal();
+                }
+                const fedLine = fedLines[attemptLineIndex] as string;
+                attemptLineIndex++;
+                return fedLine;
+            };
             try {
                 const module = await this.glueModuleLoader.importAttempt(
                     glueModule,
                     attempt,
                     this.outputTracker,
+                    readLine,
                 );
                 await this.mainInvoker.invokeMain(module, applicationArguments);
                 break;
             } catch (runError) {
                 this.outputTracker.flushShownInto(stage);
-                if (isTerminalInputNeeded(runError)) {
+                if (terminalInputRaised || isTerminalInputNeeded(runError)) {
                     const fedLine = await stage.readLine("");
                     fedLines.push(fedLine);
                     continue;
