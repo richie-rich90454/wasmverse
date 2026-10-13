@@ -2,6 +2,8 @@ import type { BuildContextRecord } from "@sharedKernel/BuildContextRecord.ts";
 import type { CompilerStrategyContract } from "@serverAtelier/compilerStrategies/CompilerStrategyContract.ts";
 import { FileSystemOperations } from "@serverAtelier/utilities/FileSystemOperations.ts";
 import { ProcessRunner } from "@serverAtelier/utilities/ProcessRunner.ts";
+const DEFAULT_DART_BINARY_PATH =
+    process.platform === "win32" ? "./.tools/dart-sdk/bin/dart.exe" : "./.tools/dart-sdk/bin/dart";
 class DartWasmCompilerStrategy implements CompilerStrategyContract {
     private readonly processRunner: ProcessRunner;
     private readonly fileSystemOperations: FileSystemOperations;
@@ -9,33 +11,29 @@ class DartWasmCompilerStrategy implements CompilerStrategyContract {
     constructor(
         processRunner: ProcessRunner,
         fileSystemOperations: FileSystemOperations,
-        dartBinaryPath: string = "./.tools/dart-sdk/bin/dart",
+        dartBinaryPath: string = DEFAULT_DART_BINARY_PATH,
     ) {
         this.processRunner = processRunner;
         this.fileSystemOperations = fileSystemOperations;
         this.dartBinaryPath = dartBinaryPath;
     }
     async compileSourceInto(context: BuildContextRecord): Promise<void> {
-        const toolchainExists = await this.fileSystemOperations.pathExists(this.dartBinaryPath);
-        const dartBinary = toolchainExists ? this.dartBinaryPath : "dart";
-        let outcome;
-        try {
-            outcome = await this.processRunner.runToCompletion(
-                [
-                    dartBinary,
-                    "compile",
-                    "wasm",
-                    context.entryFileRelativePath,
-                    "-o",
-                    `${context.runtimeDirectory}/app.wasm`,
-                ],
-                { workingDirectory: context.sourceDirectory },
-            );
-        } catch {
+        if (!(await this.fileSystemOperations.pathExists(this.dartBinaryPath))) {
             throw new Error(
-                "Dart SDK not found. Run bun run setup to provision ./.tools/dart-sdk/ or install Dart on PATH.",
+                "Dart SDK not found. Run pnpm run setup to provision ./.tools/dart-sdk/.",
             );
         }
+        const outcome = await this.processRunner.runToCompletion(
+            [
+                this.dartBinaryPath,
+                "compile",
+                "wasm",
+                context.entryFileRelativePath,
+                "-o",
+                `${context.runtimeDirectory}/app.wasm`,
+            ],
+            { workingDirectory: context.sourceDirectory },
+        );
         if (outcome.exitCode !== 0) {
             const detail =
                 outcome.standardError.trim().length > 0
