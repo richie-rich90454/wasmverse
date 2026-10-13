@@ -6,6 +6,7 @@ import { pathToFileURL } from "node:url";
 import type { TerminalStageController } from "@clientTheatre/services/TerminalStageController.ts";
 import {
     PhpEvalSourcePreparer,
+    PhpStdinCursor,
     PhpWasmEntryExecutor,
     PhpWasmPerformer,
 } from "@clientTheatre/runtimePerformers/PhpWasmPerformer.ts";
@@ -16,10 +17,8 @@ const FAKE_PHP_WEB_TEXT = [
     "        this.args = args;",
     "        this.onoutput = undefined;",
     "        this.onerror = undefined;",
+    "        this.binary = Promise.resolve({ stdin: undefined });",
     "        globalThis.__phpTestState.constructorArguments = args;",
-    "    }",
-    "    inputString(byteString) {",
-    "        globalThis.__phpTestState.stdin.push(byteString);",
     "    }",
     "    async writeFile(path, data) {",
     "        globalThis.__phpTestState.writtenFiles.push([path, data]);",
@@ -29,8 +28,25 @@ const FAKE_PHP_WEB_TEXT = [
     "    }",
     "    async run(code) {",
     "        globalThis.__phpTestState.ranSources.push(code);",
+    "        if (globalThis.__phpTestState.readUntilNewline) {",
+    "            const stdin = this.args.stdin;",
+    "            for (;;) {",
+    '                const nextByte = typeof stdin === "function" ? stdin() : null;',
+    "                if (nextByte === null) {",
+    "                    globalThis.__phpTestState.exhaustedAt = globalThis.__phpTestState.consumedBytes.length;",
+    "                    return 0;",
+    "                }",
+    "                globalThis.__phpTestState.consumedBytes.push(nextByte);",
+    "                if (nextByte === 10) {",
+    "                    break;",
+    "                }",
+    "            }",
+    "        }",
     '        this.onoutput?.({ detail: ["php says hi\\n"] });',
     "        return 0;",
+    "    }",
+    "    async refresh() {",
+    "        globalThis.__phpTestState.refreshCount += 1;",
     "    }",
     "    flush() {",
     "        globalThis.__phpTestState.flushCount += 1;",
@@ -62,13 +78,8 @@ class FakePhpRuntime {
     onoutput: ((event: { detail: Array<string> }) => void) | undefined = undefined;
     onerror: ((event: { detail: Array<string> }) => void) | undefined = undefined;
     readonly eventLog: Array<string> = [];
-    readonly stdinBytes: Array<string> = [];
     ranSource = "";
     runFailure: Error | undefined = undefined;
-    inputString(byteString: string): void {
-        this.eventLog.push(`stdin:${byteString}`);
-        this.stdinBytes.push(byteString);
-    }
     async writeFile(path: string, _data: string): Promise<void> {
         this.eventLog.push(`writeFile:${path}`);
     }
@@ -85,15 +96,21 @@ class FakePhpRuntime {
         this.onerror?.({ detail: ["err line\n"] });
         return 0;
     }
+    async refresh(): Promise<void> {
+        this.eventLog.push("refresh");
+    }
     flush(): void {
         this.eventLog.push("flush");
     }
 }
 interface PhpTestState {
-    stdin: Array<string>;
     writtenFiles: Array<[string, string]>;
     madeDirectories: Array<string>;
     ranSources: Array<string>;
+    consumedBytes: Array<number>;
+    exhaustedAt: number;
+    readUntilNewline: boolean;
+    refreshCount: number;
     flushCount: number;
     constructorArguments: Record<string, unknown> | undefined;
 }
@@ -125,10 +142,13 @@ async function createPhpFixture(): Promise<PhpFixture> {
     await writeFile(join(phpWebDirectory, "PhpWeb.js"), FAKE_PHP_WEB_TEXT);
     const stage = new FakeTerminalStage();
     const state: PhpTestState = {
-        stdin: [],
         writtenFiles: [],
         madeDirectories: [],
         ranSources: [],
+        consumedBytes: [],
+        exhaustedAt: -1,
+        readUntilNewline: false,
+        refreshCount: 0,
         flushCount: 0,
         constructorArguments: undefined,
     };
@@ -199,8 +219,36 @@ describe("PhpEvalSourcePreparer", () => {
         expect(prepared.endsWith("?><p>Hello <?php echo 1; ?></p>")).toBe(true);
     });
 });
+describe("PhpStdinCursor", () => {
+    test("serves encoded fed lines and reports exhaustion after a data-less read", () => {
+        const cursor = new PhpStdinCursor();
+        cursor.loadLines(["alpha", "beta"]);
+        const expectedBytes = Array.from(new TextEncoder().encode("alpha\nbeta\n"));
+        const consumedBytes: Array<number> = [];
+        for (;;) {
+            const nextByte = cursor.nextByte();
+            if (nextByte === null) {
+                break;
+            }
+            consumedBytes.push(nextByte);
+        }
+        expect(consumedBytes).toEqual(expectedBytes);
+        expect(cursor.exhausted).toBe(false);
+        expect(cursor.nextByte()).toBeNull();
+        expect(cursor.exhausted).toBe(true);
+        cursor.loadLines(["gamma"]);
+        expect(cursor.exhausted).toBe(false);
+        expect(cursor.nextByte()).toBe("g".charCodeAt(0));
+    });
+    test("reports exhaustion immediately when no bytes were ever served", () => {
+        const cursor = new PhpStdinCursor();
+        cursor.loadLines([]);
+        expect(cursor.nextByte()).toBeNull();
+        expect(cursor.exhausted).toBe(true);
+    });
+});
 describe("PhpWasmEntryExecutor", () => {
-    test("feeds stdin bytes before running and routes output through the tracker", async () => {
+    test("writes user files and routes output through the tracker", async () => {
         const runtime = new FakePhpRuntime();
         const outputTracker = new ReplayOutputTracker();
         runtime.onoutput = (event) => outputTracker.appendText(event.detail[0] ?? "");
@@ -215,15 +263,12 @@ describe("PhpWasmEntryExecutor", () => {
                 ["main.php", "<?php echo 1;"],
                 ["lib/util.php", "<?php"],
             ]),
-            ["alpha", "beta"],
             stage as unknown as TerminalStageController,
         );
         expect(runtime.eventLog).toEqual([
             "writeFile:/main.php",
             "mkdir:/lib",
             "writeFile:/lib/util.php",
-            "stdin:alpha\n",
-            "stdin:beta\n",
             "run",
             "flush",
         ]);
@@ -241,7 +286,6 @@ describe("PhpWasmEntryExecutor", () => {
                 "main.php",
                 [],
                 new Map([["main.php", "<?php"]]),
-                [],
                 stage as unknown as TerminalStageController,
             ),
         ).rejects.toThrow("PHP error: boom first line");
@@ -256,7 +300,6 @@ describe("PhpWasmEntryExecutor", () => {
                 "main.php",
                 [],
                 new Map([["other.php", "<?php"]]),
-                [],
                 stage as unknown as TerminalStageController,
             ),
         ).rejects.toThrow("PHP error: Entry file main.php is missing from the session.");
@@ -279,9 +322,29 @@ describe("PhpWasmPerformer", () => {
             expect(ranSource).not.toContain("strict_types");
             expect(ranSource).toContain("echo");
             expect(fixture.state.writtenFiles).toEqual([["/main.php", PHP_USER_SOURCE]]);
-            expect(fixture.state.stdin).toEqual([]);
+            expect(fixture.state.ranSources).toHaveLength(1);
+            expect(fixture.state.refreshCount).toBe(0);
             expect(fixture.state.flushCount).toBeGreaterThan(0);
             expect(fixture.state.constructorArguments?.version).toBe("8.4");
+        } finally {
+            await fixture.dispose();
+        }
+    });
+    test("replays with fed lines when the program exhausts stdin", async () => {
+        const fixture = await createPhpFixture();
+        try {
+            fixture.state.readUntilNewline = true;
+            fixture.stage.inputAnswers.push("Ada");
+            await fixture.performer.loadInto(fixture.stage as unknown as TerminalStageController);
+            await fixture.performer.performOn(fixture.stage as unknown as TerminalStageController);
+            expect(fixture.state.exhaustedAt).toBe(0);
+            expect(fixture.state.ranSources).toHaveLength(2);
+            expect(fixture.state.refreshCount).toBe(1);
+            expect(fixture.state.consumedBytes).toEqual(
+                Array.from(new TextEncoder().encode("Ada\n")),
+            );
+            expect(fixture.stage.prompts).toEqual([""]);
+            expect(fixture.stage.shownText).toBe("php says hi\n");
         } finally {
             await fixture.dispose();
         }
