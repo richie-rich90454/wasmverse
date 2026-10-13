@@ -38,6 +38,9 @@ const PERFORMER_CLASS_BY_LANGUAGE: Record<LanguageIdentifier, string> = {
     assemblyscript: "WasmPackPerformer",
     ocaml: "WasiWasmPerformer",
     haskell: "WasiWasmPerformer",
+    javascript: "JavaScriptPerformer",
+    typescript: "TypeScriptPerformer",
+    sql: "SqliteWasmPerformer",
 };
 const UNSHIPPED_RUNTIME_FILE_PATTERNS: ReadonlyArray<RegExp> = [
     /\.ts$/,
