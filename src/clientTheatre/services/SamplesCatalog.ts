@@ -33,6 +33,41 @@ const SAMPLE_PLATES: ReadonlyArray<SamplePlate> = [
         sourceText: sourceTextFor("main.py"),
     },
     {
+        languageIdentifier: "r",
+        languageLabel: "R",
+        entryFileName: "main.r",
+        programTitle: "Vectorized statistics in WebAssembly",
+        description:
+            "A vectorized sieve, rolling windows, closures, and data frame aggregation in webR.",
+        sourceText: sourceTextFor("main.r"),
+    },
+    {
+        languageIdentifier: "clojurescript",
+        languageLabel: "ClojureScript",
+        entryFileName: "main.cljs",
+        programTitle: "Immutable pipelines through Cherry",
+        description:
+            "Loop/recur, persistent vectors, and higher-order pipelines compile in the browser.",
+        sourceText: sourceTextFor("main.cljs"),
+    },
+    {
+        languageIdentifier: "scheme",
+        languageLabel: "Scheme",
+        entryFileName: "main.scm",
+        programTitle: "Recursive lists and tail-call loops",
+        description:
+            "A recursive sieve, named-let folds, and higher-order mapping run on BiwaScheme.",
+        sourceText: sourceTextFor("main.scm"),
+    },
+    {
+        languageIdentifier: "prolog",
+        languageLabel: "Prolog",
+        entryFileName: "main.pl",
+        programTitle: "Logical inference over generated facts",
+        description: "Recursive rules, negation, and findall build and query a generated ledger.",
+        sourceText: sourceTextFor("main.pl"),
+    },
+    {
         languageIdentifier: "ruby",
         languageLabel: "Ruby",
         entryFileName: "main.rb",
@@ -40,6 +75,42 @@ const SAMPLE_PLATES: ReadonlyArray<SamplePlate> = [
         description:
             "Lazy enumerators, a fiber chain, and a small interpreter for arithmetic expressions.",
         sourceText: sourceTextFor("main.rb"),
+    },
+    {
+        languageIdentifier: "perl",
+        languageLabel: "Perl",
+        entryFileName: "main.pl",
+        programTitle: "RPN stacks and hash reporting",
+        description:
+            "A stack machine, word frequencies, running totals, and an interactive session.",
+        sourceText: sourceTextFor("main.pl"),
+    },
+    {
+        languageIdentifier: "pascal",
+        languageLabel: "Pascal",
+        entryFileName: "main.pas",
+        programTitle: "Records and counted loops",
+        description:
+            "Records, dynamic arrays, and classic loops compile straight to WebAssembly through FPC.",
+        sourceText: sourceTextFor("main.pas"),
+    },
+    {
+        languageIdentifier: "cobol",
+        languageLabel: "COBOL",
+        entryFileName: "main.cob",
+        programTitle: "Tables and computed sequences",
+        description:
+            "COBOL tables, PERFORM loops, and interactive ACCEPT input on the GnuCOBOL pipeline.",
+        sourceText: sourceTextFor("main.cob"),
+    },
+    {
+        languageIdentifier: "fortran",
+        languageLabel: "Fortran",
+        entryFileName: "main.f90",
+        programTitle: "Array intrinsics and sequence math",
+        description:
+            "Whole-array idioms, intrinsic reductions, and interactive scaling through LFortran.",
+        sourceText: sourceTextFor("main.f90"),
     },
     {
         languageIdentifier: "lua",
@@ -241,6 +312,65 @@ const SAMPLE_PLATES: ReadonlyArray<SamplePlate> = [
         description:
             "Shell functions, loops, command substitution, and pipelines run on busybox ash.",
         sourceText: sourceTextFor("main.sh"),
+    },
+    {
+        languageIdentifier: "scala",
+        languageLabel: "Scala",
+        entryFileName: "main.scala",
+        programTitle: "Case classes and collection pipelines",
+        description:
+            "Sealed traits, case classes, and collection pipelines compile through Scala.js.",
+        sourceText: sourceTextFor("main.scala"),
+    },
+    {
+        languageIdentifier: "fsharp",
+        languageLabel: "F#",
+        entryFileName: "Main.fs",
+        programTitle: "Discriminated unions and list pipelines",
+        description:
+            "Pattern matching, records, and list folds compile to JavaScript through Fable.",
+        sourceText: sourceTextFor("Main.fs"),
+    },
+    {
+        languageIdentifier: "elm",
+        languageLabel: "Elm",
+        entryFileName: "Main.elm",
+        programTitle: "A typed Model-Update-View worker",
+        description: "A headless Elm worker drives a typed update loop and streams through a port.",
+        sourceText: sourceTextFor("Main.elm"),
+    },
+    {
+        languageIdentifier: "rescript",
+        languageLabel: "ReScript",
+        entryFileName: "Main.res",
+        programTitle: "Variants and pipe-first pipelines",
+        description: "ReScript variants and pipe-first chaining compile straight to readable ESM.",
+        sourceText: sourceTextFor("Main.res"),
+    },
+    {
+        languageIdentifier: "purescript",
+        languageLabel: "PureScript",
+        entryFileName: "Main.purs",
+        programTitle: "Algebraic effects with a foreign interface",
+        description:
+            "PureScript effects run through a small foreign module that bridges to the host.",
+        sourceText: sourceTextFor("Main.purs"),
+    },
+    {
+        languageIdentifier: "gleam",
+        languageLabel: "Gleam",
+        entryFileName: "main.gleam",
+        programTitle: "Friendly types on the JavaScript target",
+        description: "Gleam's typed pipelines and results compile to clean JavaScript modules.",
+        sourceText: sourceTextFor("main.gleam"),
+    },
+    {
+        languageIdentifier: "haxe",
+        languageLabel: "Haxe",
+        entryFileName: "Main.hx",
+        programTitle: "Static classes across targets",
+        description: "Haxe classes and typed collections compile to an ES module for the browser.",
+        sourceText: sourceTextFor("Main.hx"),
     },
 ];
 async function buildSampleArchive(plate: SamplePlate): Promise<File> {
