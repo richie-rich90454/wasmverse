@@ -22,7 +22,15 @@ const EXPORT_HOST_KEEP_FILE = ".nojekyll";
 const ZIP_COMPRESSION_LEVEL = 9;
 const PERFORMER_CLASS_BY_LANGUAGE: Record<LanguageIdentifier, string> = {
     python: "PyodidePerformer",
+    r: "WebRPerformer",
+    clojurescript: "CherryCljsPerformer",
+    scheme: "BiwaschemePerformer",
+    prolog: "TauPrologPerformer",
     ruby: "RubyWasmPerformer",
+    perl: "ZeroPerlPerformer",
+    pascal: "WasiWasmPerformer",
+    cobol: "EmscriptenPerformer",
+    fortran: "WasiWasmPerformer",
     lua: "LuaWasmPerformer",
     php: "PhpWasmPerformer",
     rust: "WasmPackPerformer",
@@ -46,6 +54,13 @@ const PERFORMER_CLASS_BY_LANGUAGE: Record<LanguageIdentifier, string> = {
     awk: "BusyboxAwkPerformer",
     jq: "JqWasmPerformer",
     bash: "BusyboxShellPerformer",
+    scala: "ScalaJsPerformer",
+    fsharp: "FablePerformer",
+    elm: "ElmPerformer",
+    rescript: "ReScriptPerformer",
+    purescript: "PureScriptPerformer",
+    gleam: "GleamPerformer",
+    haxe: "HaxePerformer",
 };
 const UNSHIPPED_RUNTIME_FILE_PATTERNS: ReadonlyArray<RegExp> = [
     /\.ts$/,
