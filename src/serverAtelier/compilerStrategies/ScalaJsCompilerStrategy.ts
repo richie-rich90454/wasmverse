@@ -9,6 +9,7 @@ const DEFAULT_SCALA_CLI_BINARY_PATH =
         : "./.tools/scala-cli/scala-cli";
 const SCALA_CLI_HOME_DIRECTORY = "./.tools/scala-cli-home";
 const COURSIER_CACHE_DIRECTORY = "./.tools/coursier-cache";
+const COURSIER_ARCHIVE_CACHE_DIRECTORY = "./.tools/coursier-archive-cache";
 const JDK_DIRECTORY = "./.tools/jdk";
 class ScalaJsCompilerStrategy implements CompilerStrategyContract {
     private readonly processRunner: ProcessRunner;
@@ -63,6 +64,10 @@ class ScalaJsCompilerStrategy implements CompilerStrategyContract {
                     PATH: `${resolve(process.cwd(), JDK_DIRECTORY, "bin")}${delimiter}${process.env["PATH"] ?? ""}`,
                     SCALA_CLI_HOME: resolve(process.cwd(), SCALA_CLI_HOME_DIRECTORY),
                     COURSIER_CACHE: resolve(process.cwd(), COURSIER_CACHE_DIRECTORY),
+                    COURSIER_ARCHIVE_CACHE: resolve(
+                        process.cwd(),
+                        COURSIER_ARCHIVE_CACHE_DIRECTORY,
+                    ),
                 },
             },
         );
