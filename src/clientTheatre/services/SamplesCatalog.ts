@@ -139,6 +139,42 @@ const SAMPLE_PLATES: ReadonlyArray<SamplePlate> = [
         sourceText: sourceTextFor("main.rs"),
     },
     {
+        languageIdentifier: "commonlisp",
+        languageLabel: "Common Lisp",
+        entryFileName: "main.lisp",
+        programTitle: "Recursive lists and formatted reports",
+        description:
+            "A recursive sieve, higher-order mapping, and formatted reporting run on JSCL.",
+        sourceText: sourceTextFor("main.lisp"),
+    },
+    {
+        languageIdentifier: "tcl",
+        languageLabel: "Tcl",
+        entryFileName: "main.tcl",
+        programTitle: "Procedures, lists, and string maps",
+        description:
+            "Tcl procedures, list processing, and dict-driven reports run on the wacl WebAssembly Tcl.",
+        sourceText: sourceTextFor("main.tcl"),
+    },
+    {
+        languageIdentifier: "forth",
+        languageLabel: "Forth",
+        entryFileName: "main.fth",
+        programTitle: "A stack machine in the browser",
+        description:
+            "Colon definitions, counted loops, and stack arithmetic run on a built-in Forth interpreter.",
+        sourceText: sourceTextFor("main.fth"),
+    },
+    {
+        languageIdentifier: "smalltalk",
+        languageLabel: "Smalltalk",
+        entryFileName: "main.st",
+        programTitle: "Blocks, collections, and message sends",
+        description:
+            "Blocks, collection pipelines, and cascades evaluate in a Smalltalk-80 interpreter.",
+        sourceText: sourceTextFor("main.st"),
+    },
+    {
         languageIdentifier: "c",
         languageLabel: "C",
         entryFileName: "main.c",
@@ -146,6 +182,41 @@ const SAMPLE_PLATES: ReadonlyArray<SamplePlate> = [
         description:
             "A bump arena, tagged unions, and a hand-written state machine drive the output.",
         sourceText: sourceTextFor("main.c"),
+    },
+    {
+        languageIdentifier: "brainfuck",
+        languageLabel: "Brainfuck",
+        entryFileName: "main.bf",
+        programTitle: "Tape loops and byte echo",
+        description:
+            "A generated tape program prints a banner twice from a loop, then echoes a typed byte.",
+        sourceText: sourceTextFor("main.bf"),
+    },
+    {
+        languageIdentifier: "befunge",
+        languageLabel: "Befunge",
+        entryFileName: "main.bef",
+        programTitle: "A two-dimensional program counter",
+        description:
+            "Direction control, stack arithmetic, and stdin reads drive an 80x25 playfield.",
+        sourceText: sourceTextFor("main.bef"),
+    },
+    {
+        languageIdentifier: "lolcode",
+        languageLabel: "LOLCODE",
+        entryFileName: "main.lol",
+        programTitle: "Arithmetic with LOLCODE grammar",
+        description: "Variables, loops, comparisons, and SMOOSH string building run step by step.",
+        sourceText: sourceTextFor("main.lol"),
+    },
+    {
+        languageIdentifier: "apl",
+        languageLabel: "APL",
+        entryFileName: "main.apl",
+        programTitle: "Array programming on ngn/apl",
+        description:
+            "Iota, reductions, a prime sieve, and quad input run on the vendored APL interpreter.",
+        sourceText: sourceTextFor("main.apl"),
     },
     {
         languageIdentifier: "cpp",
@@ -157,6 +228,42 @@ const SAMPLE_PLATES: ReadonlyArray<SamplePlate> = [
         sourceText: sourceTextFor("main.cpp"),
     },
     {
+        languageIdentifier: "riscv",
+        languageLabel: "RISC-V assembly",
+        entryFileName: "main.s",
+        programTitle: "RV32I assembly with a sieve",
+        description:
+            "Hand-written RV32I runs on an in-tab emulator: syscalls, argv, and a prime sieve.",
+        sourceText: sourceTextFor("main.s"),
+    },
+    {
+        languageIdentifier: "verilog",
+        languageLabel: "Verilog",
+        entryFileName: "main.v",
+        programTitle: "Ripple adder and LFSR testbench",
+        description:
+            "Icarus Verilog compiles to WebAssembly and simulated modules stream $display output.",
+        sourceText: sourceTextFor("main.v"),
+    },
+    {
+        languageIdentifier: "solidity",
+        languageLabel: "Solidity",
+        entryFileName: "main.sol",
+        programTitle: "Contracts deployed to an in-tab EVM",
+        description:
+            "solc compiles in the browser, the contract deploys to an in-memory EVM, and main() runs.",
+        sourceText: sourceTextFor("main.sol"),
+    },
+    {
+        languageIdentifier: "vimscript",
+        languageLabel: "Vim script",
+        entryFileName: "main.vim",
+        programTitle: "Headless Vim automation",
+        description:
+            "A real Vim runs in silent Ex mode: buffers, substitutions, and scripted reporting.",
+        sourceText: sourceTextFor("main.vim"),
+    },
+    {
         languageIdentifier: "go",
         languageLabel: "Go",
         entryFileName: "main.go",
@@ -164,6 +271,41 @@ const SAMPLE_PLATES: ReadonlyArray<SamplePlate> = [
         description:
             "A worker pool fans out prime scans across channels and collects ordered results.",
         sourceText: sourceTextFor("main.go"),
+    },
+    {
+        languageIdentifier: "logo",
+        languageLabel: "Logo",
+        entryFileName: "main.logo",
+        programTitle: "Procedures, lists, and a text turtle",
+        description:
+            "Recursive procedures, list operations, and an ASCII turtle spiral run in the browser.",
+        sourceText: sourceTextFor("main.logo"),
+    },
+    {
+        languageIdentifier: "gwbasic",
+        languageLabel: "GW-BASIC",
+        entryFileName: "main.bas",
+        programTitle: "Line numbers, arrays, and GOSUB",
+        description: "Classic GW-BASIC programs with FOR/NEXT, DATA, seeded RND, and subroutines.",
+        sourceText: sourceTextFor("main.bas"),
+    },
+    {
+        languageIdentifier: "sml",
+        languageLabel: "Standard ML",
+        entryFileName: "main.sml",
+        programTitle: "Typed modules and list pipelines",
+        description:
+            "Standard ML compilation arrives once ./.tools/sml/ is provisioned; see pnpm run setup.",
+        sourceText: sourceTextFor("main.sml"),
+    },
+    {
+        languageIdentifier: "m6502",
+        languageLabel: "6502 Assembly",
+        entryFileName: "main.6502",
+        programTitle: "NMOS opcodes on a built-in emulator",
+        description:
+            "A two-pass assembler and a 6502 emulator print Fibonacci over memory-mapped IO.",
+        sourceText: sourceTextFor("main.6502"),
     },
     {
         languageIdentifier: "zig",
