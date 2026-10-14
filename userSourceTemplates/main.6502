@@ -1,0 +1,85 @@
+; WASMVerse 6502 showcase for the built-in assembler and emulator.
+; Memory-mapped IO convention:
+;   $F001 write: append the character code to the terminal
+;   $F002 write: halt the program with the exit code in the low byte
+;   $F004 read : next stdin byte (line characters, then CR 13, then LF 10)
+; Zero page $00/$01 holds the print pointer; $10-$12 are fib words.
+
+        .org $0200
+
+start:
+        lda #<bannerText
+        sta $00
+        lda #>bannerText
+        sta $01
+        jsr printString
+
+        lda #0
+        sta $10
+        lda #1
+        sta $11
+        ldx #10
+fibLoop:
+        lda $10
+        jsr printByte
+        lda #10
+        sta $F001
+        lda $10
+        clc
+        adc $11
+        sta $12
+        lda $11
+        sta $10
+        lda $12
+        sta $11
+        dex
+        bne fibLoop
+
+        lda #<doneText
+        sta $00
+        lda #>doneText
+        sta $01
+        jsr printString
+        lda #0
+        sta $F002
+
+printString:
+        ldy #0
+printStringLoop:
+        lda ($00),y
+        beq printStringDone
+        sta $F001
+        iny
+        jmp printStringLoop
+printStringDone:
+        rts
+
+printByte:
+        stx $04
+        ldx #0
+printByteTens:
+        cmp #10
+        bcc printByteTensDone
+        sbc #10
+        inx
+        jmp printByteTens
+printByteTensDone:
+        sta $03
+        cpx #0
+        beq printByteSkipTens
+        txa
+        clc
+        adc #48
+        sta $F001
+printByteSkipTens:
+        lda $03
+        clc
+        adc #48
+        sta $F001
+        ldx $04
+        rts
+
+bannerText:
+        .byte "WASMVerse 6502 showcase", 10, 0
+doneText:
+        .byte "Showcase complete.", 10, 0
