@@ -36,7 +36,15 @@ const FEATURE_COLUMN_LABELS: Readonly<Record<FeatureName, string>> = {
 };
 const LANGUAGE_DISPLAY_LABELS: Readonly<Record<string, string>> = {
     python: "Python",
+    r: "R",
+    clojurescript: "ClojureScript",
+    scheme: "Scheme",
+    prolog: "Prolog",
     ruby: "Ruby",
+    perl: "Perl",
+    pascal: "Pascal",
+    cobol: "COBOL",
+    fortran: "Fortran",
     lua: "Lua",
     php: "PHP",
     rust: "Rust",
@@ -60,6 +68,13 @@ const LANGUAGE_DISPLAY_LABELS: Readonly<Record<string, string>> = {
     awk: "AWK",
     jq: "jq",
     bash: "Bash",
+    scala: "Scala",
+    fsharp: "F#",
+    elm: "Elm",
+    rescript: "ReScript",
+    purescript: "PureScript",
+    gleam: "Gleam",
+    haxe: "Haxe",
 };
 function displayLabelForLanguage(languageIdentifier: string): string {
     return LANGUAGE_DISPLAY_LABELS[languageIdentifier] ?? languageIdentifier;
