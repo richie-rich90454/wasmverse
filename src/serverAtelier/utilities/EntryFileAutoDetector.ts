@@ -1,7 +1,16 @@
 const PREFERRED_ENTRY_STEMS: ReadonlyArray<string> = ["main", "program", "app", "index"];
 const CODE_FILE_EXTENSIONS: ReadonlyArray<string> = [
     ".py",
+    ".r",
+    ".cljs",
+    ".scm",
+    ".pl",
     ".rb",
+    ".pl",
+    ".pm",
+    ".pas",
+    ".cob",
+    ".f90",
     ".lua",
     ".php",
     ".rs",
@@ -32,6 +41,14 @@ const CODE_FILE_EXTENSIONS: ReadonlyArray<string> = [
     ".ml",
     ".mli",
     ".hs",
+    ".scala",
+    ".fs",
+    ".elm",
+    ".res",
+    ".resi",
+    ".purs",
+    ".gleam",
+    ".hx",
 ];
 function isCodeFile(relativePath: string): boolean {
     const lowercasedPath = relativePath.toLowerCase();
