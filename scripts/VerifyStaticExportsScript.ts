@@ -152,9 +152,49 @@ const SHOWCASES: ReadonlyArray<ShowcaseUnderTest> = [
         budgetMilliseconds: 180_000,
     },
     {
+        languageIdentifier: "commonlisp",
+        entryFileName: "main.lisp",
+        budgetMilliseconds: 150_000,
+    },
+    {
+        languageIdentifier: "tcl",
+        entryFileName: "main.tcl",
+        budgetMilliseconds: 150_000,
+    },
+    {
+        languageIdentifier: "forth",
+        entryFileName: "main.fth",
+        budgetMilliseconds: 90_000,
+    },
+    {
+        languageIdentifier: "smalltalk",
+        entryFileName: "main.st",
+        budgetMilliseconds: 90_000,
+    },
+    {
         languageIdentifier: "c",
         entryFileName: "main.c",
         budgetMilliseconds: 150_000,
+    },
+    {
+        languageIdentifier: "brainfuck",
+        entryFileName: "main.bf",
+        budgetMilliseconds: 60_000,
+    },
+    {
+        languageIdentifier: "befunge",
+        entryFileName: "main.bef",
+        budgetMilliseconds: 60_000,
+    },
+    {
+        languageIdentifier: "lolcode",
+        entryFileName: "main.lol",
+        budgetMilliseconds: 60_000,
+    },
+    {
+        languageIdentifier: "apl",
+        entryFileName: "main.apl",
+        budgetMilliseconds: 90_000,
     },
     {
         languageIdentifier: "cpp",
@@ -162,9 +202,49 @@ const SHOWCASES: ReadonlyArray<ShowcaseUnderTest> = [
         budgetMilliseconds: 150_000,
     },
     {
+        languageIdentifier: "riscv",
+        entryFileName: "main.s",
+        budgetMilliseconds: 120_000,
+    },
+    {
+        languageIdentifier: "verilog",
+        entryFileName: "main.v",
+        budgetMilliseconds: 120_000,
+    },
+    {
+        languageIdentifier: "solidity",
+        entryFileName: "main.sol",
+        budgetMilliseconds: 180_000,
+    },
+    {
+        languageIdentifier: "vimscript",
+        entryFileName: "main.vim",
+        budgetMilliseconds: 180_000,
+    },
+    {
         languageIdentifier: "go",
         entryFileName: "main.go",
         budgetMilliseconds: 90_000,
+    },
+    {
+        languageIdentifier: "logo",
+        entryFileName: "main.logo",
+        budgetMilliseconds: 60_000,
+    },
+    {
+        languageIdentifier: "gwbasic",
+        entryFileName: "main.bas",
+        budgetMilliseconds: 60_000,
+    },
+    {
+        languageIdentifier: "sml",
+        entryFileName: "main.sml",
+        budgetMilliseconds: 120_000,
+    },
+    {
+        languageIdentifier: "m6502",
+        entryFileName: "main.6502",
+        budgetMilliseconds: 60_000,
     },
     {
         languageIdentifier: "zig",
