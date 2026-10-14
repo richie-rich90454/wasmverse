@@ -57,9 +57,49 @@ const SHOWCASES: ReadonlyArray<ShowcaseUnderTest> = [
         budgetMilliseconds: 150_000,
     },
     {
+        languageIdentifier: "r",
+        entryFileName: "main.r",
+        budgetMilliseconds: 300_000,
+    },
+    {
+        languageIdentifier: "clojurescript",
+        entryFileName: "main.cljs",
+        budgetMilliseconds: 150_000,
+    },
+    {
+        languageIdentifier: "scheme",
+        entryFileName: "main.scm",
+        budgetMilliseconds: 120_000,
+    },
+    {
+        languageIdentifier: "prolog",
+        entryFileName: "main.pl",
+        budgetMilliseconds: 120_000,
+    },
+    {
         languageIdentifier: "ruby",
         entryFileName: "main.rb",
         budgetMilliseconds: 150_000,
+    },
+    {
+        languageIdentifier: "perl",
+        entryFileName: "main.pl",
+        budgetMilliseconds: 150_000,
+    },
+    {
+        languageIdentifier: "pascal",
+        entryFileName: "main.pas",
+        budgetMilliseconds: 90_000,
+    },
+    {
+        languageIdentifier: "cobol",
+        entryFileName: "main.cob",
+        budgetMilliseconds: 150_000,
+    },
+    {
+        languageIdentifier: "fortran",
+        entryFileName: "main.f90",
+        budgetMilliseconds: 90_000,
     },
     {
         languageIdentifier: "lua",
@@ -67,8 +107,43 @@ const SHOWCASES: ReadonlyArray<ShowcaseUnderTest> = [
         budgetMilliseconds: 90_000,
     },
     {
+        languageIdentifier: "scala",
+        entryFileName: "main.scala",
+        budgetMilliseconds: 150_000,
+    },
+    {
+        languageIdentifier: "fsharp",
+        entryFileName: "Main.fs",
+        budgetMilliseconds: 150_000,
+    },
+    {
+        languageIdentifier: "elm",
+        entryFileName: "Main.elm",
+        budgetMilliseconds: 120_000,
+    },
+    {
         languageIdentifier: "php",
         entryFileName: "main.php",
+        budgetMilliseconds: 120_000,
+    },
+    {
+        languageIdentifier: "rescript",
+        entryFileName: "Main.res",
+        budgetMilliseconds: 150_000,
+    },
+    {
+        languageIdentifier: "purescript",
+        entryFileName: "Main.purs",
+        budgetMilliseconds: 150_000,
+    },
+    {
+        languageIdentifier: "gleam",
+        entryFileName: "main.gleam",
+        budgetMilliseconds: 120_000,
+    },
+    {
+        languageIdentifier: "haxe",
+        entryFileName: "Main.hx",
         budgetMilliseconds: 120_000,
     },
     {
