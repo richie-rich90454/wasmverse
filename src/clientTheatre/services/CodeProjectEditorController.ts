@@ -189,9 +189,53 @@ const CODE_EDITOR_LANGUAGE_TABLE: ReadonlyArray<CodeEditorLanguageEntry> = [
         loadLanguageSupport: async () => (await import("@codemirror/lang-rust")).rust(),
     },
     {
+        extensions: [".lisp", ".lsp", ".cl"],
+        languageLabel: "Common Lisp",
+        loadLanguageSupport: loadStreamLanguageFrom(
+            async () => (await import("@codemirror/legacy-modes/mode/commonlisp")).commonLisp,
+        ),
+    },
+    {
+        extensions: [".tcl"],
+        languageLabel: "Tcl",
+        loadLanguageSupport: loadStreamLanguageFrom(
+            async () => (await import("@codemirror/legacy-modes/mode/tcl")).tcl,
+        ),
+    },
+    {
+        extensions: [".fth", ".forth"],
+        languageLabel: "Forth",
+        loadLanguageSupport: loadStreamLanguageFrom(
+            async () => (await import("@codemirror/legacy-modes/mode/forth")).forth,
+        ),
+    },
+    {
+        extensions: [".st"],
+        languageLabel: "Smalltalk",
+        loadLanguageSupport: loadStreamLanguageFrom(
+            async () => (await import("@codemirror/legacy-modes/mode/smalltalk")).smalltalk,
+        ),
+    },
+    {
         extensions: [".c", ".h"],
         languageLabel: "C",
         loadLanguageSupport: async () => (await import("@codemirror/lang-cpp")).cpp(),
+    },
+    {
+        extensions: [".bf"],
+        languageLabel: "Brainfuck",
+    },
+    {
+        extensions: [".bef"],
+        languageLabel: "Befunge",
+    },
+    {
+        extensions: [".lol"],
+        languageLabel: "LOLCODE",
+    },
+    {
+        extensions: [".apl", ".dyalog"],
+        languageLabel: "APL",
     },
     {
         extensions: [".cpp", ".cc", ".hpp"],
@@ -199,9 +243,47 @@ const CODE_EDITOR_LANGUAGE_TABLE: ReadonlyArray<CodeEditorLanguageEntry> = [
         loadLanguageSupport: async () => (await import("@codemirror/lang-cpp")).cpp(),
     },
     {
+        extensions: [".s", ".asm", ".riscv"],
+        languageLabel: "RISC-V assembly",
+    },
+    {
+        extensions: [".v"],
+        languageLabel: "Verilog",
+        loadLanguageSupport: loadStreamLanguageFrom(
+            async () => (await import("@codemirror/legacy-modes/mode/verilog")).verilog,
+        ),
+    },
+    {
+        extensions: [".sol"],
+        languageLabel: "Solidity",
+    },
+    {
+        extensions: [".vim"],
+        languageLabel: "Vim script",
+    },
+    {
         extensions: [".go"],
         languageLabel: "Go",
         loadLanguageSupport: async () => (await import("@codemirror/lang-go")).go(),
+    },
+    {
+        extensions: [".logo", ".lgo"],
+        languageLabel: "Logo",
+    },
+    {
+        extensions: [".bas"],
+        languageLabel: "GW-BASIC",
+    },
+    {
+        extensions: [".sml", ".sig"],
+        languageLabel: "Standard ML",
+        loadLanguageSupport: loadStreamLanguageFrom(
+            async () => (await import("@codemirror/legacy-modes/mode/mllike")).sml,
+        ),
+    },
+    {
+        extensions: [".6502", ".a65"],
+        languageLabel: "6502 Assembly",
     },
     {
         extensions: [".zig"],
