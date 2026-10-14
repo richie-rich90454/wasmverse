@@ -2,7 +2,12 @@ import type { LanguageIdentifier } from "@sharedKernel/LanguageIdentifier.ts";
 import type { SessionDescriptorRecord } from "@sharedKernel/SessionDescriptorRecord.ts";
 import type { TerminalPerformerContract } from "@clientTheatre/runtimePerformers/TerminalPerformerContract.ts";
 import { PyodidePerformer } from "@clientTheatre/runtimePerformers/PyodidePerformer.ts";
+import { WebRPerformer } from "@clientTheatre/runtimePerformers/WebRPerformer.ts";
+import { CherryCljsPerformer } from "@clientTheatre/runtimePerformers/CherryCljsPerformer.ts";
+import { BiwaschemePerformer } from "@clientTheatre/runtimePerformers/BiwaschemePerformer.ts";
+import { TauPrologPerformer } from "@clientTheatre/runtimePerformers/TauPrologPerformer.ts";
 import { RubyWasmPerformer } from "@clientTheatre/runtimePerformers/RubyWasmPerformer.ts";
+import { ZeroPerlPerformer } from "@clientTheatre/runtimePerformers/ZeroPerlPerformer.ts";
 import { LuaWasmPerformer } from "@clientTheatre/runtimePerformers/LuaWasmPerformer.ts";
 import { PhpWasmPerformer } from "@clientTheatre/runtimePerformers/PhpWasmPerformer.ts";
 import { WasmPackPerformer } from "@clientTheatre/runtimePerformers/WasmPackPerformer.ts";
@@ -15,6 +20,13 @@ import { TeaVmPerformer } from "@clientTheatre/runtimePerformers/TeaVmPerformer.
 import { JavaScriptPerformer } from "@clientTheatre/runtimePerformers/JavaScriptPerformer.ts";
 import { TypeScriptPerformer } from "@clientTheatre/runtimePerformers/TypeScriptPerformer.ts";
 import { KotlinJsPerformer } from "@clientTheatre/runtimePerformers/KotlinJsPerformer.ts";
+import { ScalaJsPerformer } from "@clientTheatre/runtimePerformers/ScalaJsPerformer.ts";
+import { FablePerformer } from "@clientTheatre/runtimePerformers/FablePerformer.ts";
+import { ElmPerformer } from "@clientTheatre/runtimePerformers/ElmPerformer.ts";
+import { ReScriptPerformer } from "@clientTheatre/runtimePerformers/ReScriptPerformer.ts";
+import { PureScriptPerformer } from "@clientTheatre/runtimePerformers/PureScriptPerformer.ts";
+import { GleamPerformer } from "@clientTheatre/runtimePerformers/GleamPerformer.ts";
+import { HaxePerformer } from "@clientTheatre/runtimePerformers/HaxePerformer.ts";
 import { SqliteWasmPerformer } from "@clientTheatre/runtimePerformers/SqliteWasmPerformer.ts";
 import { DuckDbWasmPerformer } from "@clientTheatre/runtimePerformers/DuckDbWasmPerformer.ts";
 import { PglitePerformer } from "@clientTheatre/runtimePerformers/PglitePerformer.ts";
@@ -31,7 +43,15 @@ class TerminalPerformerFactory {
             [LanguageIdentifier, (sessionBaseUrl: string) => TerminalPerformerContract]
         > = [
             ["python", (sessionBaseUrl) => new PyodidePerformer(sessionBaseUrl)],
+            ["r", (sessionBaseUrl) => new WebRPerformer(sessionBaseUrl)],
+            ["clojurescript", (sessionBaseUrl) => new CherryCljsPerformer(sessionBaseUrl)],
+            ["scheme", (sessionBaseUrl) => new BiwaschemePerformer(sessionBaseUrl)],
+            ["prolog", (sessionBaseUrl) => new TauPrologPerformer(sessionBaseUrl)],
             ["ruby", (sessionBaseUrl) => new RubyWasmPerformer(sessionBaseUrl)],
+            ["perl", (sessionBaseUrl) => new ZeroPerlPerformer(sessionBaseUrl)],
+            ["pascal", (sessionBaseUrl) => new WasiWasmPerformer(sessionBaseUrl)],
+            ["cobol", (sessionBaseUrl) => new EmscriptenPerformer(sessionBaseUrl)],
+            ["fortran", (sessionBaseUrl) => new WasiWasmPerformer(sessionBaseUrl)],
             ["lua", (sessionBaseUrl) => new LuaWasmPerformer(sessionBaseUrl)],
             ["php", (sessionBaseUrl) => new PhpWasmPerformer(sessionBaseUrl)],
             ["rust", (sessionBaseUrl) => new WasmPackPerformer(sessionBaseUrl)],
@@ -55,6 +75,13 @@ class TerminalPerformerFactory {
             ["awk", (sessionBaseUrl) => new BusyboxAwkPerformer(sessionBaseUrl)],
             ["jq", (sessionBaseUrl) => new JqWasmPerformer(sessionBaseUrl)],
             ["bash", (sessionBaseUrl) => new BusyboxShellPerformer(sessionBaseUrl)],
+            ["scala", (sessionBaseUrl) => new ScalaJsPerformer(sessionBaseUrl)],
+            ["fsharp", (sessionBaseUrl) => new FablePerformer(sessionBaseUrl)],
+            ["elm", (sessionBaseUrl) => new ElmPerformer(sessionBaseUrl)],
+            ["rescript", (sessionBaseUrl) => new ReScriptPerformer(sessionBaseUrl)],
+            ["purescript", (sessionBaseUrl) => new PureScriptPerformer(sessionBaseUrl)],
+            ["gleam", (sessionBaseUrl) => new GleamPerformer(sessionBaseUrl)],
+            ["haxe", (sessionBaseUrl) => new HaxePerformer(sessionBaseUrl)],
         ];
         this.creatorClosures = new Map(performerEntries);
     }
