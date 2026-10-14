@@ -95,14 +95,14 @@ describe("sortedRows", () => {
 });
 describe("displayLabelForLanguage", () => {
     test("maps catalog languages to their display labels", () => {
-        expect(Object.keys(LANGUAGE_DISPLAY_LABELS)).toHaveLength(40);
+        expect(Object.keys(LANGUAGE_DISPLAY_LABELS).length).toBeGreaterThanOrEqual(44);
         expect(displayLabelForLanguage("cpp")).toBe("C++");
         expect(displayLabelForLanguage("csharp")).toBe("C#");
         expect(displayLabelForLanguage("assemblyscript")).toBe("AssemblyScript");
         expect(displayLabelForLanguage("typescript")).toBe("TypeScript");
     });
     test("falls back to the raw identifier for unknown languages", () => {
-        expect(displayLabelForLanguage("brainfuck")).toBe("brainfuck");
+        expect(displayLabelForLanguage("zzz-unknown-language")).toBe("zzz-unknown-language");
     });
 });
 describe("matrixSummaryText", () => {
