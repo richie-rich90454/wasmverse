@@ -112,10 +112,63 @@ const CODE_EDITOR_LANGUAGE_TABLE: ReadonlyArray<CodeEditorLanguageEntry> = [
         loadLanguageSupport: async () => (await import("@codemirror/lang-python")).python(),
     },
     {
+        extensions: [".r"],
+        languageLabel: "R",
+        loadLanguageSupport: loadStreamLanguageFrom(
+            async () => (await import("@codemirror/legacy-modes/mode/r")).r,
+        ),
+    },
+    {
+        extensions: [".cljs"],
+        languageLabel: "ClojureScript",
+        loadLanguageSupport: loadStreamLanguageFrom(
+            async () => (await import("@codemirror/legacy-modes/mode/clojure")).clojure,
+        ),
+    },
+    {
+        extensions: [".scm"],
+        languageLabel: "Scheme",
+        loadLanguageSupport: loadStreamLanguageFrom(
+            async () => (await import("@codemirror/legacy-modes/mode/scheme")).scheme,
+        ),
+    },
+    {
+        extensions: [".pl"],
+        languageLabel: "Prolog",
+    },
+    {
         extensions: [".rb"],
         languageLabel: "Ruby",
         loadLanguageSupport: loadStreamLanguageFrom(
             async () => (await import("@codemirror/legacy-modes/mode/ruby")).ruby,
+        ),
+    },
+    {
+        extensions: [".pl", ".pm"],
+        languageLabel: "Perl",
+        loadLanguageSupport: loadStreamLanguageFrom(
+            async () => (await import("@codemirror/legacy-modes/mode/perl")).perl,
+        ),
+    },
+    {
+        extensions: [".pas"],
+        languageLabel: "Pascal",
+        loadLanguageSupport: loadStreamLanguageFrom(
+            async () => (await import("@codemirror/legacy-modes/mode/pascal")).pascal,
+        ),
+    },
+    {
+        extensions: [".cob"],
+        languageLabel: "COBOL",
+        loadLanguageSupport: loadStreamLanguageFrom(
+            async () => (await import("@codemirror/legacy-modes/mode/cobol")).cobol,
+        ),
+    },
+    {
+        extensions: [".f90"],
+        languageLabel: "Fortran",
+        loadLanguageSupport: loadStreamLanguageFrom(
+            async () => (await import("@codemirror/legacy-modes/mode/fortran")).fortran,
         ),
     },
     {
@@ -252,6 +305,53 @@ const CODE_EDITOR_LANGUAGE_TABLE: ReadonlyArray<CodeEditorLanguageEntry> = [
         loadLanguageSupport: loadStreamLanguageFrom(
             async () => (await import("@codemirror/legacy-modes/mode/shell")).shell,
         ),
+    },
+    {
+        extensions: [".scala"],
+        languageLabel: "Scala",
+        loadLanguageSupport: loadStreamLanguageFrom(
+            async () => (await import("@codemirror/legacy-modes/mode/clike")).scala,
+        ),
+    },
+    {
+        extensions: [".fs", ".fsx"],
+        languageLabel: "F#",
+        loadLanguageSupport: loadStreamLanguageFrom(
+            async () => (await import("@codemirror/legacy-modes/mode/mllike")).fSharp,
+        ),
+    },
+    {
+        extensions: [".elm"],
+        languageLabel: "Elm",
+        loadLanguageSupport: loadStreamLanguageFrom(
+            async () => (await import("@codemirror/legacy-modes/mode/elm")).elm,
+        ),
+    },
+    {
+        extensions: [".res", ".resi"],
+        languageLabel: "ReScript",
+        loadLanguageSupport: async () =>
+            (await import("@codemirror/lang-javascript")).javascript({ typescript: true }),
+    },
+    {
+        extensions: [".purs"],
+        languageLabel: "PureScript",
+        loadLanguageSupport: loadStreamLanguageFrom(
+            async () => (await import("@codemirror/legacy-modes/mode/haskell")).haskell,
+        ),
+    },
+    {
+        extensions: [".gleam"],
+        languageLabel: "Gleam",
+        loadLanguageSupport: loadStreamLanguageFrom(
+            async () => (await import("@codemirror/legacy-modes/mode/erlang")).erlang,
+        ),
+    },
+    {
+        extensions: [".hx"],
+        languageLabel: "Haxe",
+        loadLanguageSupport: async () =>
+            (await import("@codemirror/lang-javascript")).javascript({ typescript: true }),
     },
 ];
 function codeEditorLanguageEntryForPath(relativePath: string): CodeEditorLanguageEntry | undefined {
