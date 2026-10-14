@@ -41,6 +41,116 @@ const FEATURE_PROBES: ReadonlyArray<FeatureProbeDefinition> = [
         unsupportedFeatures: [],
     },
     {
+        languageIdentifier: "r",
+        entryFileName: "main.r",
+        sourceFiles: {
+            "main.r":
+                "source('helper.r')\n" +
+                "cat(paste0('greet:', helper_label(), ':offline'), '\\n')\n" +
+                "cat(paste0('arg0:', argv[1]), '\\n')\n" +
+                "cat(paste0('file:', readLines('data.txt')), '\\n')\n" +
+                "cat('PROBE-DONE\\n')\n",
+            "helper.r": "helper_label <- function() 'helper'\n",
+            "data.txt": "probe-data\n",
+        },
+        programArguments: PROBE_ARGUMENTS,
+        terminalAnswers: [],
+        expectedLines: ["greet:helper:offline", "arg0:alpha", "file:probe-data", "PROBE-DONE"],
+        exercisedFeatures: ["arguments", "fileIo", "multiFile"],
+        unsupportedFeatures: [
+            {
+                feature: "stdin",
+                reason: "webR reads stdin only through its shared-memory channel; a static host without cross-origin isolation falls back to the PostMessage channel, which cannot block for input",
+            },
+        ],
+    },
+    {
+        languageIdentifier: "clojurescript",
+        entryFileName: "main.cljs",
+        sourceFiles: {
+            "main.cljs":
+                "(ns main (:require [helper :as h]))\n" +
+                '(println (str "greet:" (h/label) ":" (js/wasmverseReadLine)))\n' +
+                '(println (str "arg0:" (aget js/wasmverseProgramArguments 0)))\n' +
+                '(println (str "file:" (js/wasmverseReadFile "data.txt")))\n' +
+                '(println "PROBE-DONE")\n',
+            "helper.cljs": '(ns helper)\n\n(defn label [] "helper")\n',
+            "data.txt": "probe-data",
+        },
+        programArguments: PROBE_ARGUMENTS,
+        terminalAnswers: PROBE_ANSWERS,
+        expectedLines: ["greet:helper:Ada", "arg0:alpha", "file:probe-data", "PROBE-DONE"],
+        exercisedFeatures: ["stdin", "arguments", "fileIo", "multiFile"],
+        unsupportedFeatures: [],
+    },
+    {
+        languageIdentifier: "scheme",
+        entryFileName: "main.scm",
+        sourceFiles: {
+            "main.scm":
+                '(load "helper.scm")\n' +
+                "(define name (read-line))\n" +
+                '(display "greet:") (display (helper-label)) (display ":") (display name) (newline)\n' +
+                '(display "arg0:") (display (car wasmverse-arguments)) (newline)\n' +
+                '(define data-port (open-input-file "data.txt"))\n' +
+                '(display "file:") (display (read-line data-port)) (newline)\n' +
+                '(display "PROBE-DONE") (newline)\n',
+            "helper.scm": '(define (helper-label) "helper")\n',
+            "data.txt": "probe-data",
+        },
+        programArguments: PROBE_ARGUMENTS,
+        terminalAnswers: PROBE_ANSWERS,
+        expectedLines: ["greet:helper:Ada", "arg0:alpha", "file:probe-data", "PROBE-DONE"],
+        exercisedFeatures: ["stdin", "arguments", "fileIo", "multiFile"],
+        unsupportedFeatures: [],
+    },
+    {
+        languageIdentifier: "prolog",
+        entryFileName: "main.pl",
+        sourceFiles: {
+            "main.pl":
+                "main :-\n" +
+                "    read_input_line(NameLine),\n" +
+                "    atom_chars(Name, NameLine),\n" +
+                "    helper(Label),\n" +
+                "    write('greet:'), write(Label), write(':'), write(Name), nl,\n" +
+                "    wasmverse_argument(0, Argument),\n" +
+                "    write('arg0:'), write(Argument), nl,\n" +
+                "    read_file_chars('data.txt', FileCharacters),\n" +
+                "    atom_chars(FileText, FileCharacters),\n" +
+                "    write('file:'), write(FileText), nl,\n" +
+                "    write('PROBE-DONE'), nl.\n" +
+                "\n" +
+                "read_input_line(Line) :-\n" +
+                "    get_char(Character),\n" +
+                "    read_line_chars(Character, Line).\n" +
+                "\n" +
+                "read_line_chars(end_of_file, []) :- !.\n" +
+                "read_line_chars('\\n', []) :- !.\n" +
+                "read_line_chars(Character, [Character | Rest]) :-\n" +
+                "    get_char(Next),\n" +
+                "    read_line_chars(Next, Rest).\n" +
+                "\n" +
+                "read_file_chars(Path, Characters) :-\n" +
+                "    open(Path, read, Stream),\n" +
+                "    get_char(Stream, First),\n" +
+                "    read_stream_chars(Stream, First, Characters),\n" +
+                "    close(Stream).\n" +
+                "\n" +
+                "read_stream_chars(_, end_of_file, []) :- !.\n" +
+                "read_stream_chars(Stream, Character, [Character | Rest]) :-\n" +
+                "    get_char(Stream, Next),\n" +
+                "    read_stream_chars(Stream, Next, Rest).\n",
+            "helper.pl": "helper(helper).\n",
+            "data.txt": "probe-data",
+        },
+        programArguments: PROBE_ARGUMENTS,
+        terminalAnswers: PROBE_ANSWERS,
+        expectedLines: ["greet:helper:Ada", "arg0:alpha", "file:probe-data", "PROBE-DONE"],
+        exercisedFeatures: ["stdin", "arguments", "fileIo", "multiFile"],
+        unsupportedFeatures: [],
+    },
+    {
         languageIdentifier: "ruby",
         entryFileName: "main.rb",
         sourceFiles: {
@@ -53,6 +163,166 @@ const FEATURE_PROBES: ReadonlyArray<FeatureProbeDefinition> = [
                 "puts \"file:#{File.read('out.txt')}\"\n" +
                 "puts 'PROBE-DONE'\n",
             "helper.rb": "module Helper\n  def self.label\n    'helper'\n  end\nend\n",
+        },
+        programArguments: PROBE_ARGUMENTS,
+        terminalAnswers: PROBE_ANSWERS,
+        expectedLines: ["greet:helper:Ada", "arg0:alpha", "file:written", "PROBE-DONE"],
+        exercisedFeatures: ["stdin", "arguments", "fileIo", "multiFile"],
+        unsupportedFeatures: [],
+    },
+    {
+        languageIdentifier: "perl",
+        entryFileName: "main.pl",
+        sourceFiles: {
+            "main.pl":
+                "chdir '/'; $| = 1;\n" +
+                "require './helper.pl';\n" +
+                "my $name = <STDIN>;\n" +
+                "chomp $name;\n" +
+                'print "greet:" . helper_label() . ":" . $name . "\\n";\n' +
+                'print "arg0:" . ($ARGV[0] // "none") . "\\n";\n' +
+                "open(my $out, '>', 'out.txt') or die \"open failed: $!\";\n" +
+                "print $out 'written';\n" +
+                "close $out;\n" +
+                "open(my $in, '<', 'out.txt') or die \"read failed: $!\";\n" +
+                "my $contents = do { local $/; <$in> };\n" +
+                "close $in;\n" +
+                'print "file:" . $contents . "\\n";\n' +
+                'print "PROBE-DONE\\n";\n',
+            "helper.pl": "sub helper_label { return 'helper'; }\n1;\n",
+        },
+        programArguments: PROBE_ARGUMENTS,
+        terminalAnswers: PROBE_ANSWERS,
+        expectedLines: ["greet:helper:Ada", "arg0:alpha", "file:written", "PROBE-DONE"],
+        exercisedFeatures: ["stdin", "arguments", "fileIo", "multiFile"],
+        unsupportedFeatures: [],
+    },
+    {
+        languageIdentifier: "pascal",
+        entryFileName: "main.pas",
+        sourceFiles: {
+            "main.pas":
+                "program main;\n" +
+                "uses helper;\n" +
+                "var\n" +
+                "    nameText: AnsiString;\n" +
+                "    contents: AnsiString;\n" +
+                "    outputFile: TextFile;\n" +
+                "    inputFile: TextFile;\n" +
+                "begin\n" +
+                "    ReadLn(nameText);\n" +
+                "    WriteLn('greet:', helper_label, ':', nameText);\n" +
+                "    WriteLn('arg0:', ParamStr(1));\n" +
+                "    Assign(outputFile, 'out.txt');\n" +
+                "    Rewrite(outputFile);\n" +
+                "    Write(outputFile, 'written');\n" +
+                "    Close(outputFile);\n" +
+                "    Assign(inputFile, 'out.txt');\n" +
+                "    Reset(inputFile);\n" +
+                "    ReadLn(inputFile, contents);\n" +
+                "    Close(inputFile);\n" +
+                "    WriteLn('file:', contents);\n" +
+                "    WriteLn('PROBE-DONE');\n" +
+                "end.\n",
+            "helper.pas":
+                "unit helper;\n" +
+                "interface\n" +
+                "function helper_label: AnsiString;\n" +
+                "implementation\n" +
+                "function helper_label: AnsiString;\n" +
+                "begin\n" +
+                "    helper_label := 'helper';\n" +
+                "end;\n" +
+                "end.\n",
+        },
+        programArguments: PROBE_ARGUMENTS,
+        terminalAnswers: PROBE_ANSWERS,
+        expectedLines: ["greet:helper:Ada", "arg0:alpha", "file:written", "PROBE-DONE"],
+        exercisedFeatures: ["stdin", "arguments", "fileIo", "multiFile"],
+        unsupportedFeatures: [],
+    },
+    {
+        languageIdentifier: "cobol",
+        entryFileName: "main.cob",
+        sourceFiles: {
+            "main.cob":
+                ">>SOURCE FORMAT FREE\n" +
+                "identification division.\n" +
+                "program-id. main.\n" +
+                "environment division.\n" +
+                "input-output section.\n" +
+                "file-control.\n" +
+                "    select probe-file assign to 'out.txt'\n" +
+                "        organization is line sequential.\n" +
+                "data division.\n" +
+                "file section.\n" +
+                "fd probe-file.\n" +
+                "01 probe-record pic x(64).\n" +
+                "working-storage section.\n" +
+                "copy 'helper.cpy'.\n" +
+                "01 command-line-text pic x(128).\n" +
+                "01 program-token pic x(64).\n" +
+                "01 first-argument pic x(64).\n" +
+                "01 remaining-tokens pic x(64).\n" +
+                "01 entered-name pic x(64).\n" +
+                "procedure division.\n" +
+                "accept entered-name\n" +
+                "display 'greet:' function trim(helper-label-text) ':' function trim(entered-name)\n" +
+                "accept command-line-text from command-line\n" +
+                "unstring command-line-text delimited by all spaces\n" +
+                "    into program-token first-argument remaining-tokens\n" +
+                "display 'arg0:' function trim(first-argument)\n" +
+                "open output probe-file\n" +
+                "move 'written' to probe-record\n" +
+                "write probe-record\n" +
+                "close probe-file\n" +
+                "open input probe-file\n" +
+                "read probe-file\n" +
+                "close probe-file\n" +
+                "display 'file:' function trim(probe-record)\n" +
+                "display 'PROBE-DONE'\n" +
+                "stop run.\n",
+            "helper.cpy": "01 helper-label-text pic x(7) value 'helper'.\n",
+        },
+        programArguments: PROBE_ARGUMENTS,
+        terminalAnswers: PROBE_ANSWERS,
+        expectedLines: ["greet:helper:Ada", "arg0:alpha", "file:written", "PROBE-DONE"],
+        exercisedFeatures: ["stdin", "arguments", "fileIo", "multiFile"],
+        unsupportedFeatures: [],
+    },
+    {
+        languageIdentifier: "fortran",
+        entryFileName: "main.f90",
+        sourceFiles: {
+            "main.f90":
+                "program main\n" +
+                "    use helper_module\n" +
+                "    implicit none\n" +
+                "    character(len=64) :: name\n" +
+                "    character(len=64) :: contents\n" +
+                "    integer :: unit\n" +
+                "    read(*, '(A)') name\n" +
+                "    print '(A)', 'greet:' // helper_label() // ':' // trim(name)\n" +
+                "    call get_command_argument(1, name)\n" +
+                "    print '(A)', 'arg0:' // trim(name)\n" +
+                "    open(newunit=unit, file='out.txt', status='replace', action='write')\n" +
+                "    write(unit, '(A)') 'written'\n" +
+                "    close(unit)\n" +
+                "    open(newunit=unit, file='out.txt', status='old', action='read')\n" +
+                "    read(unit, '(A)') contents\n" +
+                "    close(unit)\n" +
+                "    print '(A)', 'file:' // trim(contents)\n" +
+                "    print '(A)', 'PROBE-DONE'\n" +
+                "end program main\n",
+            "helper.f90":
+                "module helper_module\n" +
+                "    implicit none\n" +
+                "contains\n" +
+                "    function helper_label() result(label_text)\n" +
+                "        character(len=6) :: label_text\n" +
+                "        label_text = 'helper'\n" +
+                "    end function helper_label\n" +
+                "end module helper_module\n",
         },
         programArguments: PROBE_ARGUMENTS,
         terminalAnswers: PROBE_ANSWERS,
@@ -85,6 +355,162 @@ const FEATURE_PROBES: ReadonlyArray<FeatureProbeDefinition> = [
         unsupportedFeatures: [],
     },
     {
+        languageIdentifier: "scala",
+        entryFileName: "main.scala",
+        sourceFiles: {
+            "main.scala":
+                "import scala.scalajs.js\n" +
+                "\n" +
+                "@main def main(): Unit =\n" +
+                "    val name = Helper.readLine()\n" +
+                '    Helper.emit("greet:" + Helper.label + ":" + name)\n' +
+                "    val firstArgument =\n" +
+                '        if Helper.programArguments.length > 0 then Helper.programArguments(0) else "none"\n' +
+                '    Helper.emit("arg0:" + firstArgument)\n' +
+                '    Helper.emit("file:" + Helper.readFile("data.txt"))\n' +
+                '    Helper.emit("PROBE-DONE")\n',
+            "helper.scala":
+                "import scala.scalajs.js\n" +
+                "\n" +
+                "object Helper:\n" +
+                '    def label: String = "helper"\n' +
+                "\n" +
+                "    def readLine(): String =\n" +
+                "        js.Dynamic.global.wasmverseReadLine().asInstanceOf[String]\n" +
+                "\n" +
+                "    def emit(text: String): Unit =\n" +
+                "        js.Dynamic.global.wasmversePrint(text)\n" +
+                "\n" +
+                "    def programArguments: js.Array[String] =\n" +
+                "        js.Dynamic.global.wasmverseProgramArguments.asInstanceOf[js.Array[String]]\n" +
+                "\n" +
+                "    def readFile(path: String): String =\n" +
+                "        js.Dynamic.global.wasmverseReadFile(path).asInstanceOf[String]\n",
+            "data.txt": "probe-data",
+        },
+        programArguments: PROBE_ARGUMENTS,
+        terminalAnswers: PROBE_ANSWERS,
+        expectedLines: ["greet:helper:Ada", "arg0:alpha", "file:probe-data", "PROBE-DONE"],
+        exercisedFeatures: ["stdin", "arguments", "fileIo", "multiFile"],
+        unsupportedFeatures: [],
+    },
+    {
+        languageIdentifier: "fsharp",
+        entryFileName: "Main.fs",
+        sourceFiles: {
+            "Main.fs":
+                "module Main\n" +
+                "\n" +
+                "open Fable.Core\n" +
+                "\n" +
+                '[<Emit("globalThis.wasmversePrint($0)")>]\n' +
+                "let emitPrint (text: string): unit = jsNative\n" +
+                "\n" +
+                '[<Emit("globalThis.wasmverseReadLine()")>]\n' +
+                "let readLine (): string = jsNative\n" +
+                "\n" +
+                '[<Emit("globalThis.wasmverseProgramArguments")>]\n' +
+                "let programArguments: string[] = jsNative\n" +
+                "\n" +
+                '[<Emit("globalThis.wasmverseReadFile($0)")>]\n' +
+                "let readFile (path: string): string = jsNative\n" +
+                "\n" +
+                "[<EntryPoint>]\n" +
+                "let main (_: string[]): int =\n" +
+                "    let name = readLine ()\n" +
+                '    emitPrint (sprintf "greet:%s:%s" Helper.label name)\n' +
+                "    let firstArgument =\n" +
+                '        if programArguments.Length > 0 then programArguments.[0] else "none"\n' +
+                '    emitPrint (sprintf "arg0:%s" firstArgument)\n' +
+                '    emitPrint (sprintf "file:%s" (readFile "data.txt"))\n' +
+                '    emitPrint "PROBE-DONE"\n' +
+                "    0\n",
+            "Helper.fs": 'module Helper\n\nlet label: string = "helper"\n',
+            "data.txt": "probe-data",
+        },
+        programArguments: PROBE_ARGUMENTS,
+        terminalAnswers: PROBE_ANSWERS,
+        expectedLines: ["greet:helper:Ada", "arg0:alpha", "file:probe-data", "PROBE-DONE"],
+        exercisedFeatures: ["stdin", "arguments", "fileIo", "multiFile"],
+        unsupportedFeatures: [],
+    },
+    {
+        languageIdentifier: "elm",
+        entryFileName: "Main.elm",
+        sourceFiles: {
+            "Main.elm":
+                "port module Main exposing (main)\n" +
+                "\n" +
+                "import Helper\n" +
+                "\n" +
+                "port wasmverseStdout : String -> Cmd msg\n" +
+                "\n" +
+                "port wasmverseStdinRequest : String -> Cmd msg\n" +
+                "\n" +
+                "port wasmverseStdin : (String -> msg) -> Sub msg\n" +
+                "\n" +
+                "port wasmverseFileRequest : String -> Cmd msg\n" +
+                "\n" +
+                "port wasmverseFileResponse : (( String, String ) -> msg) -> Sub msg\n" +
+                "\n" +
+                "port wasmverseDone : String -> Cmd msg\n" +
+                "\n" +
+                "type alias Flags =\n" +
+                "    { programArguments : List String }\n" +
+                "\n" +
+                "type alias Model =\n" +
+                "    { arguments : List String }\n" +
+                "\n" +
+                "type Msg\n" +
+                "    = GotName String\n" +
+                "    | GotFile String String\n" +
+                "\n" +
+                "main : Program Flags Model Msg\n" +
+                "main =\n" +
+                "    Platform.worker\n" +
+                "        { init =\n" +
+                '            \\flags -> ( { arguments = flags.programArguments }, wasmverseStdinRequest "read" )\n' +
+                "        , update = update\n" +
+                "        , subscriptions =\n" +
+                "            \\_ ->\n" +
+                "                Sub.batch\n" +
+                "                    [ wasmverseStdin GotName\n" +
+                "                    , wasmverseFileResponse (\\( path, contents ) -> GotFile path contents)\n" +
+                "                    ]\n" +
+                "        }\n" +
+                "\n" +
+                "update : Msg -> Model -> ( Model, Cmd Msg )\n" +
+                "update msg model =\n" +
+                "    case msg of\n" +
+                "        GotName name ->\n" +
+                "            ( model\n" +
+                "            , Cmd.batch\n" +
+                '                [ wasmverseStdout ("greet:" ++ Helper.label ++ ":" ++ name)\n' +
+                "                , wasmverseStdout\n" +
+                '                    ("arg0:" ++ (List.head model.arguments |> Maybe.withDefault "none"))\n' +
+                '                , wasmverseFileRequest "data.txt"\n' +
+                "                ]\n" +
+                "            )\n" +
+                "\n" +
+                "        GotFile _ contents ->\n" +
+                "            ( model\n" +
+                "            , Cmd.batch\n" +
+                '                [ wasmverseStdout ("file:" ++ contents)\n' +
+                '                , wasmverseStdout "PROBE-DONE"\n' +
+                '                , wasmverseDone "done"\n' +
+                "                ]\n" +
+                "            )\n",
+            "Helper.elm":
+                'module Helper exposing (label)\n\n\nlabel : String\nlabel =\n    "helper"\n',
+            "data.txt": "probe-data",
+        },
+        programArguments: PROBE_ARGUMENTS,
+        terminalAnswers: PROBE_ANSWERS,
+        expectedLines: ["greet:helper:Ada", "arg0:alpha", "file:probe-data", "PROBE-DONE"],
+        exercisedFeatures: ["stdin", "arguments", "fileIo", "multiFile"],
+        unsupportedFeatures: [],
+    },
+    {
         languageIdentifier: "php",
         entryFileName: "main.php",
         sourceFiles: {
@@ -102,6 +528,142 @@ const FEATURE_PROBES: ReadonlyArray<FeatureProbeDefinition> = [
         programArguments: PROBE_ARGUMENTS,
         terminalAnswers: PROBE_ANSWERS,
         expectedLines: ["greet:helper:Ada", "arg0:alpha", "file:written", "PROBE-DONE"],
+        exercisedFeatures: ["stdin", "arguments", "fileIo", "multiFile"],
+        unsupportedFeatures: [],
+    },
+    {
+        languageIdentifier: "rescript",
+        entryFileName: "Main.res",
+        sourceFiles: {
+            "Main.res":
+                '@val external wasmversePrint: string => unit = "wasmversePrint"\n' +
+                '@val external wasmverseReadLine: unit => string = "wasmverseReadLine"\n' +
+                '@val external wasmverseProgramArguments: array<string> = "wasmverseProgramArguments"\n' +
+                '@val external wasmverseReadFile: string => string = "wasmverseReadFile"\n' +
+                "\n" +
+                "let name = wasmverseReadLine()\n" +
+                'wasmversePrint("greet:" ++ Helper.label ++ ":" ++ name)\n' +
+                'wasmversePrint("arg0:" ++ wasmverseProgramArguments[0]->Option.getOr("none"))\n' +
+                'wasmversePrint("file:" ++ wasmverseReadFile("data.txt"))\n' +
+                'wasmversePrint("PROBE-DONE")\n',
+            "Helper.res": 'let label = "helper"\n',
+            "data.txt": "probe-data",
+        },
+        programArguments: PROBE_ARGUMENTS,
+        terminalAnswers: PROBE_ANSWERS,
+        expectedLines: ["greet:helper:Ada", "arg0:alpha", "file:probe-data", "PROBE-DONE"],
+        exercisedFeatures: ["stdin", "arguments", "fileIo", "multiFile"],
+        unsupportedFeatures: [],
+    },
+    {
+        languageIdentifier: "purescript",
+        entryFileName: "Main.purs",
+        sourceFiles: {
+            "Main.purs":
+                "module Main where\n" +
+                "\n" +
+                "import Prelude\n" +
+                "\n" +
+                "import Effect (Effect)\n" +
+                "import Helper (helperLabel)\n" +
+                "import WasmverseHost (wasmversePrint, wasmverseReadLine, wasmverseProgramArguments, wasmverseReadFile)\n" +
+                "\n" +
+                "firstArgument :: Array String -> String\n" +
+                "firstArgument arguments = case arguments of\n" +
+                "    [first, _] -> first\n" +
+                "    [first] -> first\n" +
+                '    _ -> "none"\n' +
+                "\n" +
+                "main :: Effect Unit\n" +
+                "main = do\n" +
+                "    name <- wasmverseReadLine\n" +
+                '    wasmversePrint ("greet:" <> helperLabel <> ":" <> name)\n' +
+                "    arguments <- wasmverseProgramArguments\n" +
+                '    wasmversePrint ("arg0:" <> firstArgument arguments)\n' +
+                '    contents <- wasmverseReadFile "data.txt"\n' +
+                '    wasmversePrint ("file:" <> contents)\n' +
+                '    wasmversePrint "PROBE-DONE"\n',
+            "Helper.purs":
+                "module Helper where\n" +
+                "\n" +
+                "helperLabel :: String\n" +
+                'helperLabel = "helper"\n',
+            "data.txt": "probe-data",
+        },
+        programArguments: PROBE_ARGUMENTS,
+        terminalAnswers: PROBE_ANSWERS,
+        expectedLines: ["greet:helper:Ada", "arg0:alpha", "file:probe-data", "PROBE-DONE"],
+        exercisedFeatures: ["stdin", "arguments", "fileIo", "multiFile"],
+        unsupportedFeatures: [],
+    },
+    {
+        languageIdentifier: "gleam",
+        entryFileName: "main.gleam",
+        sourceFiles: {
+            "main.gleam":
+                "import helper\n" +
+                "\n" +
+                '@external(javascript, "./wasmverse_host.mjs", "wasmversePrint")\n' +
+                "fn wasmverse_print(text: String) -> Nil\n" +
+                "\n" +
+                '@external(javascript, "./wasmverse_host.mjs", "wasmverseReadLine")\n' +
+                "fn wasmverse_read_line() -> String\n" +
+                "\n" +
+                '@external(javascript, "./wasmverse_host.mjs", "wasmverseProgramArguments")\n' +
+                "fn wasmverse_program_arguments() -> List(String)\n" +
+                "\n" +
+                '@external(javascript, "./wasmverse_host.mjs", "wasmverseReadFile")\n' +
+                "fn wasmverse_read_file(path: String) -> String\n" +
+                "\n" +
+                "fn first_argument(arguments: List(String)) -> String {\n" +
+                "  case arguments {\n" +
+                "    [first, ..] -> first\n" +
+                '    [] -> "none"\n' +
+                "  }\n" +
+                "}\n" +
+                "\n" +
+                "pub fn main() {\n" +
+                "  let name = wasmverse_read_line()\n" +
+                '  wasmverse_print("greet:" <> helper.label() <> ":" <> name)\n' +
+                '  wasmverse_print("arg0:" <> first_argument(wasmverse_program_arguments()))\n' +
+                '  wasmverse_print("file:" <> wasmverse_read_file("data.txt"))\n' +
+                '  wasmverse_print("PROBE-DONE")\n' +
+                "}\n",
+            "helper.gleam": 'pub fn label() -> String {\n  "helper"\n}\n',
+            "data.txt": "probe-data",
+        },
+        programArguments: PROBE_ARGUMENTS,
+        terminalAnswers: PROBE_ANSWERS,
+        expectedLines: ["greet:helper:Ada", "arg0:alpha", "file:probe-data", "PROBE-DONE"],
+        exercisedFeatures: ["stdin", "arguments", "fileIo", "multiFile"],
+        unsupportedFeatures: [],
+    },
+    {
+        languageIdentifier: "haxe",
+        entryFileName: "Main.hx",
+        sourceFiles: {
+            "Main.hx":
+                "class Main {\n" +
+                "    static function main() {\n" +
+                '        var name: String = js.Syntax.code("wasmverseReadLine()");\n' +
+                '        js.Syntax.code("wasmversePrint({0})", "greet:" + Helper.label() + ":" + name);\n' +
+                '        var arguments: Array<String> = js.Syntax.code("wasmverseProgramArguments");\n' +
+                '        js.Syntax.code("wasmversePrint({0})", "arg0:" + (arguments.length > 0 ? arguments[0] : "none"));\n' +
+                '        js.Syntax.code("wasmversePrint({0})", "file:" + js.Syntax.code("wasmverseReadFile({0})", "data.txt"));\n' +
+                '        js.Syntax.code("wasmversePrint({0})", "PROBE-DONE");\n' +
+                "    }\n" +
+                "}\n",
+            "Helper.hx":
+                "class Helper {\n" +
+                "    public static function label(): String {\n" +
+                '        return "helper";\n' +
+                "    }\n" +
+                "}\n",
+            "data.txt": "probe-data",
+        },
+        programArguments: PROBE_ARGUMENTS,
+        terminalAnswers: PROBE_ANSWERS,
+        expectedLines: ["greet:helper:Ada", "arg0:alpha", "file:probe-data", "PROBE-DONE"],
         exercisedFeatures: ["stdin", "arguments", "fileIo", "multiFile"],
         unsupportedFeatures: [],
     },
