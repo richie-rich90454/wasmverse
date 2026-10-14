@@ -21,6 +21,9 @@ import { WasmPackCompilerStrategy } from "@serverAtelier/compilerStrategies/Wasm
 import { GoWasmCompilerStrategy } from "@serverAtelier/compilerStrategies/GoWasmCompilerStrategy.ts";
 import { TypeScriptCompilerStrategy } from "@serverAtelier/compilerStrategies/TypeScriptCompilerStrategy.ts";
 import { ZigWasmCompilerStrategy } from "@serverAtelier/compilerStrategies/ZigWasmCompilerStrategy.ts";
+import { FpcWasmCompilerStrategy } from "@serverAtelier/compilerStrategies/FpcWasmCompilerStrategy.ts";
+import { GnuCobolWasmCompilerStrategy } from "@serverAtelier/compilerStrategies/GnuCobolWasmCompilerStrategy.ts";
+import { LFortranWasmCompilerStrategy } from "@serverAtelier/compilerStrategies/LFortranWasmCompilerStrategy.ts";
 import { SwiftWasmCompilerStrategy } from "@serverAtelier/compilerStrategies/SwiftWasmCompilerStrategy.ts";
 import { KotlinWasmCompilerStrategy } from "@serverAtelier/compilerStrategies/KotlinWasmCompilerStrategy.ts";
 import { DartWasmCompilerStrategy } from "@serverAtelier/compilerStrategies/DartWasmCompilerStrategy.ts";
@@ -29,11 +32,30 @@ import { DotNetBlazorCompilerStrategy } from "@serverAtelier/compilerStrategies/
 import { AssemblyScriptCompilerStrategy } from "@serverAtelier/compilerStrategies/AssemblyScriptCompilerStrategy.ts";
 import { OcamlWasmCompilerStrategy } from "@serverAtelier/compilerStrategies/OcamlWasmCompilerStrategy.ts";
 import { GhcWasmCompilerStrategy } from "@serverAtelier/compilerStrategies/GhcWasmCompilerStrategy.ts";
+import { ScalaJsCompilerStrategy } from "@serverAtelier/compilerStrategies/ScalaJsCompilerStrategy.ts";
+import { FableCompilerStrategy } from "@serverAtelier/compilerStrategies/FableCompilerStrategy.ts";
+import { ElmCompilerStrategy } from "@serverAtelier/compilerStrategies/ElmCompilerStrategy.ts";
+import { ReScriptCompilerStrategy } from "@serverAtelier/compilerStrategies/ReScriptCompilerStrategy.ts";
+import { PureScriptCompilerStrategy } from "@serverAtelier/compilerStrategies/PureScriptCompilerStrategy.ts";
+import { GleamCompilerStrategy } from "@serverAtelier/compilerStrategies/GleamCompilerStrategy.ts";
+import { HaxeCompilerStrategy } from "@serverAtelier/compilerStrategies/HaxeCompilerStrategy.ts";
 import { PyodideRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/PyodideRuntimeAssembler.ts";
+import { WebRRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/WebRRuntimeAssembler.ts";
+import { CherryCljsRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/CherryCljsRuntimeAssembler.ts";
+import { BiwaschemeRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/BiwaschemeRuntimeAssembler.ts";
+import { TauPrologRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/TauPrologRuntimeAssembler.ts";
 import { NullRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/NullRuntimeAssembler.ts";
 import { TypeScriptLoaderRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/TypeScriptLoaderRuntimeAssembler.ts";
 import { KotlinJsGlueRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/KotlinJsGlueRuntimeAssembler.ts";
+import { ScalaJsLoaderRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/ScalaJsLoaderRuntimeAssembler.ts";
+import { FableLoaderRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/FableLoaderRuntimeAssembler.ts";
+import { ElmLoaderRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/ElmLoaderRuntimeAssembler.ts";
+import { ReScriptLoaderRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/ReScriptLoaderRuntimeAssembler.ts";
+import { PureScriptLoaderRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/PureScriptLoaderRuntimeAssembler.ts";
+import { GleamLoaderRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/GleamLoaderRuntimeAssembler.ts";
+import { HaxeLoaderRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/HaxeLoaderRuntimeAssembler.ts";
 import { SqliteWasmRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/SqliteWasmRuntimeAssembler.ts";
+import { ZeroPerlRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/ZeroPerlRuntimeAssembler.ts";
 import { RubyWasmRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/RubyWasmRuntimeAssembler.ts";
 import { LuaWasmRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/LuaWasmRuntimeAssembler.ts";
 import { PhpWasmRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/PhpWasmRuntimeAssembler.ts";
@@ -45,7 +67,15 @@ import { DartWasmGlueRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/D
 import { BlazorGlueRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/BlazorGlueRuntimeAssembler.ts";
 import { TeaVmGlueRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/TeaVmGlueRuntimeAssembler.ts";
 import { PythonLanguagePlugin } from "@serverAtelier/languagePlugins/PythonLanguagePlugin.ts";
+import { RLanguagePlugin } from "@serverAtelier/languagePlugins/RLanguagePlugin.ts";
+import { ClojureScriptLanguagePlugin } from "@serverAtelier/languagePlugins/ClojureScriptLanguagePlugin.ts";
+import { SchemeLanguagePlugin } from "@serverAtelier/languagePlugins/SchemeLanguagePlugin.ts";
+import { PrologLanguagePlugin } from "@serverAtelier/languagePlugins/PrologLanguagePlugin.ts";
 import { RubyLanguagePlugin } from "@serverAtelier/languagePlugins/RubyLanguagePlugin.ts";
+import { PerlLanguagePlugin } from "@serverAtelier/languagePlugins/PerlLanguagePlugin.ts";
+import { PascalLanguagePlugin } from "@serverAtelier/languagePlugins/PascalLanguagePlugin.ts";
+import { CobolLanguagePlugin } from "@serverAtelier/languagePlugins/CobolLanguagePlugin.ts";
+import { FortranLanguagePlugin } from "@serverAtelier/languagePlugins/FortranLanguagePlugin.ts";
 import { LuaLanguagePlugin } from "@serverAtelier/languagePlugins/LuaLanguagePlugin.ts";
 import { PhpLanguagePlugin } from "@serverAtelier/languagePlugins/PhpLanguagePlugin.ts";
 import { RustLanguagePlugin } from "@serverAtelier/languagePlugins/RustLanguagePlugin.ts";
@@ -69,6 +99,13 @@ import { PgliteLanguagePlugin } from "@serverAtelier/languagePlugins/PgliteLangu
 import { AwkLanguagePlugin } from "@serverAtelier/languagePlugins/AwkLanguagePlugin.ts";
 import { JqLanguagePlugin } from "@serverAtelier/languagePlugins/JqLanguagePlugin.ts";
 import { BashLanguagePlugin } from "@serverAtelier/languagePlugins/BashLanguagePlugin.ts";
+import { ScalaJsLanguagePlugin } from "@serverAtelier/languagePlugins/ScalaJsLanguagePlugin.ts";
+import { FableLanguagePlugin } from "@serverAtelier/languagePlugins/FableLanguagePlugin.ts";
+import { ElmLanguagePlugin } from "@serverAtelier/languagePlugins/ElmLanguagePlugin.ts";
+import { ReScriptLanguagePlugin } from "@serverAtelier/languagePlugins/ReScriptLanguagePlugin.ts";
+import { PureScriptLanguagePlugin } from "@serverAtelier/languagePlugins/PureScriptLanguagePlugin.ts";
+import { GleamLanguagePlugin } from "@serverAtelier/languagePlugins/GleamLanguagePlugin.ts";
+import { HaxeLanguagePlugin } from "@serverAtelier/languagePlugins/HaxeLanguagePlugin.ts";
 import { DuckDbWasmRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/DuckDbWasmRuntimeAssembler.ts";
 import { PgliteRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/PgliteRuntimeAssembler.ts";
 import { BusyboxWasiRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/BusyboxWasiRuntimeAssembler.ts";
@@ -114,9 +151,57 @@ class ServerApplication {
                 sourceFileCopier,
                 manifestWriter,
             ),
+            new RLanguagePlugin(
+                nullCompilerStrategy,
+                new WebRRuntimeAssembler(this.fileSystemOperations),
+                sourceFileCopier,
+                manifestWriter,
+            ),
+            new ClojureScriptLanguagePlugin(
+                nullCompilerStrategy,
+                new CherryCljsRuntimeAssembler(this.fileSystemOperations),
+                sourceFileCopier,
+                manifestWriter,
+            ),
+            new SchemeLanguagePlugin(
+                nullCompilerStrategy,
+                new BiwaschemeRuntimeAssembler(this.fileSystemOperations),
+                sourceFileCopier,
+                manifestWriter,
+            ),
+            new PrologLanguagePlugin(
+                nullCompilerStrategy,
+                new TauPrologRuntimeAssembler(this.fileSystemOperations),
+                sourceFileCopier,
+                manifestWriter,
+            ),
             new RubyLanguagePlugin(
                 nullCompilerStrategy,
                 new RubyWasmRuntimeAssembler(this.fileSystemOperations),
+                sourceFileCopier,
+                manifestWriter,
+            ),
+            new PerlLanguagePlugin(
+                nullCompilerStrategy,
+                new ZeroPerlRuntimeAssembler(this.fileSystemOperations),
+                sourceFileCopier,
+                manifestWriter,
+            ),
+            new PascalLanguagePlugin(
+                new FpcWasmCompilerStrategy(processRunner, this.fileSystemOperations),
+                new WasiWasmGlueRuntimeAssembler(this.fileSystemOperations),
+                sourceFileCopier,
+                manifestWriter,
+            ),
+            new CobolLanguagePlugin(
+                new GnuCobolWasmCompilerStrategy(processRunner, this.fileSystemOperations),
+                new EmscriptenGlueRuntimeAssembler(this.fileSystemOperations),
+                sourceFileCopier,
+                manifestWriter,
+            ),
+            new FortranLanguagePlugin(
+                new LFortranWasmCompilerStrategy(processRunner, this.fileSystemOperations),
+                new WasiWasmGlueRuntimeAssembler(this.fileSystemOperations),
                 sourceFileCopier,
                 manifestWriter,
             ),
@@ -260,6 +345,48 @@ class ServerApplication {
             new BashLanguagePlugin(
                 nullCompilerStrategy,
                 new BusyboxWasiRuntimeAssembler(this.fileSystemOperations),
+                sourceFileCopier,
+                manifestWriter,
+            ),
+            new ScalaJsLanguagePlugin(
+                new ScalaJsCompilerStrategy(processRunner, this.fileSystemOperations),
+                new ScalaJsLoaderRuntimeAssembler(this.fileSystemOperations),
+                sourceFileCopier,
+                manifestWriter,
+            ),
+            new FableLanguagePlugin(
+                new FableCompilerStrategy(processRunner, this.fileSystemOperations),
+                new FableLoaderRuntimeAssembler(this.fileSystemOperations),
+                sourceFileCopier,
+                manifestWriter,
+            ),
+            new ElmLanguagePlugin(
+                new ElmCompilerStrategy(processRunner, this.fileSystemOperations),
+                new ElmLoaderRuntimeAssembler(this.fileSystemOperations),
+                sourceFileCopier,
+                manifestWriter,
+            ),
+            new ReScriptLanguagePlugin(
+                new ReScriptCompilerStrategy(processRunner, this.fileSystemOperations),
+                new ReScriptLoaderRuntimeAssembler(this.fileSystemOperations),
+                sourceFileCopier,
+                manifestWriter,
+            ),
+            new PureScriptLanguagePlugin(
+                new PureScriptCompilerStrategy(processRunner, this.fileSystemOperations),
+                new PureScriptLoaderRuntimeAssembler(this.fileSystemOperations),
+                sourceFileCopier,
+                manifestWriter,
+            ),
+            new GleamLanguagePlugin(
+                new GleamCompilerStrategy(processRunner, this.fileSystemOperations),
+                new GleamLoaderRuntimeAssembler(this.fileSystemOperations),
+                sourceFileCopier,
+                manifestWriter,
+            ),
+            new HaxeLanguagePlugin(
+                new HaxeCompilerStrategy(processRunner, this.fileSystemOperations),
+                new HaxeLoaderRuntimeAssembler(this.fileSystemOperations),
                 sourceFileCopier,
                 manifestWriter,
             ),
