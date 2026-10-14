@@ -1,6 +1,14 @@
 type LanguageIdentifier =
     | "python"
+    | "r"
+    | "clojurescript"
+    | "scheme"
+    | "prolog"
     | "ruby"
+    | "perl"
+    | "pascal"
+    | "cobol"
+    | "fortran"
     | "lua"
     | "php"
     | "rust"
@@ -23,5 +31,12 @@ type LanguageIdentifier =
     | "pglite"
     | "awk"
     | "jq"
-    | "bash";
+    | "bash"
+    | "scala"
+    | "fsharp"
+    | "elm"
+    | "rescript"
+    | "purescript"
+    | "gleam"
+    | "haxe";
 export type { LanguageIdentifier };
