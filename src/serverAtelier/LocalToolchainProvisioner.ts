@@ -1,4 +1,4 @@
-import { unzipSync } from "fflate";
+import { gunzipSync, unzipSync } from "fflate";
 import { resolve } from "node:path";
 import { FileSystemOperations } from "@serverAtelier/utilities/FileSystemOperations.ts";
 import { ProcessRunner } from "@serverAtelier/utilities/ProcessRunner.ts";
@@ -71,6 +71,74 @@ const JQ_WASM_BINARY_PATH = `${JQ_WASM_DIRECTORY}/jq.wasm`;
 const JQ_WASM_BINARY_URL = `${JQ_WASM_RELEASE_BASE_URL}/jq.wasm`;
 const JQ_WASM_GLUE_FILE_NAME = "jq-runtime.mjs";
 const JQ_WASM_GLUE_URL = `${JQ_WASM_RELEASE_BASE_URL}/jq.wasm.mjs`;
+const SCALA_CLI_VERSION = "1.18.0";
+const SCALA_CLI_DIRECTORY = "./.tools/scala-cli";
+const SCALA_CLI_BINARY_PATH = `${SCALA_CLI_DIRECTORY}/scala-cli`;
+const SCALA_CLI_HOME_DIRECTORY = "./.tools/scala-cli-home";
+const SCALA_CLI_WINDOWS_X64_ARCHIVE_URL = `https://github.com/VirtusLab/scala-cli/releases/download/v${SCALA_CLI_VERSION}/scala-cli-x86_64-pc-win32.zip`;
+const ELM_VERSION = "0.19.3";
+const ELM_DIRECTORY = "./.tools/elm";
+const ELM_BINARY_PATH = `${ELM_DIRECTORY}/elm`;
+const ELM_WINDOWS_X64_BINARY_URL = `https://github.com/elm/compiler/releases/download/${ELM_VERSION}/elm-${ELM_VERSION}-windows-x64.gz`;
+const GLEAM_VERSION = "1.19.2";
+const GLEAM_DIRECTORY = "./.tools/gleam";
+const GLEAM_BINARY_PATH = `${GLEAM_DIRECTORY}/gleam`;
+const GLEAM_WINDOWS_X64_ARCHIVE_URL = `https://github.com/gleam-lang/gleam/releases/download/v${GLEAM_VERSION}/gleam-v${GLEAM_VERSION}-x86_64-pc-windows-msvc.zip`;
+const PURESCRIPT_VERSION = "0.15.16";
+const PURESCRIPT_DIRECTORY = "./.tools/purescript";
+const PURESCRIPT_BINARY_PATH = `${PURESCRIPT_DIRECTORY}/purs`;
+const PURESCRIPT_WINDOWS_X64_ARCHIVE_URL = `https://github.com/purescript/purescript/releases/download/v${PURESCRIPT_VERSION}/win64.tar.gz`;
+const PURESCRIPT_LIBRARIES_DIRECTORY = "./.tools/purescript-libraries";
+const PURESCRIPT_PRELUDE_VERSION = "6.0.2";
+const PURESCRIPT_EFFECT_VERSION = "4.0.0";
+const HAXE_VERSION = "4.3.7";
+const HAXE_DIRECTORY = "./.tools/haxe";
+const HAXE_BINARY_PATH = `${HAXE_DIRECTORY}/haxe`;
+const HAXE_WINDOWS_X64_ARCHIVE_URL = `https://github.com/HaxeFoundation/haxe/releases/download/${HAXE_VERSION}/haxe-${HAXE_VERSION}-win64.zip`;
+const RESCRIPT_VERSION = "12.3.1";
+const RESCRIPT_DIRECTORY = "./.tools/js-toolchains/node_modules/rescript";
+const RESCRIPT_BINARY_PATH = `${RESCRIPT_DIRECTORY}/cli/rescript.js`;
+const RESCRIPT_NPM_PACKAGES: ReadonlyArray<[string, string]> = [
+    ["rescript", RESCRIPT_VERSION],
+    ["@rescript/win32-x64", RESCRIPT_VERSION],
+    ["@rescript/runtime", RESCRIPT_VERSION],
+];
+const FABLE_VERSION = "5.21.0";
+const FABLE_DIRECTORY = "./.tools/dotnet-tools";
+const FABLE_BINARY_PATH = `${FABLE_DIRECTORY}/fable`;
+const FABLE_NUGET_PACKAGES_DIRECTORY = "./.tools/fable-nuget-packages";
+const DOTNET_CLI_HOME_DIRECTORY = "./.tools/dotnet-cli-home";
+const NUGET_PACKAGES_DIRECTORY = "./.tools/nuget-packages";
+const ZEROPERL_COMMIT = "25d7100492c9437af1c928b3686b1a1d837580be";
+const ZEROPERL_DIRECTORY = "./.tools/webperl";
+const ZEROPERL_LOADER_FILE_PATH = `${ZEROPERL_DIRECTORY}/perl-runtime.js`;
+const ZEROPERL_WASM_FILE_PATH = `${ZEROPERL_DIRECTORY}/zeroperl.wasm`;
+const ZEROPERL_LOADER_URL = `https://raw.githubusercontent.com/manwar/perl-wasm/${ZEROPERL_COMMIT}/v5.44/dist/esm/index.js`;
+const ZEROPERL_WASM_URL = `https://raw.githubusercontent.com/manwar/perl-wasm/${ZEROPERL_COMMIT}/v5.44/zeroperl.wasm`;
+const FPC_WASM_DIRECTORY = "./.tools/fpc";
+const FPC_WASM_ARCHIVE_URL =
+    "https://downloads.freepascal.org/fpc/snapshot/v33/wasm32-wasip1/fpc-3.3.1.wasm32-wasip1.built.on.x86_64-linux.tar.gz";
+const FPC_WASM_WIN64_COMPILER_PATH = `${FPC_WASM_DIRECTORY}/bin/x86_64-win64/ppcrosswasm32`;
+const FPC_WASM_LINUX_COMPILER_PATH = `${FPC_WASM_DIRECTORY}/bin/x86_64-linux/ppcrosswasm32`;
+const FPC_WASM_DARWIN_COMPILER_PATH = `${FPC_WASM_DIRECTORY}/bin/x86_64-darwin/ppcrosswasm32`;
+const GNUCOBOL_DIRECTORY = "./.tools/gnucobol";
+const GNUCOBOL_TRANSLATOR_PATH = `${GNUCOBOL_DIRECTORY}/bin/cobc`;
+const GNUCOBOL_BINARIES_ARCHIVE_URL =
+    "https://github.com/mridoni/gnucobol-binaries/releases/download/3.1.2-20230124/gnucobol-3.1.2-windows-msvc-all.7z";
+const GNUCOBOL_SOURCES_ARCHIVE_URL =
+    "https://downloads.sourceforge.net/project/gnucobol/gnucobol/3.2/gnucobol-3.2_win.zip";
+const LFORTRAN_DIRECTORY = "./.tools/lfortran";
+const LFORTRAN_BINARY_PATH = `${LFORTRAN_DIRECTORY}/bin/lfortran`;
+const LFORTRAN_CONDA_PACKAGE_URLS: ReadonlyArray<string> = [
+    "https://conda.anaconda.org/conda-forge/win-64/lfortran-0.67.0-hc50d9fe_0.conda",
+    "https://conda.anaconda.org/conda-forge/win-64/xeus-6.0.6-h477610d_0.conda",
+    "https://conda.anaconda.org/conda-forge/win-64/xeus-zmq-4.0.1-hecdc818_0.conda",
+    "https://conda.anaconda.org/conda-forge/win-64/zeromq-4.3.5-drafts_h37f6b46_9.conda",
+    "https://conda.anaconda.org/conda-forge/win-64/libsodium-1.0.22-h6a83c73_0.conda",
+    "https://conda.anaconda.org/conda-forge/win-64/cppzmq-4.11.0-h0000e93_0.conda",
+    "https://conda.anaconda.org/conda-forge/win-64/libzlib-1.3.2-hfd05255_2.conda",
+    "https://conda.anaconda.org/conda-forge/win-64/zstd-1.5.7-h1b5488d_4.conda",
+];
 const WINDOWS_EXECUTABLE_EXTENSIONS: ReadonlyArray<string> = [".exe", ".bat", ".cmd"];
 interface ArchiveToolchainSpec {
     toolchainName: string;
@@ -95,6 +163,13 @@ interface ChromeForTestingVersionsPayload {
 }
 function messageOf(error: unknown): string {
     return error instanceof Error ? error.message : String(error);
+}
+function dotNetEnvironmentOverrides(): Record<string, string> {
+    return {
+        DOTNET_ROOT: resolve(process.cwd(), DOTNET_DIRECTORY),
+        DOTNET_CLI_HOME: resolve(process.cwd(), DOTNET_CLI_HOME_DIRECTORY),
+        NUGET_PACKAGES: resolve(process.cwd(), NUGET_PACKAGES_DIRECTORY),
+    };
 }
 class LocalToolchainProvisioner {
     private readonly fileSystemOperations: FileSystemOperations;
@@ -419,6 +494,381 @@ class LocalToolchainProvisioner {
             probePath: WASI_SH_BUSYBOX_PATH,
         });
     }
+    async provisionScalaCli(): Promise<void> {
+        await this.installArchiveToolchain({
+            toolchainName: "Scala CLI",
+            archiveUrl: SCALA_CLI_WINDOWS_X64_ARCHIVE_URL,
+            archiveFileName: `scala-cli-${SCALA_CLI_VERSION}-win32.zip`,
+            targetDirectory: SCALA_CLI_DIRECTORY,
+            probePath: SCALA_CLI_BINARY_PATH,
+            supportedPlatforms: ["win32"],
+        });
+        if (!(await this.isToolchainPresent(SCALA_CLI_BINARY_PATH))) {
+            return;
+        }
+        try {
+            await this.fileSystemOperations.ensureDirectoryExists(SCALA_CLI_HOME_DIRECTORY);
+            this.scopedLogger.logInformation(
+                "Scala.js dependencies are resolved into ./.tools/scala-cli-home on first compilation.",
+            );
+        } catch (error) {
+            this.scopedLogger.logWarning(`Scala CLI warm-up failed: ${messageOf(error)}`);
+        }
+    }
+    async provisionElmToolchain(): Promise<void> {
+        if (await this.isToolchainPresent(ELM_BINARY_PATH)) {
+            this.scopedLogger.logInformation("Elm already provisioned, skipping.");
+            return;
+        }
+        if (this.platformName !== "win32") {
+            this.scopedLogger.logWarning(
+                "Elm automatic provisioning is available for win32 only; provision ./.tools/elm/elm manually.",
+            );
+            return;
+        }
+        try {
+            this.scopedLogger.logInformation(`Downloading Elm from ${ELM_WINDOWS_X64_BINARY_URL}.`);
+            const compressedBytes = await this.fetchArchiveContent(ELM_WINDOWS_X64_BINARY_URL);
+            await this.fileSystemOperations.writeBinaryFile(
+                ELM_BINARY_PATH,
+                gunzipSync(compressedBytes),
+            );
+            this.scopedLogger.logSuccess(`Elm provisioned at ${ELM_DIRECTORY}.`);
+        } catch (error) {
+            this.scopedLogger.logWarning(`Elm provisioning failed: ${messageOf(error)}`);
+        }
+    }
+    async provisionGleamToolchain(): Promise<void> {
+        await this.installArchiveToolchain({
+            toolchainName: "Gleam",
+            archiveUrl: GLEAM_WINDOWS_X64_ARCHIVE_URL,
+            archiveFileName: `gleam-v${GLEAM_VERSION}-windows.zip`,
+            targetDirectory: GLEAM_DIRECTORY,
+            probePath: GLEAM_BINARY_PATH,
+            supportedPlatforms: ["win32"],
+        });
+    }
+    async provisionPureScriptToolchain(): Promise<void> {
+        await this.installArchiveToolchain({
+            toolchainName: "PureScript",
+            archiveUrl: PURESCRIPT_WINDOWS_X64_ARCHIVE_URL,
+            archiveFileName: `purescript-v${PURESCRIPT_VERSION}-win64.tar.gz`,
+            targetDirectory: PURESCRIPT_DIRECTORY,
+            probePath: PURESCRIPT_BINARY_PATH,
+            supportedPlatforms: ["win32"],
+        });
+        if (!(await this.isToolchainPresent(PURESCRIPT_BINARY_PATH))) {
+            return;
+        }
+        await this.installPureScriptLibrary("purescript-prelude", `v${PURESCRIPT_PRELUDE_VERSION}`);
+        await this.installPureScriptLibrary("purescript-effect", `v${PURESCRIPT_EFFECT_VERSION}`);
+    }
+    async provisionHaxeToolchain(): Promise<void> {
+        await this.installArchiveToolchain({
+            toolchainName: "Haxe",
+            archiveUrl: HAXE_WINDOWS_X64_ARCHIVE_URL,
+            archiveFileName: `haxe-${HAXE_VERSION}-win64.zip`,
+            targetDirectory: HAXE_DIRECTORY,
+            probePath: HAXE_BINARY_PATH,
+            supportedPlatforms: ["win32"],
+        });
+    }
+    async provisionReScriptToolchain(): Promise<void> {
+        if (await this.fileSystemOperations.pathExists(RESCRIPT_BINARY_PATH)) {
+            this.scopedLogger.logInformation("ReScript already provisioned, skipping.");
+            return;
+        }
+        if (this.platformName !== "win32") {
+            this.scopedLogger.logWarning(
+                "ReScript automatic provisioning is available for win32 only; provision ./.tools/js-toolchains/node_modules/rescript manually.",
+            );
+            return;
+        }
+        try {
+            for (const [packageName, packageVersion] of RESCRIPT_NPM_PACKAGES) {
+                await this.installNpmPackage(packageName, packageVersion);
+            }
+            this.scopedLogger.logSuccess(`ReScript provisioned at ${RESCRIPT_DIRECTORY}.`);
+        } catch (error) {
+            this.scopedLogger.logWarning(`ReScript provisioning failed: ${messageOf(error)}`);
+        }
+    }
+    async provisionFableToolchain(): Promise<void> {
+        if (await this.fileSystemOperations.pathExists(FABLE_BINARY_PATH)) {
+            this.scopedLogger.logInformation("Fable already provisioned, skipping.");
+            return;
+        }
+        if (this.platformName !== "win32") {
+            this.scopedLogger.logWarning(
+                "Fable automatic provisioning is available for win32 only; run dotnet tool install fable --tool-path ./.tools/dotnet-tools manually.",
+            );
+            return;
+        }
+        const dotNetBinaryPath = await this.resolvePresentBinaryPath(DOTNET_BINARY_PATH);
+        if (!dotNetBinaryPath) {
+            this.scopedLogger.logWarning(
+                "dotnet SDK is missing; run pnpm run setup to provision ./.tools/dotnet/ before Fable.",
+            );
+            return;
+        }
+        try {
+            const outcome = await this.processRunner.runToCompletion(
+                [
+                    dotNetBinaryPath,
+                    "tool",
+                    "install",
+                    "fable",
+                    "--version",
+                    FABLE_VERSION,
+                    "--tool-path",
+                    FABLE_DIRECTORY,
+                ],
+                { environmentOverrides: dotNetEnvironmentOverrides() },
+            );
+            if (outcome.exitCode !== 0) {
+                this.scopedLogger.logWarning(
+                    `Fable install failed: ${outcome.standardError.trim() || outcome.standardOutput.trim()}`,
+                );
+                return;
+            }
+            await this.ensureProbeAlias(FABLE_BINARY_PATH);
+            this.scopedLogger.logSuccess(`Fable provisioned at ${FABLE_DIRECTORY}.`);
+        } catch (error) {
+            this.scopedLogger.logWarning(`Fable provisioning failed: ${messageOf(error)}`);
+        }
+    }
+    async provisionWebPerlRuntime(): Promise<void> {
+        if (
+            (await this.isToolchainPresent(ZEROPERL_LOADER_FILE_PATH)) &&
+            (await this.isToolchainPresent(ZEROPERL_WASM_FILE_PATH))
+        ) {
+            this.scopedLogger.logInformation("WebPerl runtime already provisioned, skipping.");
+            return;
+        }
+        try {
+            this.scopedLogger.logInformation(
+                `Downloading WebPerl runtime from ${ZEROPERL_WASM_URL}.`,
+            );
+            await this.fileSystemOperations.writeBinaryFile(
+                ZEROPERL_WASM_FILE_PATH,
+                await this.fetchArchiveContent(ZEROPERL_WASM_URL),
+            );
+            await this.fileSystemOperations.writeTextFile(
+                ZEROPERL_LOADER_FILE_PATH,
+                await this.fetchTextContent(ZEROPERL_LOADER_URL),
+            );
+            this.scopedLogger.logSuccess(`WebPerl runtime provisioned at ${ZEROPERL_DIRECTORY}.`);
+        } catch (error) {
+            this.scopedLogger.logWarning(
+                `WebPerl runtime provisioning failed: ${messageOf(error)}`,
+            );
+        }
+    }
+    async provisionFpcWasmToolchain(): Promise<void> {
+        if (await this.isToolchainPresent(FPC_WASM_LINUX_COMPILER_PATH)) {
+            this.scopedLogger.logInformation("Free Pascal WASM already provisioned, skipping.");
+            return;
+        }
+        if (await this.isToolchainPresent(FPC_WASM_WIN64_COMPILER_PATH)) {
+            this.scopedLogger.logInformation("Free Pascal WASM already provisioned, skipping.");
+            return;
+        }
+        if (this.platformName === "win32") {
+            await this.fileSystemOperations.ensureDirectoryExists(FPC_WASM_DIRECTORY);
+            this.scopedLogger.logWarning(
+                "Free Pascal ships no prebuilt win32-host wasm cross compiler: the official snapshot at downloads.freepascal.org/fpc/snapshot/v33/wasm32-wasip1/ contains only an x86_64-linux build, and the 3.2.2 Windows release has no wasm target. Provision ./.tools/fpc/bin/x86_64-win64/ppcrosswasm32.exe manually with fpcupdeluxe or `make crossall OS_TARGET=wasip1 CPU_TARGET=wasm32 PP=fpc`.",
+            );
+            return;
+        }
+        if (this.platformName !== "linux") {
+            await this.fileSystemOperations.ensureDirectoryExists(FPC_WASM_DIRECTORY);
+            this.scopedLogger.logWarning(
+                "The official Free Pascal WASM snapshot is an x86_64-linux build; provision ./.tools/fpc/bin/ppcrosswasm32 for this platform manually.",
+            );
+            return;
+        }
+        await this.installArchiveToolchain({
+            toolchainName: "Free Pascal WASM",
+            archiveUrl: FPC_WASM_ARCHIVE_URL,
+            archiveFileName: "fpc-3.3.1.wasm32-wasip1.built.on.x86_64-linux.tar.gz",
+            targetDirectory: FPC_WASM_DIRECTORY,
+            probePath: FPC_WASM_LINUX_COMPILER_PATH,
+            supportedPlatforms: ["linux"],
+        });
+    }
+    async provisionGnuCobolToolchain(): Promise<void> {
+        if (await this.isToolchainPresent(GNUCOBOL_TRANSLATOR_PATH)) {
+            this.scopedLogger.logInformation("GnuCOBOL already provisioned, skipping.");
+            return;
+        }
+        if (this.platformName !== "win32") {
+            await this.fileSystemOperations.ensureDirectoryExists(GNUCOBOL_DIRECTORY);
+            this.scopedLogger.logWarning(
+                "GnuCOBOL prebuilt binaries are published for Windows only; provision ./.tools/gnucobol/bin/cobc manually on this platform.",
+            );
+            return;
+        }
+        try {
+            this.scopedLogger.logInformation(
+                `Downloading GnuCOBOL from ${GNUCOBOL_BINARIES_ARCHIVE_URL}.`,
+            );
+            await this.installArchiveContentsInto(
+                GNUCOBOL_BINARIES_ARCHIVE_URL,
+                "gnucobol-3.1.2-windows-msvc-all.7z",
+                GNUCOBOL_DIRECTORY,
+            );
+            await this.ensureProbeAlias(GNUCOBOL_TRANSLATOR_PATH);
+            this.scopedLogger.logSuccess(`GnuCOBOL provisioned at ${GNUCOBOL_DIRECTORY}.`);
+        } catch (error) {
+            this.scopedLogger.logWarning(`GnuCOBOL provisioning failed: ${messageOf(error)}`);
+        }
+        try {
+            if (!(await this.fileSystemOperations.pathExists(`${GNUCOBOL_DIRECTORY}/sources`))) {
+                this.scopedLogger.logInformation(
+                    `Downloading GnuCOBOL sources from ${GNUCOBOL_SOURCES_ARCHIVE_URL}.`,
+                );
+                await this.installArchiveContentsInto(
+                    GNUCOBOL_SOURCES_ARCHIVE_URL,
+                    "gnucobol-3.2_win.zip",
+                    `${GNUCOBOL_DIRECTORY}/sources`,
+                );
+            }
+        } catch (error) {
+            this.scopedLogger.logWarning(
+                `GnuCOBOL source provisioning failed: ${messageOf(error)}`,
+            );
+        }
+        if (!(await this.fileSystemOperations.pathExists(`${GNUCOBOL_DIRECTORY}/wasm/libcob.a`))) {
+            this.scopedLogger.logWarning(
+                "GnuCOBOL wasm runtime library ./.tools/gnucobol/wasm/libcob.a is not present. GnuCOBOL ships no wasm build of libcob, and libcob requires GMP (or MPIR) compiled to wasm; build both with ./.emsdk/ to enable wasm builds.",
+            );
+        }
+    }
+    async provisionLFortranToolchain(): Promise<void> {
+        if (await this.isToolchainPresent(LFORTRAN_BINARY_PATH)) {
+            this.scopedLogger.logInformation("LFortran already provisioned, skipping.");
+            return;
+        }
+        if (this.platformName !== "win32") {
+            await this.fileSystemOperations.ensureDirectoryExists(LFORTRAN_DIRECTORY);
+            this.scopedLogger.logWarning(
+                "LFortran prebuilt binaries are published only as conda-forge win-64 packages; provision ./.tools/lfortran/ manually on this platform.",
+            );
+            return;
+        }
+        try {
+            for (const packageUrl of LFORTRAN_CONDA_PACKAGE_URLS) {
+                await this.extractCondaPackageInto(packageUrl, `${LFORTRAN_DIRECTORY}/bin`);
+            }
+            this.scopedLogger.logSuccess(`LFortran provisioned at ${LFORTRAN_DIRECTORY}.`);
+        } catch (error) {
+            this.scopedLogger.logWarning(`LFortran provisioning failed: ${messageOf(error)}`);
+        } finally {
+            try {
+                await this.fileSystemOperations.removeRecursively(`${LFORTRAN_DIRECTORY}-staging`);
+            } catch {}
+        }
+    }
+    private async extractCondaPackageInto(
+        packageUrl: string,
+        destinationDirectory: string,
+    ): Promise<void> {
+        const archiveFileName = packageUrl.split("/").pop() as string;
+        const stagingDirectory = `${LFORTRAN_DIRECTORY}-staging/${archiveFileName}`;
+        this.scopedLogger.logInformation(`Downloading ${archiveFileName}.`);
+        const archivePath = `${stagingDirectory}/${archiveFileName}`;
+        await this.fileSystemOperations.writeBinaryFile(
+            archivePath,
+            await this.fetchArchiveContent(packageUrl),
+        );
+        await this.extractTarInto(archivePath, stagingDirectory);
+        const stagedFiles = await this.fileSystemOperations.listFilesRecursively(stagingDirectory);
+        const packagePayloadPath = stagedFiles.find(
+            (relativePath) => relativePath.startsWith("pkg-") && relativePath.endsWith(".tar.zst"),
+        );
+        if (!packagePayloadPath) {
+            throw new Error(`${archiveFileName} does not contain a package payload`);
+        }
+        const extractionDirectory = `${stagingDirectory}/extracted`;
+        await this.fileSystemOperations.ensureDirectoryExists(extractionDirectory);
+        await this.extractTarInto(`${stagingDirectory}/${packagePayloadPath}`, extractionDirectory);
+        const libraryBinDirectory = `${extractionDirectory}/Library/bin`;
+        if (!(await this.fileSystemOperations.pathExists(libraryBinDirectory))) {
+            return;
+        }
+        const libraryBinFiles =
+            await this.fileSystemOperations.listFilesRecursively(libraryBinDirectory);
+        for (const relativePath of libraryBinFiles) {
+            const fileName = relativePath.split("/").pop() as string;
+            await this.fileSystemOperations.copyFileInto(
+                `${libraryBinDirectory}/${relativePath}`,
+                `${destinationDirectory}/${fileName}`,
+            );
+        }
+    }
+    private async installNpmPackage(packageName: string, packageVersion: string): Promise<void> {
+        const tarballFileName = packageName.split("/").pop() as string;
+        const sourceUrl = `https://registry.npmjs.org/${encodeURIComponent(packageName)}/-/${tarballFileName}-${packageVersion}.tgz`;
+        const targetDirectory = `./.tools/js-toolchains/node_modules/${packageName}`;
+        const stagingDirectory = `${targetDirectory}-staging`;
+        try {
+            await this.fileSystemOperations.removeRecursively(stagingDirectory);
+            this.scopedLogger.logInformation(`Downloading ${packageName} from ${sourceUrl}.`);
+            const archiveContent = await this.fetchArchiveContent(sourceUrl);
+            const archivePath = `${stagingDirectory}/${tarballFileName}.tgz`;
+            await this.fileSystemOperations.writeBinaryFile(archivePath, archiveContent);
+            const extractionDirectory = `${stagingDirectory}/extracted`;
+            await this.fileSystemOperations.ensureDirectoryExists(extractionDirectory);
+            await this.extractTarInto(archivePath, extractionDirectory);
+            await this.fileSystemOperations.removeRecursively(targetDirectory);
+            await this.fileSystemOperations.moveInto(
+                `${extractionDirectory}/package`,
+                targetDirectory,
+            );
+        } finally {
+            try {
+                await this.fileSystemOperations.removeRecursively(stagingDirectory);
+            } catch {}
+        }
+    }
+    private async installPureScriptLibrary(
+        libraryName: string,
+        libraryVersionTag: string,
+    ): Promise<void> {
+        const targetDirectory = `${PURESCRIPT_LIBRARIES_DIRECTORY}/${libraryName}`;
+        if (await this.fileSystemOperations.pathExists(`${targetDirectory}/src`)) {
+            this.scopedLogger.logInformation(`${libraryName} already vendored, skipping.`);
+            return;
+        }
+        const sourceUrl = `https://github.com/purescript/${libraryName}/archive/refs/tags/${libraryVersionTag}.tar.gz`;
+        const stagingDirectory = `${PURESCRIPT_LIBRARIES_DIRECTORY}-staging`;
+        try {
+            this.scopedLogger.logInformation(`Downloading ${libraryName} from ${sourceUrl}.`);
+            const archiveContent = await this.fetchArchiveContent(sourceUrl);
+            const archivePath = `${stagingDirectory}/${libraryName}.tar.gz`;
+            await this.fileSystemOperations.writeBinaryFile(archivePath, archiveContent);
+            const extractionDirectory = `${stagingDirectory}/extracted`;
+            await this.fileSystemOperations.ensureDirectoryExists(extractionDirectory);
+            await this.extractTarInto(archivePath, extractionDirectory);
+            const extractedFiles =
+                await this.fileSystemOperations.listFilesRecursively(extractionDirectory);
+            const topLevelName = extractedFiles[0]?.split("/")[0] as string | undefined;
+            if (!topLevelName) {
+                throw new Error(`${libraryName} archive extraction produced no files`);
+            }
+            await this.fileSystemOperations.copyDirectoryInto(
+                `${extractionDirectory}/${topLevelName}/src`,
+                `${targetDirectory}/src`,
+            );
+            this.scopedLogger.logSuccess(`${libraryName} vendored at ${targetDirectory}.`);
+        } catch (error) {
+            this.scopedLogger.logWarning(`${libraryName} provisioning failed: ${messageOf(error)}`);
+        } finally {
+            try {
+                await this.fileSystemOperations.removeRecursively(stagingDirectory);
+            } catch {}
+        }
+    }
     async provisionJqWasmRuntime(): Promise<void> {
         if (await this.isToolchainPresent(JQ_WASM_BINARY_PATH)) {
             this.scopedLogger.logInformation("jq wasm runtime already provisioned, skipping.");
@@ -464,6 +914,17 @@ class LocalToolchainProvisioner {
         await this.provisionGhcWasmToolchain();
         await this.provisionWasiShellRuntime();
         await this.provisionJqWasmRuntime();
+        await this.provisionScalaCli();
+        await this.provisionElmToolchain();
+        await this.provisionGleamToolchain();
+        await this.provisionPureScriptToolchain();
+        await this.provisionHaxeToolchain();
+        await this.provisionReScriptToolchain();
+        await this.provisionFableToolchain();
+        await this.provisionWebPerlRuntime();
+        await this.provisionFpcWasmToolchain();
+        await this.provisionGnuCobolToolchain();
+        await this.provisionLFortranToolchain();
     }
     private async installArchiveToolchain(spec: ArchiveToolchainSpec): Promise<void> {
         if (await this.isToolchainPresent(spec.probePath)) {
