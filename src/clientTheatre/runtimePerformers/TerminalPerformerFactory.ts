@@ -11,7 +11,19 @@ import { ZeroPerlPerformer } from "@clientTheatre/runtimePerformers/ZeroPerlPerf
 import { LuaWasmPerformer } from "@clientTheatre/runtimePerformers/LuaWasmPerformer.ts";
 import { PhpWasmPerformer } from "@clientTheatre/runtimePerformers/PhpWasmPerformer.ts";
 import { WasmPackPerformer } from "@clientTheatre/runtimePerformers/WasmPackPerformer.ts";
+import { CommonLispPerformer } from "@clientTheatre/runtimePerformers/CommonLispPerformer.ts";
+import { TclWaclPerformer } from "@clientTheatre/runtimePerformers/TclWaclPerformer.ts";
+import { ForthPerformer } from "@clientTheatre/runtimePerformers/ForthPerformer.ts";
+import { SmalltalkPerformer } from "@clientTheatre/runtimePerformers/SmalltalkPerformer.ts";
 import { EmscriptenPerformer } from "@clientTheatre/runtimePerformers/EmscriptenPerformer.ts";
+import { RiscvPerformer } from "@clientTheatre/runtimePerformers/RiscvPerformer.ts";
+import { VerilogWasmPerformer } from "@clientTheatre/runtimePerformers/VerilogWasmPerformer.ts";
+import { SolidityPerformer } from "@clientTheatre/runtimePerformers/SolidityPerformer.ts";
+import { VimWasmPerformer } from "@clientTheatre/runtimePerformers/VimWasmPerformer.ts";
+import { BrainfuckPerformer } from "@clientTheatre/runtimePerformers/BrainfuckPerformer.ts";
+import { BefungePerformer } from "@clientTheatre/runtimePerformers/BefungePerformer.ts";
+import { LolcodePerformer } from "@clientTheatre/runtimePerformers/LolcodePerformer.ts";
+import { NgnAplPerformer } from "@clientTheatre/runtimePerformers/NgnAplPerformer.ts";
 import { GoWasmPerformer } from "@clientTheatre/runtimePerformers/GoWasmPerformer.ts";
 import { WasiWasmPerformer } from "@clientTheatre/runtimePerformers/WasiWasmPerformer.ts";
 import { DartWasmPerformer } from "@clientTheatre/runtimePerformers/DartWasmPerformer.ts";
@@ -33,6 +45,10 @@ import { PglitePerformer } from "@clientTheatre/runtimePerformers/PglitePerforme
 import { BusyboxAwkPerformer } from "@clientTheatre/runtimePerformers/BusyboxAwkPerformer.ts";
 import { JqWasmPerformer } from "@clientTheatre/runtimePerformers/JqWasmPerformer.ts";
 import { BusyboxShellPerformer } from "@clientTheatre/runtimePerformers/BusyboxShellPerformer.ts";
+import { LogoPerformer } from "@clientTheatre/runtimePerformers/LogoPerformer.ts";
+import { GwBasicPerformer } from "@clientTheatre/runtimePerformers/GwBasicPerformer.ts";
+import { SmlPerformer } from "@clientTheatre/runtimePerformers/SmlPerformer.ts";
+import { M6502Performer } from "@clientTheatre/runtimePerformers/M6502Performer.ts";
 class TerminalPerformerFactory {
     private readonly creatorClosures: Map<
         LanguageIdentifier,
@@ -55,9 +71,25 @@ class TerminalPerformerFactory {
             ["lua", (sessionBaseUrl) => new LuaWasmPerformer(sessionBaseUrl)],
             ["php", (sessionBaseUrl) => new PhpWasmPerformer(sessionBaseUrl)],
             ["rust", (sessionBaseUrl) => new WasmPackPerformer(sessionBaseUrl)],
+            ["commonlisp", (sessionBaseUrl) => new CommonLispPerformer(sessionBaseUrl)],
+            ["tcl", (sessionBaseUrl) => new TclWaclPerformer(sessionBaseUrl)],
+            ["forth", (sessionBaseUrl) => new ForthPerformer(sessionBaseUrl)],
+            ["smalltalk", (sessionBaseUrl) => new SmalltalkPerformer(sessionBaseUrl)],
             ["c", (sessionBaseUrl) => new EmscriptenPerformer(sessionBaseUrl)],
+            ["brainfuck", (sessionBaseUrl) => new BrainfuckPerformer(sessionBaseUrl)],
+            ["befunge", (sessionBaseUrl) => new BefungePerformer(sessionBaseUrl)],
+            ["lolcode", (sessionBaseUrl) => new LolcodePerformer(sessionBaseUrl)],
+            ["apl", (sessionBaseUrl) => new NgnAplPerformer(sessionBaseUrl)],
             ["cpp", (sessionBaseUrl) => new EmscriptenPerformer(sessionBaseUrl)],
+            ["riscv", (sessionBaseUrl) => new RiscvPerformer(sessionBaseUrl)],
+            ["verilog", (sessionBaseUrl) => new VerilogWasmPerformer(sessionBaseUrl)],
+            ["solidity", (sessionBaseUrl) => new SolidityPerformer(sessionBaseUrl)],
+            ["vimscript", (sessionBaseUrl) => new VimWasmPerformer(sessionBaseUrl)],
             ["go", (sessionBaseUrl) => new GoWasmPerformer(sessionBaseUrl)],
+            ["logo", (sessionBaseUrl) => new LogoPerformer(sessionBaseUrl)],
+            ["gwbasic", (sessionBaseUrl) => new GwBasicPerformer(sessionBaseUrl)],
+            ["sml", (sessionBaseUrl) => new SmlPerformer(sessionBaseUrl)],
+            ["m6502", (sessionBaseUrl) => new M6502Performer(sessionBaseUrl)],
             ["zig", (sessionBaseUrl) => new WasiWasmPerformer(sessionBaseUrl)],
             ["swift", (sessionBaseUrl) => new WasiWasmPerformer(sessionBaseUrl)],
             ["kotlin", (sessionBaseUrl) => new KotlinJsPerformer(sessionBaseUrl)],
