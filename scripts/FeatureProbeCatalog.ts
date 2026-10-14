@@ -714,6 +714,93 @@ const FEATURE_PROBES: ReadonlyArray<FeatureProbeDefinition> = [
         ],
     },
     {
+        languageIdentifier: "commonlisp",
+        entryFileName: "main.lisp",
+        sourceFiles: {
+            "main.lisp":
+                '(load "helper.lisp")\n' +
+                "(defparameter *probe-name* (read-line))\n" +
+                '(format t "greet:~a:~a~%" (helper-label) *probe-name*)\n' +
+                '(format t "arg0:~a~%" (first *wasmverse-arguments*))\n' +
+                '(format t "file:~a~%" (wasmverse-read-file "data.txt"))\n' +
+                '(format t "PROBE-DONE~%")\n',
+            "helper.lisp": '(defun helper-label () "helper")\n',
+            "data.txt": "probe-data",
+        },
+        programArguments: PROBE_ARGUMENTS,
+        terminalAnswers: PROBE_ANSWERS,
+        expectedLines: ["greet:helper:Ada", "arg0:alpha", "file:probe-data", "PROBE-DONE"],
+        exercisedFeatures: ["stdin", "arguments", "fileIo", "multiFile"],
+        unsupportedFeatures: [],
+    },
+    {
+        languageIdentifier: "tcl",
+        entryFileName: "main.tcl",
+        sourceFiles: {
+            "main.tcl":
+                "source helper.tcl\n" +
+                "set name [gets stdin]\n" +
+                'puts "greet:[helper-label]:$name"\n' +
+                'puts "arg0:[lindex $argv 0]"\n' +
+                "set handle [open data.txt r]\n" +
+                "set data [read -nonewline $handle]\n" +
+                "close $handle\n" +
+                'puts "file:$data"\n' +
+                "puts PROBE-DONE\n",
+            "helper.tcl": "proc helper-label {} { return helper }\n",
+            "data.txt": "probe-data",
+        },
+        programArguments: PROBE_ARGUMENTS,
+        terminalAnswers: PROBE_ANSWERS,
+        expectedLines: ["greet:helper:Ada", "arg0:alpha", "file:probe-data", "PROBE-DONE"],
+        exercisedFeatures: ["stdin", "arguments", "fileIo", "multiFile"],
+        unsupportedFeatures: [],
+    },
+    {
+        languageIdentifier: "forth",
+        entryFileName: "main.fth",
+        sourceFiles: {
+            "main.fth":
+                "INCLUDE helper.fth\n" +
+                "0 64 ACCEPT\n" +
+                '." greet:" helper-label TYPE\n' +
+                '." :" 0 SWAP TYPE CR\n' +
+                '." arg0:" 0 ARG TYPE CR\n' +
+                '." file:" READ-FILE TYPE CR\n' +
+                '." PROBE-DONE" CR\n',
+            "helper.fth": ': helper-label ( -- addr len ) S" helper" ;\n',
+            "data.txt": "probe-data",
+        },
+        programArguments: PROBE_ARGUMENTS,
+        terminalAnswers: PROBE_ANSWERS,
+        expectedLines: ["greet:helper:Ada", "arg0:alpha", "file:probe-data", "PROBE-DONE"],
+        exercisedFeatures: ["stdin", "arguments", "fileIo", "multiFile"],
+        unsupportedFeatures: [],
+    },
+    {
+        languageIdentifier: "smalltalk",
+        entryFileName: "main.st",
+        sourceFiles: {
+            "main.st":
+                "Compiler evaluate: ((FileStream readOnlyFileNamed: 'helper.st') contentsOfEntireFile).\n" +
+                "Transcript\n" +
+                "    show: 'greet:';\n" +
+                "    show: helperLabel;\n" +
+                "    show: ':';\n" +
+                "    showCr: StandardInput nextLine.\n" +
+                "Transcript showCr: 'arg0:', SmalltalkArguments first.\n" +
+                "(FileStream fileNamed: 'out.txt') nextPutAll: 'written'; close.\n" +
+                "Transcript showCr: 'file:', ((FileStream readOnlyFileNamed: 'out.txt') contentsOfEntireFile).\n" +
+                "Transcript showCr: 'PROBE-DONE'.\n",
+            "helper.st": "Smalltalk at: #helperLabel put: 'helper'.\n",
+        },
+        programArguments: PROBE_ARGUMENTS,
+        terminalAnswers: PROBE_ANSWERS,
+        expectedLines: ["greet:helper:Ada", "arg0:alpha", "file:written", "PROBE-DONE"],
+        exercisedFeatures: ["stdin", "arguments", "fileIo", "multiFile"],
+        unsupportedFeatures: [],
+    },
+    {
         languageIdentifier: "c",
         entryFileName: "main.c",
         sourceFiles: {
@@ -761,6 +848,112 @@ const FEATURE_PROBES: ReadonlyArray<FeatureProbeDefinition> = [
         unsupportedFeatures: [],
     },
     {
+        languageIdentifier: "brainfuck",
+        entryFileName: "main.bf",
+        sourceFiles: {
+            "main.bf":
+                "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++.+++++++++++.-------------..+++++++++++++++.----------------------------------------------------------.++++++++++++++++++++++++++++++++++++++++++++++.---.+++++++.++++.-----------.+++++++++++++.--------------------------------------------------------.+++++++.+++++++++++++++++++++++++++++++++++.---.---------------------------------------------------------------------------------------.+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++.--.+++++.+++++++.-----------------------------------------------------.,.,.,.[-]++++++++++.++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++.++.---.-------------.+++.------------------------.+++++++++++++++++++++++.+++++++++++.-.---------.-----------------------------------------------------------.",
+        },
+        programArguments: PROBE_ARGUMENTS,
+        terminalAnswers: PROBE_ANSWERS,
+        expectedLines: ["greet:helper:Ada", "echo:Ada", "PROBE-DONE"],
+        exercisedFeatures: ["stdin"],
+        unsupportedFeatures: [
+            {
+                feature: "arguments",
+                reason: "brainfuck has no program arguments; the tape and the stdin byte stream are its only inputs",
+            },
+            {
+                feature: "fileIo",
+                reason: "the brainfuck tape is the only memory; there is no file API",
+            },
+            {
+                feature: "multiFile",
+                reason: "brainfuck programs are single flat instruction streams with no include mechanism",
+            },
+        ],
+    },
+    {
+        languageIdentifier: "befunge",
+        entryFileName: "main.bef",
+        sourceFiles: {
+            "main.bef": '"adA:repleh:teerg">:#,_55+,":ohce">:#,_~,~,~,55+,"ENOD-EBORP">:#,_@\n',
+        },
+        programArguments: PROBE_ARGUMENTS,
+        terminalAnswers: PROBE_ANSWERS,
+        expectedLines: ["greet:helper:Ada", "echo:Ada", "PROBE-DONE"],
+        exercisedFeatures: ["stdin"],
+        unsupportedFeatures: [
+            {
+                feature: "arguments",
+                reason: "befunge-93 programs read stdin only; the playfield and stack are its entire state",
+            },
+            {
+                feature: "fileIo",
+                reason: "befunge-93 has no file instructions; only the playfield and stdin exist",
+            },
+            {
+                feature: "multiFile",
+                reason: "a befunge-93 program is one 80x25 playfield; there is no include mechanism",
+            },
+        ],
+    },
+    {
+        languageIdentifier: "lolcode",
+        entryFileName: "main.lol",
+        sourceFiles: {
+            "main.lol":
+                "HAI 1.2\n" +
+                "I HAS A NAME\n" +
+                'VISIBLE "name> "!\n' +
+                "GIMMEH NAME\n" +
+                'VISIBLE SMOOSH "greet:helper::" AN NAME MKAY\n' +
+                'VISIBLE "PROBE-DONE"\n' +
+                "KTHXBYE\n",
+        },
+        programArguments: PROBE_ARGUMENTS,
+        terminalAnswers: PROBE_ANSWERS,
+        expectedLines: ["greet:helper:Ada", "PROBE-DONE"],
+        exercisedFeatures: ["stdin"],
+        unsupportedFeatures: [
+            {
+                feature: "arguments",
+                reason: "the LOLCODE interpreter has no argv; GIMMEH is the only input",
+            },
+            {
+                feature: "fileIo",
+                reason: "the LOLCODE interpreter has no file API",
+            },
+            {
+                feature: "multiFile",
+                reason: "the LOLCODE interpreter runs the entry program only",
+            },
+        ],
+    },
+    {
+        languageIdentifier: "apl",
+        entryFileName: "main.apl",
+        sourceFiles: {
+            "main.apl":
+                "\u235d probe: stdin, arguments, and evaluated helper files\n" +
+                "name\u2190\u2395\n" +
+                "\u2395\u2190'greet:',helperLabel,':',name\n" +
+                "\u2395\u2190'arg0:',\u2283wasmverseArguments\n" +
+                "\u2395\u2190'PROBE-DONE'\n",
+            "helper.apl": "helperLabel\u2190'helper'\n",
+        },
+        programArguments: PROBE_ARGUMENTS,
+        terminalAnswers: PROBE_ANSWERS,
+        expectedLines: ["greet:helper:Ada", "arg0:alpha", "PROBE-DONE"],
+        exercisedFeatures: ["stdin", "arguments", "multiFile"],
+        unsupportedFeatures: [
+            {
+                feature: "fileIo",
+                reason: "the ngn/apl interpreter exposes no filesystem; only quad input feeds data into a program",
+            },
+        ],
+    },
+    {
         languageIdentifier: "cpp",
         entryFileName: "main.cpp",
         sourceFiles: {
@@ -801,6 +994,216 @@ const FEATURE_PROBES: ReadonlyArray<FeatureProbeDefinition> = [
         unsupportedFeatures: [],
     },
     {
+        languageIdentifier: "riscv",
+        entryFileName: "main.s",
+        sourceFiles: {
+            "main.s":
+                '.include "helper.s"\n' +
+                ".data\n" +
+                'greet_word:  .asciz "greet:"\n' +
+                'colon:       .asciz ":"\n' +
+                'arg_word:    .asciz "arg0:"\n' +
+                'file_word:   .asciz "file:"\n' +
+                'none_word:   .asciz "none"\n' +
+                'newline:     .asciz "\\n"\n' +
+                'done_word:   .asciz "PROBE-DONE"\n' +
+                'path_word:   .asciz "data.txt"\n' +
+                "name_buffer: .space 64\n" +
+                "file_buffer: .space 64\n" +
+                ".text\n" +
+                "_start:\n" +
+                "    mv s8, a0\n" +
+                "    mv s9, a1\n" +
+                "    la a1, greet_word\n" +
+                "    li a7, 20\n" +
+                "    ecall\n" +
+                "    la a1, helper_label\n" +
+                "    li a7, 20\n" +
+                "    ecall\n" +
+                "    la a1, colon\n" +
+                "    li a7, 20\n" +
+                "    ecall\n" +
+                "    la a1, name_buffer\n" +
+                "    li a2, 64\n" +
+                "    li a7, 8\n" +
+                "    ecall\n" +
+                "    mv s2, a0\n" +
+                "    la a1, name_buffer\n" +
+                "    mv a2, s2\n" +
+                "    li a7, 4\n" +
+                "    ecall\n" +
+                "    la a1, newline\n" +
+                "    li a7, 20\n" +
+                "    ecall\n" +
+                "    la a1, arg_word\n" +
+                "    li a7, 20\n" +
+                "    ecall\n" +
+                "    beqz s8, probe_no_argument\n" +
+                "    lw a1, 0(s9)\n" +
+                "    li a7, 20\n" +
+                "    ecall\n" +
+                "    j probe_argument_done\n" +
+                "probe_no_argument:\n" +
+                "    la a1, none_word\n" +
+                "    li a7, 20\n" +
+                "    ecall\n" +
+                "probe_argument_done:\n" +
+                "    la a1, newline\n" +
+                "    li a7, 20\n" +
+                "    ecall\n" +
+                "    la a1, file_word\n" +
+                "    li a7, 20\n" +
+                "    ecall\n" +
+                "    la a1, path_word\n" +
+                "    li a7, 13\n" +
+                "    ecall\n" +
+                "    mv t0, a0\n" +
+                "    mv a0, t0\n" +
+                "    la a1, file_buffer\n" +
+                "    li a2, 63\n" +
+                "    li a7, 14\n" +
+                "    ecall\n" +
+                "    mv a2, a0\n" +
+                "    la a1, file_buffer\n" +
+                "    li a7, 4\n" +
+                "    ecall\n" +
+                "    la a1, newline\n" +
+                "    li a7, 20\n" +
+                "    ecall\n" +
+                "    mv a0, t0\n" +
+                "    li a7, 15\n" +
+                "    ecall\n" +
+                "    la a1, done_word\n" +
+                "    li a7, 20\n" +
+                "    ecall\n" +
+                "    li a0, 0\n" +
+                "    li a7, 10\n" +
+                "    ecall\n",
+            "helper.s": '.data\nhelper_label: .asciz "helper"\n',
+            "data.txt": "probe-data",
+        },
+        programArguments: PROBE_ARGUMENTS,
+        terminalAnswers: PROBE_ANSWERS,
+        expectedLines: ["greet:helper:Ada", "arg0:alpha", "file:probe-data", "PROBE-DONE"],
+        exercisedFeatures: ["stdin", "arguments", "fileIo", "multiFile"],
+        unsupportedFeatures: [],
+    },
+    {
+        languageIdentifier: "verilog",
+        entryFileName: "main.v",
+        sourceFiles: {
+            "main.v":
+                "`timescale 1ns/1ps\n" +
+                "module tb;\n" +
+                "    wire [47:0] helper_label;\n" +
+                "    helper label_source(.label_text(helper_label));\n" +
+                "    integer data_handle;\n" +
+                "    integer read_count;\n" +
+                "    reg [8*16-1:0] line_buffer;\n" +
+                "    reg [8*16-1:0] first_argument;\n" +
+                "    initial begin\n" +
+                '        $display("greet:%0s:Ada", helper_label);\n' +
+                '        if ($value$plusargs("arg0=%s", first_argument)) begin\n' +
+                '            $display("arg0:%0s", first_argument);\n' +
+                "        end else begin\n" +
+                '            $display("arg0:none");\n' +
+                "        end\n" +
+                '        data_handle = $fopen("data.txt", "r");\n' +
+                "        if (data_handle != 0) begin\n" +
+                "            read_count = $fgets(line_buffer, data_handle);\n" +
+                '            $display("file:%0s", line_buffer);\n' +
+                "            $fclose(data_handle);\n" +
+                "        end else begin\n" +
+                '            $display("file:missing");\n' +
+                "        end\n" +
+                '        $display("PROBE-DONE");\n' +
+                "        $finish;\n" +
+                "    end\n" +
+                "endmodule\n",
+            "helper.v":
+                "module helper(output [47:0] label_text);\n" +
+                '    assign label_text = "helper";\n' +
+                "endmodule\n",
+            "data.txt": "probe-data\n",
+        },
+        programArguments: PROBE_ARGUMENTS,
+        terminalAnswers: [],
+        expectedLines: ["greet:helper:Ada", "arg0:alpha", "file:probe-data", "PROBE-DONE"],
+        exercisedFeatures: ["arguments", "fileIo", "multiFile"],
+        unsupportedFeatures: [
+            {
+                feature: "stdin",
+                reason: "the Icarus Verilog WASM engine exposes no stdin; testbenches drive stimuli with time delays and timeouts instead",
+            },
+        ],
+    },
+    {
+        languageIdentifier: "solidity",
+        entryFileName: "main.sol",
+        sourceFiles: {
+            "main.sol":
+                "// SPDX-License-Identifier: MIT\n" +
+                "pragma solidity ^0.8.0;\n" +
+                'import {Helper} from "./helper.sol";\n' +
+                "contract Main {\n" +
+                "    function main(string[] memory args) public pure returns (string[] memory) {\n" +
+                "        string[] memory lines = new string[](3);\n" +
+                '        lines[0] = string.concat("greet:", Helper.label(), ":Ada");\n' +
+                '        lines[1] = string.concat("arg0:", args[0]);\n' +
+                '        lines[2] = "PROBE-DONE";\n' +
+                "        return lines;\n" +
+                "    }\n" +
+                "}\n",
+            "helper.sol":
+                "// SPDX-License-Identifier: MIT\n" +
+                "pragma solidity ^0.8.0;\n" +
+                "library Helper {\n" +
+                '    function label() internal pure returns (string memory) { return "helper"; }\n' +
+                "}\n",
+        },
+        programArguments: PROBE_ARGUMENTS,
+        terminalAnswers: [],
+        expectedLines: ["greet:helper:Ada", "arg0:alpha", "PROBE-DONE"],
+        exercisedFeatures: ["arguments", "multiFile"],
+        unsupportedFeatures: [
+            {
+                feature: "stdin",
+                reason: "contracts have no stdin channel; inputs arrive through ABI encoded function arguments",
+            },
+            {
+                feature: "fileIo",
+                reason: "the in-memory EVM has no host filesystem; compile-time imports are the only cross-file channel",
+            },
+        ],
+    },
+    {
+        languageIdentifier: "vimscript",
+        entryFileName: "main.vim",
+        sourceFiles: {
+            "main.vim":
+                "call writefile([], '/result.txt')\n" +
+                "source /helper.vim\n" +
+                "call writefile(['greet:' . Label() . ':Ada'], '/result.txt', 'a')\n" +
+                "let s:arguments = readfile('/wasmverse-args.txt')\n" +
+                "call writefile(['arg0:' . s:arguments[0]], '/result.txt', 'a')\n" +
+                "call writefile(['file:' . readfile('data.txt')[0]], '/result.txt', 'a')\n" +
+                "call writefile(['PROBE-DONE'], '/result.txt', 'a')\n" +
+                "qall!\n",
+            "helper.vim": "function! Label() abort\n    return 'helper'\nendfunction\n",
+            "data.txt": "probe-data\n",
+        },
+        programArguments: PROBE_ARGUMENTS,
+        terminalAnswers: [],
+        expectedLines: ["greet:helper:Ada", "arg0:alpha", "file:probe-data", "PROBE-DONE"],
+        exercisedFeatures: ["arguments", "fileIo", "multiFile"],
+        unsupportedFeatures: [
+            {
+                feature: "stdin",
+                reason: "the vim.wasm build replaces stdin with an end-of-file stub, so Ex mode cannot read interactive input",
+            },
+        ],
+    },
+    {
         languageIdentifier: "go",
         entryFileName: "main.go",
         sourceFiles: {
@@ -836,6 +1239,188 @@ const FEATURE_PROBES: ReadonlyArray<FeatureProbeDefinition> = [
         expectedLines: ["greet:helper:Ada", "arg0:alpha", "file:written", "PROBE-DONE"],
         exercisedFeatures: ["stdin", "arguments", "fileIo", "multiFile"],
         unsupportedFeatures: [],
+    },
+    {
+        languageIdentifier: "logo",
+        entryFileName: "main.logo",
+        sourceFiles: {
+            "main.logo":
+                "PRINT WORD |greet:helper:| READWORD\n" +
+                "PRINT WORD |arg0:| FIRST :WASMVERSE.ARGUMENTS\n" +
+                "PRINT |PROBE-DONE|\n",
+        },
+        programArguments: PROBE_ARGUMENTS,
+        terminalAnswers: PROBE_ANSWERS,
+        expectedLines: ["greet:helper:Ada", "arg0:alpha", "PROBE-DONE"],
+        exercisedFeatures: ["stdin", "arguments"],
+        unsupportedFeatures: [
+            {
+                feature: "fileIo",
+                reason: "the Logo interpreter keeps values in memory only; host files are not mapped",
+            },
+            {
+                feature: "multiFile",
+                reason: "the interpreter loads the entry file only; helper procedures live inside the entry program",
+            },
+        ],
+    },
+    {
+        languageIdentifier: "gwbasic",
+        entryFileName: "main.bas",
+        sourceFiles: {
+            "main.bas":
+                '10 INPUT "name? "; N$\n' +
+                "20 GOSUB 100\n" +
+                '30 PRINT "greet:"; LABEL$; ":"; N$\n' +
+                '40 PRINT "PROBE-DONE"\n' +
+                "50 END\n" +
+                '100 LABEL$ = "helper"\n' +
+                "110 RETURN\n",
+        },
+        programArguments: PROBE_ARGUMENTS,
+        terminalAnswers: PROBE_ANSWERS,
+        expectedLines: ["greet:helper:Ada", "PROBE-DONE"],
+        exercisedFeatures: ["stdin"],
+        unsupportedFeatures: [
+            {
+                feature: "arguments",
+                reason: "GW-BASIC has no argv channel in this interpreter; programs take input through INPUT and DATA",
+            },
+            {
+                feature: "fileIo",
+                reason: "the interpreter keeps variables in memory only; host files are not mapped",
+            },
+            {
+                feature: "multiFile",
+                reason: "only the entry listing is loaded; helper logic lives in GOSUB subroutines inside one listing",
+            },
+        ],
+    },
+    {
+        languageIdentifier: "sml",
+        entryFileName: "main.sml",
+        sourceFiles: {
+            "main.sml":
+                'fun helperLabel () = "helper"\n' +
+                'val () = print ("greet:" ^ helperLabel() ^ ":sml\\n")\n' +
+                'val () = print "PROBE-DONE\\n"\n',
+        },
+        programArguments: PROBE_ARGUMENTS,
+        terminalAnswers: [],
+        expectedLines: ["PROBE-DONE"],
+        exercisedFeatures: [],
+        unsupportedFeatures: [
+            {
+                feature: "stdin",
+                reason: "no verified Standard ML browser runtime exists; the SMLtoJs toolchain is not provisioned under ./.tools/sml/",
+            },
+            {
+                feature: "arguments",
+                reason: "no verified Standard ML browser runtime exists; the SMLtoJs toolchain is not provisioned under ./.tools/sml/",
+            },
+            {
+                feature: "fileIo",
+                reason: "no verified Standard ML browser runtime exists; the SMLtoJs toolchain is not provisioned under ./.tools/sml/",
+            },
+            {
+                feature: "multiFile",
+                reason: "no verified Standard ML browser runtime exists; use-based loading is unverified",
+            },
+        ],
+    },
+    {
+        languageIdentifier: "m6502",
+        entryFileName: "main.6502",
+        sourceFiles: {
+            "main.6502":
+                "        .org $0200\n" +
+                "\n" +
+                "start:\n" +
+                "        lda #<greetText\n" +
+                "        sta $00\n" +
+                "        lda #>greetText\n" +
+                "        sta $01\n" +
+                "        jsr printString\n" +
+                "        lda #<helperText\n" +
+                "        sta $00\n" +
+                "        lda #>helperText\n" +
+                "        sta $01\n" +
+                "        jsr printString\n" +
+                "        lda #<colonText\n" +
+                "        sta $00\n" +
+                "        lda #>colonText\n" +
+                "        sta $01\n" +
+                "        jsr printString\n" +
+                "        ldx #0\n" +
+                "readLoop:\n" +
+                "        lda $F004\n" +
+                "        cmp #13\n" +
+                "        beq readDone\n" +
+                "        sta nameBuffer,x\n" +
+                "        inx\n" +
+                "        cpx #60\n" +
+                "        bcc readLoop\n" +
+                "readDone:\n" +
+                "        stx nameLength\n" +
+                "        ldx #0\n" +
+                "echoLoop:\n" +
+                "        cpx nameLength\n" +
+                "        beq echoDone\n" +
+                "        lda nameBuffer,x\n" +
+                "        sta $F001\n" +
+                "        inx\n" +
+                "        jmp echoLoop\n" +
+                "echoDone:\n" +
+                "        lda #10\n" +
+                "        sta $F001\n" +
+                "        lda #<doneText\n" +
+                "        sta $00\n" +
+                "        lda #>doneText\n" +
+                "        sta $01\n" +
+                "        jsr printString\n" +
+                "        lda #0\n" +
+                "        sta $F002\n" +
+                "\n" +
+                "printString:\n" +
+                "        ldy #0\n" +
+                "printStringLoop:\n" +
+                "        lda ($00),y\n" +
+                "        beq printStringDone\n" +
+                "        sta $F001\n" +
+                "        iny\n" +
+                "        jmp printStringLoop\n" +
+                "printStringDone:\n" +
+                "        rts\n" +
+                "\n" +
+                "greetText:\n" +
+                '        .byte "greet:", 0\n' +
+                "colonText:\n" +
+                '        .byte ":", 0\n' +
+                "doneText:\n" +
+                '        .byte "PROBE-DONE", 10, 0\n' +
+                "\n" +
+                "nameBuffer:\n" +
+                "        .res 64\n" +
+                "nameLength:\n" +
+                "        .byte 0\n" +
+                "\n" +
+                '        .include "helper.6502"\n',
+            "helper.6502": 'helperText:\n        .byte "helper", 0\n',
+        },
+        programArguments: PROBE_ARGUMENTS,
+        terminalAnswers: PROBE_ANSWERS,
+        expectedLines: ["greet:helper:Ada", "PROBE-DONE"],
+        exercisedFeatures: ["stdin", "multiFile"],
+        unsupportedFeatures: [
+            {
+                feature: "arguments",
+                reason: "the emulator exposes no argv channel; programs read data through $F004 and memory-mapped IO",
+            },
+            {
+                feature: "fileIo",
+                reason: "the emulator maps only terminal IO ($F001 output, $F004 input); there is no host filesystem",
+            },
+        ],
     },
     {
         languageIdentifier: "zig",
