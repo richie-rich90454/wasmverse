@@ -1,0 +1,41 @@
+; WASMVerse Logo showcase.
+; Supported in this interpreter: PRINT / SHOW / TYPE, + - * / and = < >,
+; MAKE with "names and :variable reads, REPEAT, IF and IFELSE with instruction
+; lists, TO ... END procedures with OUTPUT and recursion, list basics
+; (FIRST / LAST / BUTFIRST / BUTLAST / COUNT / ITEM / WORD / LIST / SENTENCE),
+; READWORD / READLIST for stdin, and a text turtle: FORWARD/FD, BACK/BK,
+; RIGHT/RT, LEFT/LT, SETHEADING/SETH, HOME, PENDOWN/PD, PENUP/PU,
+; CLEARSCREEN/CS and DRAW. Turtle commands only update state; DRAW renders
+; the recorded path as ASCII art into the terminal. WASMVERSE.ARGUMENTS holds
+; the program arguments as a list. File loading (LOAD) is not supported.
+
+PRINT |WASMVerse Logo showcase|
+PRINT |Stage one: procedures with OUTPUT and recursion|
+TO FACT :N
+  IF :N = 0 [ OUTPUT 1 ]
+  OUTPUT :N * FACT :N - 1
+END
+PRINT (FACT 6)
+PRINT (FACT 8)
+PRINT |Stage two: lists and word building|
+MAKE "PRIMES [2 3 5 7 11 13]
+PRINT COUNT :PRIMES
+PRINT (ITEM 3 :PRIMES)
+SHOW :PRIMES
+PRINT (WORD "prime-count: COUNT :PRIMES)
+PRINT |Stage three: REPEAT and MAKE accumulation|
+MAKE "INDEX 0
+REPEAT 5 [
+  MAKE "INDEX :INDEX + 1
+  PRINT :INDEX * :INDEX
+]
+PRINT |Stage four: text turtle spiral rendered with DRAW|
+CLEARSCREEN
+MAKE "STEP 2
+REPEAT 8 [
+  FORWARD :STEP
+  RIGHT 90
+  MAKE "STEP :STEP + 2
+]
+DRAW
+PRINT |Showcase complete.|
