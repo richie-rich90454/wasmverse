@@ -45,6 +45,7 @@ import { CherryCljsRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/Che
 import { BiwaschemeRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/BiwaschemeRuntimeAssembler.ts";
 import { TauPrologRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/TauPrologRuntimeAssembler.ts";
 import { NullRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/NullRuntimeAssembler.ts";
+import { NgnAplRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/NgnAplRuntimeAssembler.ts";
 import { TypeScriptLoaderRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/TypeScriptLoaderRuntimeAssembler.ts";
 import { KotlinJsGlueRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/KotlinJsGlueRuntimeAssembler.ts";
 import { ScalaJsLoaderRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/ScalaJsLoaderRuntimeAssembler.ts";
@@ -79,8 +80,25 @@ import { FortranLanguagePlugin } from "@serverAtelier/languagePlugins/FortranLan
 import { LuaLanguagePlugin } from "@serverAtelier/languagePlugins/LuaLanguagePlugin.ts";
 import { PhpLanguagePlugin } from "@serverAtelier/languagePlugins/PhpLanguagePlugin.ts";
 import { RustLanguagePlugin } from "@serverAtelier/languagePlugins/RustLanguagePlugin.ts";
+import { CommonLispLanguagePlugin } from "@serverAtelier/languagePlugins/CommonLispLanguagePlugin.ts";
+import { TclLanguagePlugin } from "@serverAtelier/languagePlugins/TclLanguagePlugin.ts";
+import { ForthLanguagePlugin } from "@serverAtelier/languagePlugins/ForthLanguagePlugin.ts";
+import { SmalltalkLanguagePlugin } from "@serverAtelier/languagePlugins/SmalltalkLanguagePlugin.ts";
+import { JsclRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/JsclRuntimeAssembler.ts";
+import { WaclRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/WaclRuntimeAssembler.ts";
 import { CLanguagePlugin } from "@serverAtelier/languagePlugins/CLanguagePlugin.ts";
+import { BrainfuckLanguagePlugin } from "@serverAtelier/languagePlugins/BrainfuckLanguagePlugin.ts";
+import { BefungeLanguagePlugin } from "@serverAtelier/languagePlugins/BefungeLanguagePlugin.ts";
+import { LolcodeLanguagePlugin } from "@serverAtelier/languagePlugins/LolcodeLanguagePlugin.ts";
+import { AplLanguagePlugin } from "@serverAtelier/languagePlugins/AplLanguagePlugin.ts";
 import { CppLanguagePlugin } from "@serverAtelier/languagePlugins/CppLanguagePlugin.ts";
+import { RiscvLanguagePlugin } from "@serverAtelier/languagePlugins/RiscvLanguagePlugin.ts";
+import { VerilogLanguagePlugin } from "@serverAtelier/languagePlugins/VerilogLanguagePlugin.ts";
+import { SolidityLanguagePlugin } from "@serverAtelier/languagePlugins/SolidityLanguagePlugin.ts";
+import { VimscriptLanguagePlugin } from "@serverAtelier/languagePlugins/VimscriptLanguagePlugin.ts";
+import { VerilogWasmRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/VerilogWasmRuntimeAssembler.ts";
+import { SoliditySolcRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/SoliditySolcRuntimeAssembler.ts";
+import { VimWasmRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/VimWasmRuntimeAssembler.ts";
 import { GoLanguagePlugin } from "@serverAtelier/languagePlugins/GoLanguagePlugin.ts";
 import { ZigLanguagePlugin } from "@serverAtelier/languagePlugins/ZigLanguagePlugin.ts";
 import { SwiftLanguagePlugin } from "@serverAtelier/languagePlugins/SwiftLanguagePlugin.ts";
@@ -110,6 +128,11 @@ import { DuckDbWasmRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/Duc
 import { PgliteRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/PgliteRuntimeAssembler.ts";
 import { BusyboxWasiRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/BusyboxWasiRuntimeAssembler.ts";
 import { JqWasmRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/JqWasmRuntimeAssembler.ts";
+import { SmlToJsCompilerStrategy } from "@serverAtelier/compilerStrategies/SmlToJsCompilerStrategy.ts";
+import { LogoLanguagePlugin } from "@serverAtelier/languagePlugins/LogoLanguagePlugin.ts";
+import { GwBasicLanguagePlugin } from "@serverAtelier/languagePlugins/GwBasicLanguagePlugin.ts";
+import { SmlLanguagePlugin } from "@serverAtelier/languagePlugins/SmlLanguagePlugin.ts";
+import { M6502LanguagePlugin } from "@serverAtelier/languagePlugins/M6502LanguagePlugin.ts";
 class ServerApplication {
     private readonly serverConfiguration: ServerConfiguration;
     private readonly scopedLogger: ScopedLogger;
@@ -223,9 +246,57 @@ class ServerApplication {
                 sourceFileCopier,
                 manifestWriter,
             ),
+            new CommonLispLanguagePlugin(
+                nullCompilerStrategy,
+                new JsclRuntimeAssembler(this.fileSystemOperations),
+                sourceFileCopier,
+                manifestWriter,
+            ),
+            new TclLanguagePlugin(
+                nullCompilerStrategy,
+                new WaclRuntimeAssembler(this.fileSystemOperations),
+                sourceFileCopier,
+                manifestWriter,
+            ),
+            new ForthLanguagePlugin(
+                nullCompilerStrategy,
+                new NullRuntimeAssembler(),
+                sourceFileCopier,
+                manifestWriter,
+            ),
+            new SmalltalkLanguagePlugin(
+                nullCompilerStrategy,
+                new NullRuntimeAssembler(),
+                sourceFileCopier,
+                manifestWriter,
+            ),
             new CLanguagePlugin(
                 emscriptenCompilerStrategy,
                 new EmscriptenGlueRuntimeAssembler(this.fileSystemOperations),
+                sourceFileCopier,
+                manifestWriter,
+            ),
+            new BrainfuckLanguagePlugin(
+                nullCompilerStrategy,
+                new NullRuntimeAssembler(),
+                sourceFileCopier,
+                manifestWriter,
+            ),
+            new BefungeLanguagePlugin(
+                nullCompilerStrategy,
+                new NullRuntimeAssembler(),
+                sourceFileCopier,
+                manifestWriter,
+            ),
+            new LolcodeLanguagePlugin(
+                nullCompilerStrategy,
+                new NullRuntimeAssembler(),
+                sourceFileCopier,
+                manifestWriter,
+            ),
+            new AplLanguagePlugin(
+                nullCompilerStrategy,
+                new NgnAplRuntimeAssembler(this.fileSystemOperations),
                 sourceFileCopier,
                 manifestWriter,
             ),
@@ -240,9 +311,57 @@ class ServerApplication {
                 sourceFileCopier,
                 manifestWriter,
             ),
+            new RiscvLanguagePlugin(
+                nullCompilerStrategy,
+                new NullRuntimeAssembler(),
+                sourceFileCopier,
+                manifestWriter,
+            ),
+            new VerilogLanguagePlugin(
+                nullCompilerStrategy,
+                new VerilogWasmRuntimeAssembler(this.fileSystemOperations),
+                sourceFileCopier,
+                manifestWriter,
+            ),
+            new SolidityLanguagePlugin(
+                nullCompilerStrategy,
+                new SoliditySolcRuntimeAssembler(this.fileSystemOperations),
+                sourceFileCopier,
+                manifestWriter,
+            ),
+            new VimscriptLanguagePlugin(
+                nullCompilerStrategy,
+                new VimWasmRuntimeAssembler(this.fileSystemOperations),
+                sourceFileCopier,
+                manifestWriter,
+            ),
             new GoLanguagePlugin(
                 new GoWasmCompilerStrategy(processRunner),
                 new GoWasmExecRuntimeAssembler(this.fileSystemOperations),
+                sourceFileCopier,
+                manifestWriter,
+            ),
+            new LogoLanguagePlugin(
+                nullCompilerStrategy,
+                new NullRuntimeAssembler(),
+                sourceFileCopier,
+                manifestWriter,
+            ),
+            new GwBasicLanguagePlugin(
+                nullCompilerStrategy,
+                new NullRuntimeAssembler(),
+                sourceFileCopier,
+                manifestWriter,
+            ),
+            new SmlLanguagePlugin(
+                new SmlToJsCompilerStrategy(processRunner, this.fileSystemOperations),
+                new NullRuntimeAssembler(),
+                sourceFileCopier,
+                manifestWriter,
+            ),
+            new M6502LanguagePlugin(
+                nullCompilerStrategy,
+                new NullRuntimeAssembler(),
                 sourceFileCopier,
                 manifestWriter,
             ),
