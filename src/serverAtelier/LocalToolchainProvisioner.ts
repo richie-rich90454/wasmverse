@@ -15,6 +15,8 @@ const GO_VERSION = "1.27.2";
 const GO_DIRECTORY = "./.tools/go";
 const GO_BINARY_PATH = `${GO_DIRECTORY}/bin/go.exe`;
 const GO_WINDOWS_X64_ARCHIVE_URL = `https://go.dev/dl/go${GO_VERSION}.windows-amd64.zip`;
+const SML_DIRECTORY = "./.tools/sml";
+const SML_TO_JS_COMPILER_PATH = `${SML_DIRECTORY}/bin/smltojs`;
 const ZIG_VERSION = "0.17.0";
 const ZIG_DIRECTORY = "./.tools/zig";
 const ZIG_BINARY_PATH = `${ZIG_DIRECTORY}/zig`;
@@ -28,6 +30,19 @@ const RUSTUP_INIT_URL =
 const RUST_CARGO_DIRECTORY = "./.tools/cargo";
 const RUST_CARGO_BINARY_PATH = `${RUST_CARGO_DIRECTORY}/bin/cargo.exe`;
 const RUST_RUSTUP_DIRECTORY = "./.tools/rustup";
+const JSCL_VERSION = "0.9.0-alpha.0";
+const JSCL_DIRECTORY = "./.tools/jscl";
+const JSCL_FILE_PATH = `${JSCL_DIRECTORY}/jscl.js`;
+const JSCL_ARCHIVE_URL = `https://registry.npmjs.org/jscl/-/jscl-${JSCL_VERSION}.tgz`;
+const WACL_ARCHIVE_URL = "https://ecky-l.github.io/wacl/releases/wacl.zip";
+const WACL_DIRECTORY = "./.tools/tcl";
+const WACL_SCRIPT_PATH = `${WACL_DIRECTORY}/wacl.js`;
+const WACL_RUNTIME_FILE_NAMES: ReadonlyArray<string> = [
+    "wacl.js",
+    "wacl.wasm",
+    "wacl-library.data",
+    "wacl-custom.data",
+];
 const JDK_DIRECTORY = "./.tools/jdk";
 const JDK_BINARY_PATH = `${JDK_DIRECTORY}/bin/java.exe`;
 const JDK_WINDOWS_X64_ARCHIVE_URL =
@@ -71,6 +86,10 @@ const JQ_WASM_BINARY_PATH = `${JQ_WASM_DIRECTORY}/jq.wasm`;
 const JQ_WASM_BINARY_URL = `${JQ_WASM_RELEASE_BASE_URL}/jq.wasm`;
 const JQ_WASM_GLUE_FILE_NAME = "jq-runtime.mjs";
 const JQ_WASM_GLUE_URL = `${JQ_WASM_RELEASE_BASE_URL}/jq.wasm.mjs`;
+const NGN_APL_COMMIT = "f48272b0eb15d98b9d2907bed9bfbee2c45638c1";
+const NGN_APL_DIRECTORY = "./.tools/ngn-apl";
+const NGN_APL_RUNTIME_PATH = `${NGN_APL_DIRECTORY}/apl.js`;
+const NGN_APL_RUNTIME_URL = `https://raw.githubusercontent.com/abrudz/ngn-apl/${NGN_APL_COMMIT}/apl.js`;
 const SCALA_CLI_VERSION = "1.18.0";
 const SCALA_CLI_DIRECTORY = "./.tools/scala-cli";
 const SCALA_CLI_BINARY_PATH = `${SCALA_CLI_DIRECTORY}/scala-cli`;
@@ -139,6 +158,21 @@ const LFORTRAN_CONDA_PACKAGE_URLS: ReadonlyArray<string> = [
     "https://conda.anaconda.org/conda-forge/win-64/libzlib-1.3.2-hfd05255_2.conda",
     "https://conda.anaconda.org/conda-forge/win-64/zstd-1.5.7-h1b5488d_4.conda",
 ];
+const VERILOG_WASM_DIRECTORY = "./.tools/verilog";
+const VERILOG_WASM_COMMIT = "a275a9ac28c59db1130505973644c9a3754ec1d7";
+const VERILOG_WASM_BASE_URL = `https://raw.githubusercontent.com/senolgulgonul/verisim/${VERILOG_WASM_COMMIT}`;
+const VERILOG_WASM_FILE_NAMES: ReadonlyArray<string> = [
+    "ivlpp.js",
+    "ivlpp.wasm",
+    "ivl.js",
+    "ivl.wasm",
+    "vvp.js",
+    "vvp.wasm",
+];
+const VIM_WASM_VERSION = "0.0.13";
+const VIM_WASM_DIRECTORY = "./.tools/vim-wasm";
+const VIM_WASM_BINARY_PATH = `${VIM_WASM_DIRECTORY}/vim.wasm`;
+const VIM_WASM_ARCHIVE_URL = `https://registry.npmjs.org/vim-wasm/-/vim-wasm-${VIM_WASM_VERSION}.tgz`;
 const WINDOWS_EXECUTABLE_EXTENSIONS: ReadonlyArray<string> = [".exe", ".bat", ".cmd"];
 interface ArchiveToolchainSpec {
     toolchainName: string;
@@ -243,6 +277,16 @@ class LocalToolchainProvisioner {
             supportedPlatforms: ["win32"],
         });
     }
+    async provisionSmlToolchain(): Promise<void> {
+        if (await this.isToolchainPresent(SML_TO_JS_COMPILER_PATH)) {
+            this.scopedLogger.logInformation("SMLtoJs already provisioned, skipping.");
+            return;
+        }
+        await this.fileSystemOperations.ensureDirectoryExists(SML_DIRECTORY);
+        this.scopedLogger.logWarning(
+            "Standard ML has no pinned browser toolchain: MLKit releases ship linux/darwin binaries only (no wasm32 and no win32 asset), SMLtoJs needs a host MLKit or MLton build, and the sml.js npm package is an unrelated UI library. Provision ./.tools/sml/bin/smltojs manually; until then Standard ML builds report Run pnpm run setup.",
+        );
+    }
     async provisionZigToolchain(): Promise<void> {
         await this.installArchiveToolchain({
             toolchainName: "Zig",
@@ -310,6 +354,67 @@ class LocalToolchainProvisioner {
             this.scopedLogger.logSuccess(`Rust toolchain provisioned at ${RUST_CARGO_DIRECTORY}.`);
         } catch (error) {
             this.scopedLogger.logWarning(`Rust provisioning failed: ${messageOf(error)}`);
+        } finally {
+            try {
+                await this.fileSystemOperations.removeRecursively(stagingDirectory);
+            } catch {}
+        }
+    }
+    async provisionJsclRuntime(): Promise<void> {
+        if (await this.isToolchainPresent(JSCL_FILE_PATH)) {
+            this.scopedLogger.logInformation("JSCL runtime already provisioned, skipping.");
+            return;
+        }
+        const stagingDirectory = `${JSCL_DIRECTORY}-staging`;
+        try {
+            this.scopedLogger.logInformation(`Downloading JSCL from ${JSCL_ARCHIVE_URL}.`);
+            const archivePath = `${stagingDirectory}/jscl-${JSCL_VERSION}.tgz`;
+            await this.fileSystemOperations.ensureDirectoryExists(stagingDirectory);
+            await this.fileSystemOperations.writeBinaryFile(
+                archivePath,
+                await this.fetchArchiveContent(JSCL_ARCHIVE_URL),
+            );
+            const extractionDirectory = `${stagingDirectory}/extracted`;
+            await this.fileSystemOperations.ensureDirectoryExists(extractionDirectory);
+            await this.extractTarInto(archivePath, extractionDirectory);
+            await this.fileSystemOperations.copyFileInto(
+                `${extractionDirectory}/package/dist/jscl.js`,
+                JSCL_FILE_PATH,
+            );
+            this.scopedLogger.logSuccess(`JSCL runtime provisioned at ${JSCL_DIRECTORY}.`);
+        } catch (error) {
+            this.scopedLogger.logWarning(`JSCL runtime provisioning failed: ${messageOf(error)}`);
+        } finally {
+            try {
+                await this.fileSystemOperations.removeRecursively(stagingDirectory);
+            } catch {}
+        }
+    }
+    async provisionWaclRuntime(): Promise<void> {
+        if (await this.isToolchainPresent(WACL_SCRIPT_PATH)) {
+            this.scopedLogger.logInformation("Tcl wacl runtime already provisioned, skipping.");
+            return;
+        }
+        const stagingDirectory = `${WACL_DIRECTORY}-staging`;
+        try {
+            this.scopedLogger.logInformation(
+                `Downloading Tcl wacl runtime from ${WACL_ARCHIVE_URL}.`,
+            );
+            const archiveContent = await this.fetchArchiveContent(WACL_ARCHIVE_URL);
+            const extractionDirectory = `${stagingDirectory}/extracted`;
+            await this.fileSystemOperations.ensureDirectoryExists(extractionDirectory);
+            await this.extractZipInto(archiveContent, extractionDirectory);
+            for (const fileName of WACL_RUNTIME_FILE_NAMES) {
+                await this.fileSystemOperations.copyFileInto(
+                    `${extractionDirectory}/js/tcl/${fileName}`,
+                    `${WACL_DIRECTORY}/${fileName}`,
+                );
+            }
+            this.scopedLogger.logSuccess(`Tcl wacl runtime provisioned at ${WACL_DIRECTORY}.`);
+        } catch (error) {
+            this.scopedLogger.logWarning(
+                `Tcl wacl runtime provisioning failed: ${messageOf(error)}`,
+            );
         } finally {
             try {
                 await this.fileSystemOperations.removeRecursively(stagingDirectory);
@@ -889,6 +994,26 @@ class LocalToolchainProvisioner {
             this.scopedLogger.logWarning(`jq wasm provisioning failed: ${messageOf(error)}`);
         }
     }
+    async provisionNgnAplRuntime(): Promise<void> {
+        if (await this.isToolchainPresent(NGN_APL_RUNTIME_PATH)) {
+            this.scopedLogger.logInformation("ngn/apl runtime already provisioned, skipping.");
+            return;
+        }
+        try {
+            this.scopedLogger.logInformation(
+                `Downloading ngn/apl runtime from ${NGN_APL_RUNTIME_URL}.`,
+            );
+            await this.fileSystemOperations.writeTextFile(
+                NGN_APL_RUNTIME_PATH,
+                await this.fetchTextContent(NGN_APL_RUNTIME_URL),
+            );
+            this.scopedLogger.logSuccess(`ngn/apl runtime provisioned at ${NGN_APL_DIRECTORY}.`);
+        } catch (error) {
+            this.scopedLogger.logWarning(
+                `ngn/apl runtime provisioning failed: ${messageOf(error)}`,
+            );
+        }
+    }
     private async fetchTextContent(sourceUrl: string): Promise<string> {
         const response = await fetch(sourceUrl);
         if (!response.ok) {
@@ -896,12 +1021,47 @@ class LocalToolchainProvisioner {
         }
         return await response.text();
     }
+    async provisionVerilogWasmRuntime(): Promise<void> {
+        if (await this.isToolchainPresent(`${VERILOG_WASM_DIRECTORY}/vvp.wasm`)) {
+            this.scopedLogger.logInformation("Verilog wasm runtime already provisioned, skipping.");
+            return;
+        }
+        try {
+            for (const fileName of VERILOG_WASM_FILE_NAMES) {
+                const sourceUrl = `${VERILOG_WASM_BASE_URL}/${fileName}`;
+                this.scopedLogger.logInformation(
+                    `Downloading Verilog wasm runtime from ${sourceUrl}.`,
+                );
+                await this.fileSystemOperations.writeBinaryFile(
+                    `${VERILOG_WASM_DIRECTORY}/${fileName}`,
+                    await this.fetchArchiveContent(sourceUrl),
+                );
+            }
+            this.scopedLogger.logSuccess(
+                `Verilog wasm runtime provisioned at ${VERILOG_WASM_DIRECTORY}.`,
+            );
+        } catch (error) {
+            this.scopedLogger.logWarning(`Verilog wasm provisioning failed: ${messageOf(error)}`);
+        }
+    }
+    async provisionVimWasmRuntime(): Promise<void> {
+        await this.installArchiveToolchain({
+            toolchainName: "vim.wasm",
+            archiveUrl: VIM_WASM_ARCHIVE_URL,
+            archiveFileName: `vim-wasm-${VIM_WASM_VERSION}.tgz`,
+            targetDirectory: VIM_WASM_DIRECTORY,
+            probePath: VIM_WASM_BINARY_PATH,
+        });
+    }
     async provisionAllToolchains(): Promise<void> {
         await this.provisionEmscriptenSdk();
         await this.provisionGoToolchain();
+        await this.provisionSmlToolchain();
         await this.provisionZigToolchain();
         await this.provisionWasmPackToolchain();
         await this.provisionRustToolchain();
+        await this.provisionJsclRuntime();
+        await this.provisionWaclRuntime();
         await this.provisionJdkToolchain();
         await this.provisionMavenToolchain();
         await this.provisionChromeForTesting();
@@ -914,6 +1074,7 @@ class LocalToolchainProvisioner {
         await this.provisionGhcWasmToolchain();
         await this.provisionWasiShellRuntime();
         await this.provisionJqWasmRuntime();
+        await this.provisionNgnAplRuntime();
         await this.provisionScalaCli();
         await this.provisionElmToolchain();
         await this.provisionGleamToolchain();
@@ -925,6 +1086,8 @@ class LocalToolchainProvisioner {
         await this.provisionFpcWasmToolchain();
         await this.provisionGnuCobolToolchain();
         await this.provisionLFortranToolchain();
+        await this.provisionVerilogWasmRuntime();
+        await this.provisionVimWasmRuntime();
     }
     private async installArchiveToolchain(spec: ArchiveToolchainSpec): Promise<void> {
         if (await this.isToolchainPresent(spec.probePath)) {
