@@ -901,7 +901,7 @@ class SmalltalkEvaluator {
             }
             return this.numericResult(receiver, right, (a, b) => Math.floor(a / b));
         }
-        if (selector === "\\") {
+        if (selector === "\\" || selector === "\\\\") {
             const right = this.requireNumber(args[0], selector);
             if (right.value === 0) {
                 throw new Error("Division by zero");
