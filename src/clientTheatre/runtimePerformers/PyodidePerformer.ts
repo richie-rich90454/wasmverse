@@ -98,7 +98,7 @@ class PyodideRuntimeLoader {
     private readonly indexUrl: string;
     constructor(sessionBaseUrl: string) {
         this.assetLocator = createRuntimeAssetLocator(sessionBaseUrl);
-        this.indexUrl = `${sessionBaseUrl}/runtime/`;
+        this.indexUrl = `${this.assetLocator.resolveAssetUrl("runtime")}/`;
     }
     async loadRuntime(): Promise<PyodideInstance> {
         const pyodideModule = (await import(
@@ -109,12 +109,11 @@ class PyodideRuntimeLoader {
             packageBaseUrl: this.indexUrl,
             createPyodideModule: async (settings: Record<string, unknown>) => {
                 const asmModule = await import(
-                    /* @vite-ignore */ this.assetLocator.resolveAssetUrl(
-                        "runtime/python-asm.js",
-                    )
+                    /* @vite-ignore */ this.assetLocator.resolveAssetUrl("runtime/python-asm.js")
                 );
-                return (asmModule as { default: (settings: Record<string, unknown>) => unknown })
-                    .default(settings);
+                return (
+                    asmModule as { default: (settings: Record<string, unknown>) => unknown }
+                ).default(settings);
             },
         });
     }
