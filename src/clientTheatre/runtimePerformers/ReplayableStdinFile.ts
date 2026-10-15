@@ -27,6 +27,9 @@ class ReplayableStdinFile extends Fd {
     override fd_fdstat_get(): { ret: number; fdstat: wasi.Fdstat | null } {
         return { ret: 0, fdstat: new wasi.Fdstat(wasi.FILETYPE_CHARACTER_DEVICE, 0) };
     }
+    override fd_pread(size: number, _offset: bigint): { ret: number; data: Uint8Array } {
+        return this.fd_read(size);
+    }
     override fd_read(size: number): { ret: number; data: Uint8Array } {
         const availableLength = this.fedLength - this.consumedLength;
         if (availableLength <= 0) {
