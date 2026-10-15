@@ -7,6 +7,10 @@ import {
 } from "@clientTheatre/runtimePerformers/ReplayableStdinFile.ts";
 import { ReplayOutputTracker } from "@clientTheatre/runtimePerformers/ReplayOutputTracker.ts";
 import {
+    createRuntimeAssetLocator,
+    type RuntimeAssetLocator,
+} from "@clientTheatre/runtimePerformers/RuntimeAssetLocator.ts";
+import {
     directoryOf,
     joinRelativePath,
     normalizeWithinRoot,
@@ -45,15 +49,17 @@ interface BiwaInterpreterInstance {
     parser: { insert(sourceText: string): void };
 }
 class BiwaschemeRuntimeLoader {
-    private readonly sessionBaseUrl: string;
+    private readonly assetLocator: RuntimeAssetLocator;
     private runtimeNamespace: BiwaschemeNamespace | undefined;
     constructor(sessionBaseUrl: string) {
-        this.sessionBaseUrl = sessionBaseUrl.replace(/\/+$/, "");
+        this.assetLocator = createRuntimeAssetLocator(sessionBaseUrl.replace(/\/+$/, ""));
     }
     async loadRuntimeModule(stage: TerminalStageController): Promise<void> {
         stage.writeLine("Loading Scheme runtime.");
         const runtimeModule = (await import(
-            /* @vite-ignore */ `${this.sessionBaseUrl}/runtime/${SCHEME_RUNTIME_DIRECTORY_NAME}/biwascheme.js`
+            /* @vite-ignore */ this.assetLocator.resolveAssetUrl(
+                `runtime/${SCHEME_RUNTIME_DIRECTORY_NAME}/biwascheme.js`,
+            )
         )) as { default: BiwaschemeNamespace };
         this.runtimeNamespace = runtimeModule.default;
     }
