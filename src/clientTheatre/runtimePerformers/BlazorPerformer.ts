@@ -6,6 +6,10 @@ import {
     isTerminalInputNeeded,
 } from "@clientTheatre/runtimePerformers/ReplayableStdinFile.ts";
 import { ReplayOutputTracker } from "@clientTheatre/runtimePerformers/ReplayOutputTracker.ts";
+import {
+    createRuntimeAssetLocator,
+    type RuntimeAssetLocator,
+} from "@clientTheatre/runtimePerformers/RuntimeAssetLocator.ts";
 const MAXIMUM_REPLAY_INPUTS = 1000;
 interface BlazorAttemptOptions {
     baseUrl: string;
@@ -22,16 +26,16 @@ interface BlazorGlueModule {
     createBlazorRuntimeAttempt?(options: BlazorAttemptOptions): Promise<BlazorAttemptRunner>;
 }
 class BlazorRuntimeLoader {
-    private readonly sessionBaseUrl: string;
+    private readonly assetLocator: RuntimeAssetLocator;
     private glueModule: BlazorGlueModule | undefined;
     constructor(sessionBaseUrl: string) {
-        this.sessionBaseUrl = sessionBaseUrl;
+        this.assetLocator = createRuntimeAssetLocator(sessionBaseUrl);
     }
     async loadGlueModule(stage: TerminalStageController): Promise<BlazorGlueModule> {
         if (!this.glueModule) {
             stage.writeLine("Loading Blazor runtime.");
             this.glueModule = (await import(
-                /* @vite-ignore */ `${this.sessionBaseUrl}/runtime/blazor-loader.js`
+                /* @vite-ignore */ this.assetLocator.resolveAssetUrl("runtime/blazor-loader.js")
             )) as BlazorGlueModule;
         }
         return this.glueModule;
@@ -41,13 +45,13 @@ class BlazorPerformer implements TerminalPerformerContract {
     private readonly runtimeLoader: BlazorRuntimeLoader;
     private readonly outputTracker: ReplayOutputTracker;
     private readonly userFilesClient: SessionUserFilesClient;
-    private sessionBaseUrl: string;
+    private readonly assetLocator: RuntimeAssetLocator;
     private glueModule: BlazorGlueModule | undefined;
     private entryRelativePath: string = "";
     private programArguments: ReadonlyArray<string> = [];
     private userFiles: Map<string, string> = new Map();
     constructor(sessionBaseUrl: string) {
-        this.sessionBaseUrl = sessionBaseUrl;
+        this.assetLocator = createRuntimeAssetLocator(sessionBaseUrl);
         this.runtimeLoader = new BlazorRuntimeLoader(sessionBaseUrl);
         this.outputTracker = new ReplayOutputTracker();
         this.userFilesClient = new SessionUserFilesClient(sessionBaseUrl);
@@ -93,7 +97,7 @@ class BlazorPerformer implements TerminalPerformerContract {
             console.error = captureInto;
             try {
                 const attemptRunner = await this.createAttemptRunner({
-                    baseUrl: `${this.sessionBaseUrl}/runtime`,
+                    baseUrl: this.assetLocator.resolveAssetUrl("runtime"),
                     attemptIndex: attempt,
                     applicationArguments,
                     userFiles,
