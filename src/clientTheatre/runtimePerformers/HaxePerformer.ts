@@ -1,6 +1,10 @@
 import type { TerminalStageController } from "@clientTheatre/services/TerminalStageController.ts";
 import type { TerminalPerformerContract } from "@clientTheatre/runtimePerformers/TerminalPerformerContract.ts";
 import { SessionUserFilesClient } from "@clientTheatre/runtimePerformers/SessionUserFilesClient.ts";
+import {
+    createRuntimeAssetLocator,
+    type RuntimeAssetLocator,
+} from "@clientTheatre/runtimePerformers/RuntimeAssetLocator.ts";
 import { isTerminalInputNeeded } from "@clientTheatre/runtimePerformers/ReplayableStdinFile.ts";
 import { ReplayOutputTracker } from "@clientTheatre/runtimePerformers/ReplayOutputTracker.ts";
 import { WasmverseProgramGlobalsHost } from "@clientTheatre/runtimePerformers/WasmverseProgramGlobalsHost.ts";
