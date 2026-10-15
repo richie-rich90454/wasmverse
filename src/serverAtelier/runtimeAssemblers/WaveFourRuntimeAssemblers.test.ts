@@ -53,6 +53,14 @@ describe("WebRRuntimeAssembler", () => {
                 false,
             );
             expect(kernelText.includes("(await response).arrayBuffer()")).toBe(true);
+            expect(kernelText).toContain('resolvedSourceFile.startsWith("blob:")');
+            expect(kernelText).toContain("fn(dir, file, resolvedSourceFile, true, true);");
+            const loaderText = await readFile(join(runtimeRoot, "webr.js"), "utf8");
+            expect(loaderText).toContain("__WASMVERSE_RESOLVE_EMBEDDED_ASSET__");
+            expect(loaderText).toContain("new Worker(resolve(`${t.baseUrl}webr-worker.js`))");
+            const workerText = await readFile(join(runtimeRoot, "webr-worker.js"), "utf8");
+            expect(workerText).toContain("X.wasmverseEmbeddedAssetUrls");
+            expect(workerText).toContain('X.wasmverseEmbeddedAssetUrls["R.js"]');
         } finally {
             await rm(fixtureDirectory, { recursive: true, force: true });
         }
