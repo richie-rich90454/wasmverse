@@ -6,6 +6,10 @@ import {
     isTerminalInputNeeded,
 } from "@clientTheatre/runtimePerformers/ReplayableStdinFile.ts";
 import { ReplayOutputTracker } from "@clientTheatre/runtimePerformers/ReplayOutputTracker.ts";
+import {
+    createRuntimeAssetLocator,
+    type RuntimeAssetLocator,
+} from "@clientTheatre/runtimePerformers/RuntimeAssetLocator.ts";
 const MAXIMUM_REPLAY_INPUTS = 1000;
 const PROLOG_RUNTIME_DIRECTORY_NAME = "prolog";
 const PROLOG_RUNTIME_SCRIPT_FILE_NAMES: ReadonlyArray<string> = [
@@ -38,15 +42,17 @@ interface TauSessionRecord {
     streams: Record<string, TauStreamRecord>;
 }
 class TauPrologScriptLoader {
-    private readonly sessionBaseUrl: string;
+    private readonly assetLocator: RuntimeAssetLocator;
     constructor(sessionBaseUrl: string) {
-        this.sessionBaseUrl = sessionBaseUrl.replace(/\/+$/, "");
+        this.assetLocator = createRuntimeAssetLocator(sessionBaseUrl.replace(/\/+$/, ""));
     }
     async loadRuntimeScripts(stage: TerminalStageController): Promise<void> {
         stage.writeLine("Loading Prolog runtime.");
         for (const scriptFileName of PROLOG_RUNTIME_SCRIPT_FILE_NAMES) {
             await this.loadScript(
-                `${this.sessionBaseUrl}/runtime/${PROLOG_RUNTIME_DIRECTORY_NAME}/${scriptFileName}`,
+                this.assetLocator.resolveAssetUrl(
+                    `runtime/${PROLOG_RUNTIME_DIRECTORY_NAME}/${scriptFileName}`,
+                ),
             );
         }
     }
