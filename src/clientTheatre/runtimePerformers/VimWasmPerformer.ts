@@ -2,6 +2,10 @@ import type { TerminalStageController } from "@clientTheatre/services/TerminalSt
 import type { TerminalPerformerContract } from "@clientTheatre/runtimePerformers/TerminalPerformerContract.ts";
 import { SessionUserFilesClient } from "@clientTheatre/runtimePerformers/SessionUserFilesClient.ts";
 import { ReplayOutputTracker } from "@clientTheatre/runtimePerformers/ReplayOutputTracker.ts";
+import {
+    createRuntimeAssetLocator,
+    type RuntimeAssetLocator,
+} from "@clientTheatre/runtimePerformers/RuntimeAssetLocator.ts";
 const VIM_RUNTIME_DIRECTORY_NAME = "vim-wasm";
 const VIM_ARGUMENT_FILE_PATH = "/wasmverse-args.txt";
 const VIM_RESULT_FILE_PATH = "/result.txt";
@@ -32,7 +36,7 @@ interface VimHostWindow {
 }
 const vimOutputSink: { write(text: string): void } = { write: () => {} };
 class VimWasmPerformer implements TerminalPerformerContract {
-    private readonly sessionBaseUrl: string;
+    private readonly assetLocator: RuntimeAssetLocator;
     private readonly userFilesClient: SessionUserFilesClient;
     private readonly outputTracker: ReplayOutputTracker;
     private runtimeHandle: VimRuntimeHandle | undefined;
@@ -40,7 +44,7 @@ class VimWasmPerformer implements TerminalPerformerContract {
     private programArguments: ReadonlyArray<string> = [];
     private userFiles: Map<string, string> = new Map();
     constructor(sessionBaseUrl: string) {
-        this.sessionBaseUrl = sessionBaseUrl;
+        this.assetLocator = createRuntimeAssetLocator(sessionBaseUrl);
         this.userFilesClient = new SessionUserFilesClient(sessionBaseUrl);
         this.outputTracker = new ReplayOutputTracker();
     }
@@ -100,10 +104,14 @@ class VimWasmPerformer implements TerminalPerformerContract {
                 print: (text: string) => vimOutputSink.write(String(text) + "\n"),
                 printErr: (text: string) => vimOutputSink.write(String(text) + "\n"),
                 locateFile: (fileName: string) =>
-                    `${this.sessionBaseUrl}/runtime/${VIM_RUNTIME_DIRECTORY_NAME}/${fileName}`,
+                    this.assetLocator.resolveAssetUrl(
+                        `runtime/${VIM_RUNTIME_DIRECTORY_NAME}/${fileName}`,
+                    ),
             };
             const scriptElement = document.createElement("script");
-            scriptElement.src = `${this.sessionBaseUrl}/runtime/${VIM_RUNTIME_DIRECTORY_NAME}/vim.js`;
+            scriptElement.src = this.assetLocator.resolveAssetUrl(
+                `runtime/${VIM_RUNTIME_DIRECTORY_NAME}/vim.js`,
+            );
             const scriptLoaded = new Promise<void>((resolveLoaded, rejectLoaded) => {
                 scriptElement.addEventListener("load", () => resolveLoaded(), { once: true });
                 scriptElement.addEventListener(
