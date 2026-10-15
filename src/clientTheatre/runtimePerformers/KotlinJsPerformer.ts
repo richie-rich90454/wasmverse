@@ -7,6 +7,10 @@ import {
 } from "@clientTheatre/runtimePerformers/ReplayableStdinFile.ts";
 import { ReplayOutputTracker } from "@clientTheatre/runtimePerformers/ReplayOutputTracker.ts";
 import {
+    createRuntimeAssetLocator,
+    type RuntimeAssetLocator,
+} from "@clientTheatre/runtimePerformers/RuntimeAssetLocator.ts";
+import {
     directoryOf,
     joinRelativePath,
     normalizeWithinRoot,
@@ -24,15 +28,15 @@ interface KotlinLoaderModule {
     loadKotlinModule(baseUrl: string, attemptIdentifier: string): Promise<unknown>;
 }
 class KotlinBundleLoader {
-    private readonly sessionBaseUrl: string;
+    private readonly assetLocator: RuntimeAssetLocator;
     private loaderModule: KotlinLoaderModule | undefined;
     constructor(sessionBaseUrl: string) {
-        this.sessionBaseUrl = sessionBaseUrl;
+        this.assetLocator = createRuntimeAssetLocator(sessionBaseUrl);
     }
     async loadLoaderModule(stage: TerminalStageController): Promise<void> {
         stage.writeLine("Loading Kotlin runtime.");
         this.loaderModule = (await import(
-            /* @vite-ignore */ `${this.sessionBaseUrl}/runtime/kotlin-loader.js`
+            /* @vite-ignore */ this.assetLocator.resolveAssetUrl("runtime/kotlin-loader.js")
         )) as KotlinLoaderModule;
     }
     async loadFreshBundle(attemptIdentifier: string): Promise<void> {
@@ -40,7 +44,7 @@ class KotlinBundleLoader {
             throw new Error("Kotlin loader not loaded. Call loadLoaderModule first.");
         }
         await this.loaderModule.loadKotlinModule(
-            `${this.sessionBaseUrl}/runtime`,
+            this.assetLocator.resolveAssetUrl("runtime"),
             attemptIdentifier,
         );
     }
