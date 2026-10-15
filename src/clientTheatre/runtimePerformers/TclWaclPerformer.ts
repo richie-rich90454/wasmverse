@@ -14,12 +14,7 @@ const MAXIMUM_REPLAY_INPUTS = 1000;
 const TCL_RUNTIME_DIRECTORY_NAME = "tcl";
 const WACL_SCRIPT_FILE_NAME = "wacl.js";
 interface WaclFileSystem {
-    FS_createPath(
-        parentPath: string,
-        path: string,
-        canRead: boolean,
-        canWrite: boolean,
-    ): void;
+    FS_createPath(parentPath: string, path: string, canRead: boolean, canWrite: boolean): void;
     FS_createDataFile(
         parentPath: string,
         fileName: string,
@@ -58,13 +53,11 @@ class WaclRuntimeLoader {
     }
     async loadRuntimeModule(stage: TerminalStageController): Promise<void> {
         stage.writeLine("Loading Tcl runtime.");
-        const scriptResponse = await fetch(
-            `${this.runtimeBaseUrl}${WACL_SCRIPT_FILE_NAME}`,
-        );
+        const scriptResponse = await fetch(`${this.runtimeBaseUrl}${WACL_SCRIPT_FILE_NAME}`);
         if (!scriptResponse.ok) {
             throw new Error("Tcl runtime file wacl.js is missing. Run pnpm run setup.");
         }
-        const patchedText = patchWaclModuleText(await scriptResponse.text());
+        const patchedText = patchWaclModuleText(await scriptResponse.text(), this.runtimeBaseUrl);
         const amdModule = await evaluateAmdModule(patchedText, this.runtimeBaseUrl);
         await new Promise<void>((resolveReady) => {
             amdModule.onReady((api) => {
@@ -74,8 +67,20 @@ class WaclRuntimeLoader {
         });
     }
 }
-function patchWaclModuleText(sourceText: string): string {
-    return sourceText.replace(/eval\("[^"]*"\)/, "({})");
+function patchWaclModuleText(sourceText: string, runtimeBaseUrl: string): string {
+    const markers = [
+        'var REMOTE_PACKAGE_BASE="wacl-library.data"',
+        'var REMOTE_PACKAGE_BASE="wacl-custom.data"',
+    ] as const;
+    for (const marker of markers) {
+        if (!sourceText.includes(marker)) {
+            throw new Error("Tcl runtime file wacl.js does not match the expected layout.");
+        }
+    }
+    return sourceText
+        .replace(/eval\("[^"]*"\)/, "({})")
+        .replace(markers[0], `var REMOTE_PACKAGE_BASE="${runtimeBaseUrl}wacl-library.data"`)
+        .replace(markers[1], `var REMOTE_PACKAGE_BASE="${runtimeBaseUrl}wacl-custom.data"`);
 }
 async function evaluateAmdModule(
     moduleText: string,
@@ -213,18 +218,14 @@ class TclWaclPerformer implements TerminalPerformerContract {
         for (const [relativePath, content] of this.userFiles) {
             const normalizedPath = normalizeWithinRoot(relativePath);
             const directory = directoryOf(normalizedPath);
-            const fileName = normalizedPath.slice(directory.length === 0 ? 0 : directory.length + 1);
+            const fileName = normalizedPath.slice(
+                directory.length === 0 ? 0 : directory.length + 1,
+            );
             const parentPath = directory.length === 0 ? "/" : `/${directory}`;
             if (directory.length > 0) {
                 fileSystem.FS_createPath("/", directory, true, true);
             }
-            fileSystem.FS_createDataFile(
-                parentPath,
-                fileName,
-                encoder.encode(content),
-                true,
-                true,
-            );
+            fileSystem.FS_createDataFile(parentPath, fileName, encoder.encode(content), true, true);
         }
     }
     private installProgramArguments(api: WaclInterpreterApi): void {
