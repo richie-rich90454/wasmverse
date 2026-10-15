@@ -41,11 +41,9 @@ class EmscriptenFedLineCursor {
 }
 class EmscriptenGlueScriptLoader {
     private readonly assetLocator: RuntimeAssetLocator;
-    private readonly runtimeBaseUrl: string;
     private loaderModule: EmscriptenLoaderModule | undefined;
     constructor(sessionBaseUrl: string) {
         this.assetLocator = createRuntimeAssetLocator(sessionBaseUrl);
-        this.runtimeBaseUrl = sessionBaseUrl;
     }
     async loadGlue(stage: TerminalStageController): Promise<void> {
         stage.writeLine("Loading Emscripten module.");
@@ -58,7 +56,7 @@ class EmscriptenGlueScriptLoader {
             throw new Error("Emscripten module not loaded. Call loadGlue first.");
         }
         const moduleHandle = await this.loaderModule.loadEmscriptenModule(
-            `${this.runtimeBaseUrl}/runtime`,
+            this.assetLocator.resolveAssetUrl("runtime"),
             overrides,
         );
         return moduleHandle as EmscriptenModuleHandle;
