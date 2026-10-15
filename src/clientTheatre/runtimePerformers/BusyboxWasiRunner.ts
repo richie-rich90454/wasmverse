@@ -2,6 +2,10 @@ import type { TerminalStageController } from "@clientTheatre/services/TerminalSt
 import type { TerminalPerformerContract } from "@clientTheatre/runtimePerformers/TerminalPerformerContract.ts";
 import { SessionUserFilesClient } from "@clientTheatre/runtimePerformers/SessionUserFilesClient.ts";
 import {
+    createRuntimeAssetLocator,
+    type RuntimeAssetLocator,
+} from "@clientTheatre/runtimePerformers/RuntimeAssetLocator.ts";
+import {
     TerminalInputNeededSignal,
     isTerminalInputNeeded,
 } from "@clientTheatre/runtimePerformers/ReplayableStdinFile.ts";
@@ -69,18 +73,20 @@ class ReplayInputAdapter implements VendoredWasiShimInput {
     }
 }
 class BusyboxWasiRuntimeLoader {
-    private readonly sessionBaseUrl: string;
+    private readonly assetLocator: RuntimeAssetLocator;
     private shimModule: VendoredWasiShimModule | undefined;
     private compiledModule: WebAssembly.Module | undefined;
     constructor(sessionBaseUrl: string) {
-        this.sessionBaseUrl = sessionBaseUrl;
+        this.assetLocator = createRuntimeAssetLocator(sessionBaseUrl);
     }
     async loadRuntime(stage: TerminalStageController): Promise<void> {
         stage.writeLine("Loading busybox runtime.");
         this.shimModule = (await import(
-            /* @vite-ignore */ `${this.sessionBaseUrl}/runtime/busybox/wasi-sh-shim.js`
+            /* @vite-ignore */ this.assetLocator.resolveAssetUrl("runtime/busybox/wasi-sh-shim.js")
         )) as VendoredWasiShimModule;
-        const wasmResponse = await fetch(`${this.sessionBaseUrl}/runtime/busybox/busybox.wasm`);
+        const wasmResponse = await fetch(
+            this.assetLocator.resolveAssetUrl("runtime/busybox/busybox.wasm"),
+        );
         if (!wasmResponse.ok) {
             throw new Error(`busybox.wasm request failed with status ${wasmResponse.status}.`);
         }
