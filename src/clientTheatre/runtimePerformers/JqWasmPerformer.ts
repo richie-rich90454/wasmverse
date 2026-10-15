@@ -2,6 +2,10 @@ import type { TerminalStageController } from "@clientTheatre/services/TerminalSt
 import type { TerminalPerformerContract } from "@clientTheatre/runtimePerformers/TerminalPerformerContract.ts";
 import { SessionUserFilesClient } from "@clientTheatre/runtimePerformers/SessionUserFilesClient.ts";
 import { ReplayOutputTracker } from "@clientTheatre/runtimePerformers/ReplayOutputTracker.ts";
+import {
+    createRuntimeAssetLocator,
+    type RuntimeAssetLocator,
+} from "@clientTheatre/runtimePerformers/RuntimeAssetLocator.ts";
 interface JqRuntime {
     invoke(inputText: string, filterText: string, options?: ReadonlyArray<string>): Promise<string>;
 }
@@ -11,7 +15,7 @@ interface JqRuntimeModule {
 const DEFAULT_INPUT_DOCUMENT = "null";
 const INPUT_DOCUMENT_FILE_NAME = "data.json";
 class JqWasmPerformer implements TerminalPerformerContract {
-    private readonly sessionBaseUrl: string;
+    private readonly assetLocator: RuntimeAssetLocator;
     private readonly userFilesClient: SessionUserFilesClient;
     private readonly outputTracker: ReplayOutputTracker;
     private runtime: JqRuntime | undefined;
@@ -19,7 +23,7 @@ class JqWasmPerformer implements TerminalPerformerContract {
     private programArguments: ReadonlyArray<string> = [];
     private userFiles: Map<string, string> = new Map();
     constructor(sessionBaseUrl: string) {
-        this.sessionBaseUrl = sessionBaseUrl;
+        this.assetLocator = createRuntimeAssetLocator(sessionBaseUrl);
         this.userFilesClient = new SessionUserFilesClient(sessionBaseUrl);
         this.outputTracker = new ReplayOutputTracker();
     }
@@ -27,9 +31,11 @@ class JqWasmPerformer implements TerminalPerformerContract {
         stage.writeLine("Loading jq runtime.");
         try {
             const runtimeModule = (await import(
-                /* @vite-ignore */ `${this.sessionBaseUrl}/runtime/jq/jq-runtime.js`
+                /* @vite-ignore */ this.assetLocator.resolveAssetUrl("runtime/jq/jq-runtime.js")
             )) as JqRuntimeModule;
-            const wasmResponse = await fetch(`${this.sessionBaseUrl}/runtime/jq/jq.wasm`);
+            const wasmResponse = await fetch(
+                this.assetLocator.resolveAssetUrl("runtime/jq/jq.wasm"),
+            );
             if (!wasmResponse.ok) {
                 throw new Error(`jq.wasm request failed with status ${wasmResponse.status}.`);
             }
