@@ -17,9 +17,7 @@ class JsclRuntimeAssembler implements RuntimeAssetAssemblerContract {
     async assembleRuntimeInto(context: BuildContextRecord): Promise<void> {
         const sourcePath = `${this.toolchainDirectory}/${JSCL_FILE_NAME}`;
         if (!(await this.fileSystemOperations.pathExists(sourcePath))) {
-            throw new Error(
-                `JSCL runtime file ${JSCL_FILE_NAME} is missing. Run pnpm run setup.`,
-            );
+            throw new Error(`JSCL runtime file ${JSCL_FILE_NAME} is missing. Run pnpm run setup.`);
         }
         await this.fileSystemOperations.copyFileInto(
             sourcePath,
