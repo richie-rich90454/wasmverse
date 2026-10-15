@@ -6,6 +6,10 @@ import {
     isTerminalInputNeeded,
 } from "@clientTheatre/runtimePerformers/ReplayableStdinFile.ts";
 import { ReplayOutputTracker } from "@clientTheatre/runtimePerformers/ReplayOutputTracker.ts";
+import {
+    createRuntimeAssetLocator,
+    type RuntimeAssetLocator,
+} from "@clientTheatre/runtimePerformers/RuntimeAssetLocator.ts";
 const MAXIMUM_REPLAY_INPUTS = 1000;
 interface ZeroPerlRunResult {
     success: boolean;
@@ -54,15 +58,15 @@ class ZeroPerlStdinFeeder {
     }
 }
 class ZeroPerlRuntimeLoader {
-    private readonly sessionBaseUrl: string;
+    private readonly assetLocator: RuntimeAssetLocator;
     private runtimeModule: ZeroPerlRuntimeModule | undefined;
     constructor(sessionBaseUrl: string) {
-        this.sessionBaseUrl = sessionBaseUrl;
+        this.assetLocator = createRuntimeAssetLocator(sessionBaseUrl);
     }
     async loadRuntimeModule(stage: TerminalStageController): Promise<void> {
         stage.writeLine("Loading WebPerl runtime.");
         this.runtimeModule = (await import(
-            /* @vite-ignore */ `${this.sessionBaseUrl}/runtime/webperl/perl-runtime.js`
+            /* @vite-ignore */ this.assetLocator.resolveAssetUrl("runtime/webperl/perl-runtime.js")
         )) as ZeroPerlRuntimeModule;
     }
     async createInstance(
@@ -78,7 +82,7 @@ class ZeroPerlRuntimeLoader {
             fileSystem.addFile(`/${relativePath}`, fileContent);
         }
         const stdinFeeder = new ZeroPerlStdinFeeder(fedLines);
-        const wasmUrl = `${this.sessionBaseUrl}/runtime/webperl/zeroperl.wasm`;
+        const wasmUrl = this.assetLocator.resolveAssetUrl("runtime/webperl/zeroperl.wasm");
         return await this.runtimeModule.ZeroPerl.create({
             fetch: () => fetch(wasmUrl),
             stdin: () => stdinFeeder.nextChunk(),
