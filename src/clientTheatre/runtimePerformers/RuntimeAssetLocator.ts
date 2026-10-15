@@ -8,7 +8,8 @@ const EMBEDDED_RESOLVER_GLOBAL_NAME = "__WASMVERSE_RESOLVE_EMBEDDED_ASSET__";
 const EMBEDDED_FETCH_BRIDGE_GLOBAL_NAME = "__WASMVERSE_EMBEDDED_FETCH_BRIDGE__";
 // ponytail: textual specifier rewrite, switch to a parser if glue assets ever ship non-ESM relative imports
 const RELATIVE_MODULE_SPECIFIER_PATTERN =
-    /((?:\bfrom\s*|\bimport\s*\(\s*|\bimport\s+)["'])(\.{1,2}\/[^"']+)(["'])/g;
+    /((?:\bfrom\s*|\bimport\s*\(\s*|\bimport\s+)["'`])(\.{1,2}\/[^"'`$]+)(["'`])/g;
+const IMPORT_META_URL_PATTERN = /\bimport\.meta\.url\b/g;
 function readEmbeddedAssetMap(): EmbeddedAssetMap | undefined {
     const candidateAssetMap = (globalThis as Record<string, unknown>)[EMBEDDED_ASSETS_GLOBAL_NAME];
     if (!candidateAssetMap || typeof candidateAssetMap !== "object") {
@@ -144,19 +145,23 @@ class EmbeddedAssetSource implements RuntimeAssetLocator {
         this.assetPathsBeingPrepared.add(relativePath);
         try {
             const sourceText = new TextDecoder().decode(assetBytes);
-            const rewrittenText = sourceText.replace(
-                RELATIVE_MODULE_SPECIFIER_PATTERN,
-                (match, prefix: string, specifier: string, suffix: string) => {
-                    const resolvedSpecifier = this.resolveRelativeSpecifier(
-                        relativePath,
-                        specifier,
-                    );
-                    if (resolvedSpecifier === undefined) {
-                        return match;
-                    }
-                    return `${prefix}${resolvedSpecifier}${suffix}`;
-                },
-            );
+            const rewrittenText = sourceText
+                .replace(
+                    RELATIVE_MODULE_SPECIFIER_PATTERN,
+                    (match, prefix: string, specifier: string, suffix: string) => {
+                        const resolvedSpecifier = this.resolveRelativeSpecifier(
+                            relativePath,
+                            specifier,
+                        );
+                        if (resolvedSpecifier === undefined) {
+                            return match;
+                        }
+                        return `${prefix}${resolvedSpecifier}${suffix}`;
+                    },
+                )
+                .replace(IMPORT_META_URL_PATTERN, () =>
+                    JSON.stringify(`${this.sessionBaseUrl}/${relativePath}`),
+                );
             return new TextEncoder().encode(rewrittenText);
         } finally {
             this.assetPathsBeingPrepared.delete(relativePath);
