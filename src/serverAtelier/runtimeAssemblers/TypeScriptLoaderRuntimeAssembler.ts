@@ -4,7 +4,9 @@ import { FileSystemOperations } from "@serverAtelier/utilities/FileSystemOperati
 const TYPESCRIPT_LOADER_FILE_NAME = "typescript-loader.js";
 const TYPESCRIPT_LOADER_SOURCE = [
     "export async function loadTypeScriptModule(baseUrl, attemptIdentifier) {",
-    "    return await import(`${baseUrl}/app.js?attempt=${encodeURIComponent(attemptIdentifier)}`);",
+    "    const composedUrl = `${baseUrl}/app.js?attempt=${encodeURIComponent(attemptIdentifier)}`;",
+    "    const resolveEmbeddedAsset = globalThis.__WASMVERSE_RESOLVE_EMBEDDED_ASSET__;",
+    "    return await import(resolveEmbeddedAsset ? resolveEmbeddedAsset(composedUrl) : composedUrl);",
     "}",
     "",
 ].join("\n");
