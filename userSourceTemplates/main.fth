@@ -98,8 +98,10 @@ VARIABLE HEAD-LIMIT
 ." residue zero under 5: " 5 COUNT-DIVISIBLE . CR
 ." Stage four: program arguments" CR
 ." argument count: " ARGC . CR
-ARGC 0>
-IF
-    ." first argument: " 0 ARG TYPE CR
-THEN
+: REPORT-FIRST-ARG
+    ARGC 0>
+    IF
+        ." first argument: " 0 ARG TYPE CR
+    THEN ;
+REPORT-FIRST-ARG
 ." Showcase complete." CR
