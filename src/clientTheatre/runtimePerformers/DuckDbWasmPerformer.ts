@@ -2,6 +2,10 @@ import type { TerminalStageController } from "@clientTheatre/services/TerminalSt
 import type { TerminalPerformerContract } from "@clientTheatre/runtimePerformers/TerminalPerformerContract.ts";
 import { SessionUserFilesClient } from "@clientTheatre/runtimePerformers/SessionUserFilesClient.ts";
 import { ReplayOutputTracker } from "@clientTheatre/runtimePerformers/ReplayOutputTracker.ts";
+import {
+    createRuntimeAssetLocator,
+    type RuntimeAssetLocator,
+} from "@clientTheatre/runtimePerformers/RuntimeAssetLocator.ts";
 interface DuckDbResultTable {
     schema: { fields: ReadonlyArray<{ name: string }> };
     toArray(): Array<unknown>;
@@ -87,14 +91,14 @@ function splitDuckDbStatements(sourceText: string): Array<string> {
     return statements;
 }
 class DuckDbWasmPerformer implements TerminalPerformerContract {
-    private readonly sessionBaseUrl: string;
+    private readonly assetLocator: RuntimeAssetLocator;
     private readonly userFilesClient: SessionUserFilesClient;
     private readonly outputTracker: ReplayOutputTracker;
     private runtimeModule: DuckDbRuntimeModule | undefined;
     private database: DuckDbDatabase | undefined;
     private entrySourceText: string = "";
     constructor(sessionBaseUrl: string) {
-        this.sessionBaseUrl = sessionBaseUrl;
+        this.assetLocator = createRuntimeAssetLocator(sessionBaseUrl);
         this.userFilesClient = new SessionUserFilesClient(sessionBaseUrl);
         this.outputTracker = new ReplayOutputTracker();
     }
@@ -102,15 +106,17 @@ class DuckDbWasmPerformer implements TerminalPerformerContract {
         stage.writeLine("Loading DuckDB runtime.");
         try {
             this.runtimeModule = (await import(
-                /* @vite-ignore */ `${this.sessionBaseUrl}/runtime/duckdb/duckdb-runtime.js`
+                /* @vite-ignore */ this.assetLocator.resolveAssetUrl(
+                    "runtime/duckdb/duckdb-runtime.js",
+                )
             )) as DuckDbRuntimeModule;
             const worker = new Worker(
-                `${this.sessionBaseUrl}/runtime/duckdb/duckdb-browser-eh.worker.js`,
+                this.assetLocator.resolveAssetUrl("runtime/duckdb/duckdb-browser-eh.worker.js"),
             );
             const logger = new this.runtimeModule.VoidLogger();
             this.database = new this.runtimeModule.AsyncDuckDB(logger, worker);
             await this.database.instantiate(
-                `${this.sessionBaseUrl}/runtime/duckdb/duckdb-eh.wasm`,
+                this.assetLocator.resolveAssetUrl("runtime/duckdb/duckdb-eh.wasm"),
                 null,
             );
         } catch (loadError) {
