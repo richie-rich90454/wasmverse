@@ -7,6 +7,10 @@ import {
     isTerminalInputNeeded,
 } from "@clientTheatre/runtimePerformers/ReplayableStdinFile.ts";
 import { ReplayOutputTracker } from "@clientTheatre/runtimePerformers/ReplayOutputTracker.ts";
+import {
+    createRuntimeAssetLocator,
+    type RuntimeAssetLocator,
+} from "@clientTheatre/runtimePerformers/RuntimeAssetLocator.ts";
 const MAXIMUM_REPLAY_INPUTS = 1000;
 interface LuaEngine {
     global: { set(name: string, value: unknown): void };
@@ -116,15 +120,15 @@ function describeLuaError(runError: unknown): string {
     return firstLine.length > 300 ? firstLine.slice(0, 300) : firstLine;
 }
 class LuaWasmLoader implements LuaAttemptRuntime {
-    private readonly sessionBaseUrl: string;
+    private readonly assetLocator: RuntimeAssetLocator;
     private loadedFactory: LuaFactory | undefined;
     constructor(sessionBaseUrl: string) {
-        this.sessionBaseUrl = sessionBaseUrl;
+        this.assetLocator = createRuntimeAssetLocator(sessionBaseUrl);
     }
     async loadFactory(stage: TerminalStageController): Promise<void> {
         stage.writeLine("Loading Lua runtime.");
         try {
-            const factory = new LuaFactory(`${this.sessionBaseUrl}/runtime/glue.wasm`);
+            const factory = new LuaFactory(this.assetLocator.resolveAssetUrl("runtime/glue.wasm"));
             await factory.getLuaModule();
             this.loadedFactory = factory;
         } catch (loadError) {
