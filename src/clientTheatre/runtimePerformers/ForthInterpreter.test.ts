@@ -1,4 +1,6 @@
 import { describe, expect, test } from "vitest";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import type { TerminalStageController } from "@clientTheatre/services/TerminalStageController.ts";
 import { ForthInterpreter } from "@clientTheatre/runtimePerformers/ForthInterpreter.ts";
 import { ForthPerformer } from "@clientTheatre/runtimePerformers/ForthPerformer.ts";
@@ -91,7 +93,10 @@ describe("ForthInterpreter", () => {
     });
     test("loops with BEGIN WHILE REPEAT", () => {
         const fixture = createInterpreter({});
-        runFor(fixture.interpreter, ": COUNT-WHILE 0 BEGIN DUP 3 < WHILE DUP . 1+ REPEAT DROP ; COUNT-WHILE");
+        runFor(
+            fixture.interpreter,
+            ": COUNT-WHILE 0 BEGIN DUP 3 < WHILE DUP . 1+ REPEAT DROP ; COUNT-WHILE",
+        );
         expect(fixture.outputText).toBe("0 1 2 ");
     });
     test("stores and fetches variables", () => {
@@ -99,7 +104,7 @@ describe("ForthInterpreter", () => {
         runFor(fixture.interpreter, "VARIABLE X 42 X ! X @ . 8 X +! X @ .");
         expect(fixture.outputText).toBe("42 50 ");
     });
-    test("writes strings with S\" and .\"", () => {
+    test('writes strings with S" and ."', () => {
         const fixture = createInterpreter({});
         runFor(fixture.interpreter, 'S" hello" TYPE 32 EMIT ." world" CR');
         expect(fixture.outputText).toBe("hello world\n");
@@ -255,5 +260,16 @@ describe("ForthPerformer", () => {
         } finally {
             fixture.dispose();
         }
+    });
+});
+describe("forth showcase template", () => {
+    test("runs the shipped showcase to completion", () => {
+        const templatePath = fileURLToPath(
+            new URL("../../../userSourceTemplates/main.fth", import.meta.url),
+        );
+        const fixture = createInterpreter({});
+        runFor(fixture.interpreter, readFileSync(templatePath, "utf8"));
+        expect(fixture.outputText).toContain("WASMVerse Forth showcase");
+        expect(fixture.outputText.endsWith("Showcase complete.\n")).toBe(true);
     });
 });
