@@ -1,4 +1,6 @@
 import { describe, expect, test } from "vitest";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import type { TerminalStageController } from "@clientTheatre/services/TerminalStageController.ts";
 import { SmalltalkEvaluator } from "@clientTheatre/runtimePerformers/SmalltalkEvaluator.ts";
 import { SmalltalkPerformer } from "@clientTheatre/runtimePerformers/SmalltalkPerformer.ts";
@@ -45,6 +47,11 @@ describe("SmalltalkEvaluator", () => {
         const fixture = createEvaluator({});
         evaluate(fixture, "Transcript showCr: (3 + 4 * 2) printString.");
         expect(fixture.outputText).toBe("14\n");
+    });
+    test("computes modulo with the standard double backslash selector", () => {
+        const fixture = createEvaluator({});
+        evaluate(fixture, "Transcript showCr: (10 \\\\ 3) printString.");
+        expect(fixture.outputText).toBe("1\n");
     });
     test("gives unary messages higher precedence than binary messages", () => {
         const fixture = createEvaluator({});
@@ -228,5 +235,16 @@ describe("SmalltalkPerformer", () => {
         } finally {
             fixture.dispose();
         }
+    });
+});
+describe("smalltalk showcase template", () => {
+    test("runs the shipped showcase to completion", () => {
+        const templatePath = fileURLToPath(
+            new URL("../../../userSourceTemplates/main.st", import.meta.url),
+        );
+        const fixture = createEvaluator({});
+        evaluate(fixture, readFileSync(templatePath, "utf8"));
+        expect(fixture.outputText).toContain("WASMVerse Smalltalk showcase\n");
+        expect(fixture.outputText.endsWith("Showcase complete.\n")).toBe(true);
     });
 });
