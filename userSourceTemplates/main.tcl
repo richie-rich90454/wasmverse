@@ -19,8 +19,8 @@ proc collect-primes {limit} {
 
 proc rolling-sums {values width} {
     set totals [list]
-    set final-index [expr {[llength $values] - $width}]
-    for {set index 0} {$index <= $final-index} {incr index} {
+    set finalIndex [expr {[llength $values] - $width}]
+    for {set index 0} {$index <= $finalIndex} {incr index} {
         set total 0
         foreach value [lrange $values $index [expr {$index + $width - 1}]] {
             incr total $value
