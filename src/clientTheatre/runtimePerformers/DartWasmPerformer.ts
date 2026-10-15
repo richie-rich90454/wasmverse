@@ -6,6 +6,10 @@ import {
     isTerminalInputNeeded,
 } from "@clientTheatre/runtimePerformers/ReplayableStdinFile.ts";
 import { ReplayOutputTracker } from "@clientTheatre/runtimePerformers/ReplayOutputTracker.ts";
+import {
+    createRuntimeAssetLocator,
+    type RuntimeAssetLocator,
+} from "@clientTheatre/runtimePerformers/RuntimeAssetLocator.ts";
 const MAXIMUM_REPLAY_INPUTS = 1000;
 interface DartInstantiatedApp {
     invokeMain(...applicationArguments: Array<string>): Promise<unknown> | unknown;
@@ -25,16 +29,16 @@ interface DartGlueModule {
     installDartWasmHostBridge?(bridge: DartHostBridgeOptions): void;
 }
 class DartWasmRuntimeLoader {
-    private readonly sessionBaseUrl: string;
+    private readonly assetLocator: RuntimeAssetLocator;
     private glueModule: DartGlueModule | undefined;
     constructor(sessionBaseUrl: string) {
-        this.sessionBaseUrl = sessionBaseUrl;
+        this.assetLocator = createRuntimeAssetLocator(sessionBaseUrl);
     }
     async loadGlueModule(stage: TerminalStageController): Promise<DartGlueModule> {
         if (!this.glueModule) {
             stage.writeLine("Loading Dart WASM module.");
             this.glueModule = (await import(
-                /* @vite-ignore */ `${this.sessionBaseUrl}/runtime/dart-loader.js`
+                /* @vite-ignore */ this.assetLocator.resolveAssetUrl("runtime/dart-loader.js")
             )) as DartGlueModule;
         }
         return this.glueModule;
@@ -44,13 +48,13 @@ class DartWasmPerformer implements TerminalPerformerContract {
     private readonly runtimeLoader: DartWasmRuntimeLoader;
     private readonly outputTracker: ReplayOutputTracker;
     private readonly userFilesClient: SessionUserFilesClient;
-    private sessionBaseUrl: string;
+    private readonly assetLocator: RuntimeAssetLocator;
     private glueModule: DartGlueModule | undefined;
     private entryRelativePath: string = "";
     private programArguments: ReadonlyArray<string> = [];
     private userFiles: Map<string, string> = new Map();
     constructor(sessionBaseUrl: string) {
-        this.sessionBaseUrl = sessionBaseUrl;
+        this.assetLocator = createRuntimeAssetLocator(sessionBaseUrl);
         this.runtimeLoader = new DartWasmRuntimeLoader(sessionBaseUrl);
         this.outputTracker = new ReplayOutputTracker();
         this.userFilesClient = new SessionUserFilesClient(sessionBaseUrl);
@@ -130,10 +134,12 @@ class DartWasmPerformer implements TerminalPerformerContract {
             throw new Error("Dart module not loaded. Call loadInto first.");
         }
         if (typeof glueModule.loadDartRuntime === "function") {
-            return await glueModule.loadDartRuntime(`${this.sessionBaseUrl}/runtime`);
+            return await glueModule.loadDartRuntime(this.assetLocator.resolveAssetUrl("runtime"));
         }
         if (typeof glueModule.loadDartApp === "function") {
-            const legacyApp = await glueModule.loadDartApp(`${this.sessionBaseUrl}/runtime`);
+            const legacyApp = await glueModule.loadDartApp(
+                this.assetLocator.resolveAssetUrl("runtime"),
+            );
             let legacyAppConsumed = false;
             return {
                 instantiateAttempt: async () => {
