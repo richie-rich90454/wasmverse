@@ -6,6 +6,10 @@ import {
     isTerminalInputNeeded,
 } from "@clientTheatre/runtimePerformers/ReplayableStdinFile.ts";
 import { ReplayOutputTracker } from "@clientTheatre/runtimePerformers/ReplayOutputTracker.ts";
+import {
+    createRuntimeAssetLocator,
+    type RuntimeAssetLocator,
+} from "@clientTheatre/runtimePerformers/RuntimeAssetLocator.ts";
 const MAXIMUM_REPLAY_INPUTS = 1000;
 type TeaVmExportedMain = (
     applicationArguments?: ReadonlyArray<string>,
@@ -20,16 +24,16 @@ interface TeaVmGlueModule {
     ): Promise<Record<string, unknown>>;
 }
 class TeaVmGlueModuleLoader {
-    private readonly sessionBaseUrl: string;
+    private readonly assetLocator: RuntimeAssetLocator;
     private glueModule: TeaVmGlueModule | undefined;
     constructor(sessionBaseUrl: string) {
-        this.sessionBaseUrl = sessionBaseUrl;
+        this.assetLocator = createRuntimeAssetLocator(sessionBaseUrl);
     }
     async loadGlueModule(stage: TerminalStageController): Promise<TeaVmGlueModule> {
         if (!this.glueModule) {
             stage.writeLine("Loading TeaVM module.");
             this.glueModule = (await import(
-                /* @vite-ignore */ `${this.sessionBaseUrl}/runtime/teavm-loader.js`
+                /* @vite-ignore */ this.assetLocator.resolveAssetUrl("runtime/teavm-loader.js")
             )) as TeaVmGlueModule;
         }
         return this.glueModule;
@@ -41,7 +45,7 @@ class TeaVmGlueModuleLoader {
         readLine?: () => string,
     ): Promise<Record<string, unknown>> {
         return glueModule.loadTeaVmModule(
-            `${this.sessionBaseUrl}/runtime`,
+            this.assetLocator.resolveAssetUrl("runtime"),
             (line) => outputTracker.appendText(line + "\n"),
             (text) => outputTracker.appendText(text),
             attempt,
