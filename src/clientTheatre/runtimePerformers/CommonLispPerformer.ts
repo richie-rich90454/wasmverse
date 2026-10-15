@@ -2,6 +2,10 @@ import type { TerminalStageController } from "@clientTheatre/services/TerminalSt
 import type { TerminalPerformerContract } from "@clientTheatre/runtimePerformers/TerminalPerformerContract.ts";
 import { SessionUserFilesClient } from "@clientTheatre/runtimePerformers/SessionUserFilesClient.ts";
 import {
+    createRuntimeAssetLocator,
+    type RuntimeAssetLocator,
+} from "@clientTheatre/runtimePerformers/RuntimeAssetLocator.ts";
+import {
     TerminalInputNeededSignal,
     isTerminalInputNeeded,
 } from "@clientTheatre/runtimePerformers/ReplayableStdinFile.ts";
@@ -23,6 +27,7 @@ interface JsclInternals {
     symbolValue(symbol: JsclSymbol): unknown;
     pv(value?: unknown): unknown;
     js_to_lisp(value: unknown): unknown;
+    lisp_to_js(value: unknown): unknown;
 }
 interface JsclNamespace {
     evaluateString(sourceText: string): unknown;
@@ -30,16 +35,18 @@ interface JsclNamespace {
 }
 type JsclCallable = (values: unknown, ...parameters: Array<unknown>) => unknown;
 class JsclRuntimeLoader {
-    private readonly sessionBaseUrl: string;
+    private readonly assetLocator: RuntimeAssetLocator;
     private runtimeNamespace: JsclNamespace | undefined;
     constructor(sessionBaseUrl: string) {
-        this.sessionBaseUrl = sessionBaseUrl.replace(/\/+$/, "");
+        this.assetLocator = createRuntimeAssetLocator(sessionBaseUrl.replace(/\/+$/, ""));
     }
     async loadRuntimeModule(stage: TerminalStageController): Promise<void> {
         stage.writeLine("Loading Common Lisp runtime.");
         await new Promise<void>((resolveLoad, rejectLoad) => {
             const scriptElement = document.createElement("script");
-            scriptElement.src = `${this.sessionBaseUrl}/runtime/${COMMON_LISP_RUNTIME_DIRECTORY_NAME}/${JSCL_EXPORT_FILE_NAME}`;
+            scriptElement.src = this.assetLocator.resolveAssetUrl(
+                `runtime/${COMMON_LISP_RUNTIME_DIRECTORY_NAME}/${JSCL_EXPORT_FILE_NAME}`,
+            );
             scriptElement.addEventListener("load", () => resolveLoad(), { once: true });
             scriptElement.addEventListener(
                 "error",
@@ -138,9 +145,7 @@ class CommonLispPerformer implements TerminalPerformerContract {
         const argumentList = this.programArguments
             .map((argument) => this.escapeLispString(argument))
             .join(" ");
-        namespace.evaluateString(
-            `(defparameter *wasmverse-arguments* (list ${argumentList}))`,
-        );
+        namespace.evaluateString(`(defparameter *wasmverse-arguments* (list ${argumentList}))`);
     }
     private installHostStreams(fedLines: ReadonlyArray<string>): void {
         const namespace = this.runtimeLoader.namespace;
@@ -151,7 +156,7 @@ class CommonLispPerformer implements TerminalPerformerContract {
             internals.pv,
             keyword("WRITE-FN"),
             (_values: unknown, text: unknown) => {
-                this.outputTracker.appendText(String(text));
+                this.outputTracker.appendText(String(internals.lisp_to_js(text)));
                 return internals.pv();
             },
         );
@@ -166,15 +171,24 @@ class CommonLispPerformer implements TerminalPerformerContract {
         );
         internals.intern("*STANDARD-INPUT*").value = inputStream;
         internals.intern("LOAD").fvalue = (_values: unknown, requestedPath: unknown) => {
-            this.evaluateSourceText(this.readUserFile(String(requestedPath)));
+            this.evaluateSourceText(this.readUserFile(this.lispStringOf(requestedPath)));
             return internals.pv();
         };
-        internals.intern("WASMVERSE-READ-FILE").fvalue = (
+        internals.intern("WASMVERSE-READ-FILE", this.currentUserPackageName()).fvalue = (
             _values: unknown,
             requestedPath: unknown,
         ) => {
-            return internals.js_to_lisp(this.readUserFile(String(requestedPath)));
+            return internals.js_to_lisp(this.readUserFile(this.lispStringOf(requestedPath)));
         };
+    }
+    private currentUserPackageName(): string {
+        const namespace = this.runtimeLoader.namespace;
+        return String(
+            namespace.internals.lisp_to_js(namespace.evaluateString("(package-name *package*)")),
+        );
+    }
+    private lispStringOf(value: unknown): string {
+        return String(this.runtimeLoader.namespace.internals.lisp_to_js(value));
     }
     private evaluateProgram(): unknown {
         const entrySourceText = this.userFiles.get(this.entryRelativePath) as string;
