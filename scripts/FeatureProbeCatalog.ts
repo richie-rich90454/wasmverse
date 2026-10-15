@@ -766,7 +766,7 @@ const FEATURE_PROBES: ReadonlyArray<FeatureProbeDefinition> = [
                 '." greet:" helper-label TYPE\n' +
                 '." :" 0 SWAP TYPE CR\n' +
                 '." arg0:" 0 ARG TYPE CR\n' +
-                '." file:" READ-FILE TYPE CR\n' +
+                '." file:" READ-FILE data.txt TYPE CR\n' +
                 '." PROBE-DONE" CR\n',
             "helper.fth": ': helper-label ( -- addr len ) S" helper" ;\n',
             "data.txt": "probe-data",
