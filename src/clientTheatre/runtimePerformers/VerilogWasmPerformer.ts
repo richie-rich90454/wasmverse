@@ -2,6 +2,10 @@ import type { TerminalStageController } from "@clientTheatre/services/TerminalSt
 import type { TerminalPerformerContract } from "@clientTheatre/runtimePerformers/TerminalPerformerContract.ts";
 import { SessionUserFilesClient } from "@clientTheatre/runtimePerformers/SessionUserFilesClient.ts";
 import { ReplayOutputTracker } from "@clientTheatre/runtimePerformers/ReplayOutputTracker.ts";
+import {
+    createRuntimeAssetLocator,
+    type RuntimeAssetLocator,
+} from "@clientTheatre/runtimePerformers/RuntimeAssetLocator.ts";
 const VERILOG_GENERATION = "2005";
 const VERILOG_RUNTIME_DIRECTORY_NAME = "verilog";
 const BENIGN_COMPILER_MESSAGE_PATTERN =
@@ -27,7 +31,7 @@ interface VerilogToolModuleEntry {
     default: VerilogToolModuleFactory;
 }
 class VerilogWasmPerformer implements TerminalPerformerContract {
-    private readonly sessionBaseUrl: string;
+    private readonly assetLocator: RuntimeAssetLocator;
     private readonly userFilesClient: SessionUserFilesClient;
     private readonly outputTracker: ReplayOutputTracker;
     private ivlppFactory: VerilogToolModuleFactory | undefined;
@@ -37,7 +41,7 @@ class VerilogWasmPerformer implements TerminalPerformerContract {
     private programArguments: ReadonlyArray<string> = [];
     private userFiles: Map<string, string> = new Map();
     constructor(sessionBaseUrl: string) {
-        this.sessionBaseUrl = sessionBaseUrl;
+        this.assetLocator = createRuntimeAssetLocator(sessionBaseUrl);
         this.userFilesClient = new SessionUserFilesClient(sessionBaseUrl);
         this.outputTracker = new ReplayOutputTracker();
     }
@@ -80,9 +84,10 @@ class VerilogWasmPerformer implements TerminalPerformerContract {
         }
     }
     private async loadToolFactory(fileName: string): Promise<VerilogToolModuleFactory> {
-        const runtimeBaseUrl = `${this.sessionBaseUrl}/runtime/${VERILOG_RUNTIME_DIRECTORY_NAME}`;
         const runtimeModule = (await import(
-            /* @vite-ignore */ `${runtimeBaseUrl}/${fileName}`
+            /* @vite-ignore */ this.assetLocator.resolveAssetUrl(
+                `runtime/${VERILOG_RUNTIME_DIRECTORY_NAME}/${fileName}`,
+            )
         )) as VerilogToolModuleEntry;
         if (typeof runtimeModule.default !== "function") {
             throw new Error(`${fileName} has no default export.`);
@@ -90,7 +95,9 @@ class VerilogWasmPerformer implements TerminalPerformerContract {
         return runtimeModule.default;
     }
     private locateFile(fileName: string): string {
-        return `${this.sessionBaseUrl}/runtime/${VERILOG_RUNTIME_DIRECTORY_NAME}/${fileName}`;
+        return this.assetLocator.resolveAssetUrl(
+            `runtime/${VERILOG_RUNTIME_DIRECTORY_NAME}/${fileName}`,
+        );
     }
     private async preprocessProject(): Promise<string> {
         const sourceLines: Array<string> = [];
