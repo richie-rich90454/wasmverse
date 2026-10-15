@@ -2,6 +2,10 @@ import type { TerminalStageController } from "@clientTheatre/services/TerminalSt
 import type { TerminalPerformerContract } from "@clientTheatre/runtimePerformers/TerminalPerformerContract.ts";
 import { SessionUserFilesClient } from "@clientTheatre/runtimePerformers/SessionUserFilesClient.ts";
 import {
+    createRuntimeAssetLocator,
+    type RuntimeAssetLocator,
+} from "@clientTheatre/runtimePerformers/RuntimeAssetLocator.ts";
+import {
     TerminalInputNeededSignal,
     isTerminalInputNeeded,
 } from "@clientTheatre/runtimePerformers/ReplayableStdinFile.ts";
@@ -11,7 +15,7 @@ import {
     normalizeWithinRoot,
 } from "@clientTheatre/runtimePerformers/UserFilePathResolver.ts";
 const MAXIMUM_REPLAY_INPUTS = 1000;
-const TCL_RUNTIME_DIRECTORY_NAME = "tcl";
+const TCL_RUNTIME_ASSET_DIRECTORY = "runtime/tcl";
 const WACL_SCRIPT_FILE_NAME = "wacl.js";
 interface WaclFileSystem {
     FS_createPath(parentPath: string, path: string, canRead: boolean, canWrite: boolean): void;
@@ -37,10 +41,10 @@ interface WaclTclException {
     errorInfo?: string;
 }
 class WaclRuntimeLoader {
-    private readonly sessionBaseUrl: string;
+    private readonly assetLocator: RuntimeAssetLocator;
     private runtimeApi: WaclInterpreterApi | undefined;
     constructor(sessionBaseUrl: string) {
-        this.sessionBaseUrl = sessionBaseUrl.replace(/\/+$/, "");
+        this.assetLocator = createRuntimeAssetLocator(sessionBaseUrl);
     }
     get interpreterApi(): WaclInterpreterApi {
         if (!this.runtimeApi) {
@@ -48,17 +52,18 @@ class WaclRuntimeLoader {
         }
         return this.runtimeApi;
     }
-    get runtimeBaseUrl(): string {
-        return `${this.sessionBaseUrl}/runtime/${TCL_RUNTIME_DIRECTORY_NAME}/`;
-    }
     async loadRuntimeModule(stage: TerminalStageController): Promise<void> {
         stage.writeLine("Loading Tcl runtime.");
-        const scriptResponse = await fetch(`${this.runtimeBaseUrl}${WACL_SCRIPT_FILE_NAME}`);
+        const scriptResponse = await fetch(
+            this.assetLocator.resolveAssetUrl(
+                `${TCL_RUNTIME_ASSET_DIRECTORY}/${WACL_SCRIPT_FILE_NAME}`,
+            ),
+        );
         if (!scriptResponse.ok) {
             throw new Error("Tcl runtime file wacl.js is missing. Run pnpm run setup.");
         }
-        const patchedText = patchWaclModuleText(await scriptResponse.text(), this.runtimeBaseUrl);
-        const amdModule = await evaluateAmdModule(patchedText, this.runtimeBaseUrl);
+        const patchedText = patchWaclModuleText(await scriptResponse.text(), this.assetLocator);
+        const amdModule = evaluateAmdModule(patchedText);
         await new Promise<void>((resolveReady) => {
             amdModule.onReady((api) => {
                 this.runtimeApi = api;
@@ -67,25 +72,40 @@ class WaclRuntimeLoader {
         });
     }
 }
-function patchWaclModuleText(sourceText: string, runtimeBaseUrl: string): string {
-    const markers = [
-        'var REMOTE_PACKAGE_BASE="wacl-library.data"',
-        'var REMOTE_PACKAGE_BASE="wacl-custom.data"',
-    ] as const;
-    for (const marker of markers) {
+function patchWaclModuleText(sourceText: string, assetLocator: RuntimeAssetLocator): string {
+    const wasmUrlMarker = '_currPath+"wacl.wasm"';
+    const packagePrefixMarker = 'Module["filePackagePrefixURL"]=_currPath;';
+    const libraryMarker = 'var REMOTE_PACKAGE_BASE="wacl-library.data"';
+    const customMarker = 'var REMOTE_PACKAGE_BASE="wacl-custom.data"';
+    const stderrConsoleMarker =
+        'Module["printErr"]=(function(txt){console.error("wacl stderr: "+txt)});';
+    for (const marker of [
+        wasmUrlMarker,
+        packagePrefixMarker,
+        libraryMarker,
+        customMarker,
+        stderrConsoleMarker,
+    ]) {
         if (!sourceText.includes(marker)) {
             throw new Error("Tcl runtime file wacl.js does not match the expected layout.");
         }
     }
+    const wasmUrl = assetLocator.resolveAssetUrl(`${TCL_RUNTIME_ASSET_DIRECTORY}/wacl.wasm`);
+    const libraryUrl = assetLocator.resolveAssetUrl(
+        `${TCL_RUNTIME_ASSET_DIRECTORY}/wacl-library.data`,
+    );
+    const customUrl = assetLocator.resolveAssetUrl(
+        `${TCL_RUNTIME_ASSET_DIRECTORY}/wacl-custom.data`,
+    );
     return sourceText
         .replace(/eval\("[^"]*"\)/, "({})")
-        .replace(markers[0], `var REMOTE_PACKAGE_BASE="${runtimeBaseUrl}wacl-library.data"`)
-        .replace(markers[1], `var REMOTE_PACKAGE_BASE="${runtimeBaseUrl}wacl-custom.data"`);
+        .replace(wasmUrlMarker, `"${wasmUrl}"`)
+        .replace(packagePrefixMarker, 'Module["filePackagePrefixURL"]="";')
+        .replace(libraryMarker, `var REMOTE_PACKAGE_BASE="${libraryUrl}"`)
+        .replace(customMarker, `var REMOTE_PACKAGE_BASE="${customUrl}"`)
+        .replace(stderrConsoleMarker, 'Module["printErr"]=(function(txt){});');
 }
-async function evaluateAmdModule(
-    moduleText: string,
-    runtimeBaseUrl: string,
-): Promise<WaclAmdModule> {
+function evaluateAmdModule(moduleText: string): WaclAmdModule {
     const globalScope = window as unknown as {
         define?: unknown;
         require?: unknown;
@@ -97,20 +117,12 @@ async function evaluateAmdModule(
         capturedModule = factory();
     };
     globalScope.require = {
-        toUrl: (modulePath: string) => modulePath.replace(/^tcl\//, runtimeBaseUrl),
+        toUrl: (modulePath: string) => modulePath,
     };
     try {
-        await new Promise<void>((resolveLoad, rejectLoad) => {
-            const scriptElement = document.createElement("script");
-            scriptElement.textContent = moduleText;
-            scriptElement.addEventListener("load", () => resolveLoad(), { once: true });
-            scriptElement.addEventListener(
-                "error",
-                () => rejectLoad(new Error("Tcl runtime script failed to evaluate.")),
-                { once: true },
-            );
-            document.head.appendChild(scriptElement);
-        });
+        const scriptElement = document.createElement("script");
+        scriptElement.textContent = moduleText;
+        document.head.appendChild(scriptElement);
     } finally {
         globalScope.define = previousDefine;
         globalScope.require = previousRequire;
@@ -123,16 +135,22 @@ async function evaluateAmdModule(
 class TclFedLineReader {
     private readonly fedLines: ReadonlyArray<string>;
     private fedIndex = 0;
+    private refillPending = false;
     constructor(fedLines: ReadonlyArray<string>) {
         this.fedLines = fedLines;
     }
-    readLine(): string {
+    readLine(): string | null {
         const fedLine = this.fedLines[this.fedIndex];
-        if (fedLine === undefined) {
-            throw new TerminalInputNeededSignal();
+        if (fedLine !== undefined) {
+            this.fedIndex += 1;
+            this.refillPending = true;
+            return fedLine;
         }
-        this.fedIndex += 1;
-        return fedLine;
+        if (this.refillPending) {
+            this.refillPending = false;
+            return null;
+        }
+        throw new TerminalInputNeededSignal();
     }
 }
 function isTclInputInterruption(runError: unknown): boolean {
@@ -143,7 +161,7 @@ function isTclInputInterruption(runError: unknown): boolean {
     const text = [details?.errorInfo, details?.errorCode, String(runError)]
         .filter((part) => typeof part === "string")
         .join("\n");
-    return /input\/output error|POSIX EIO/.test(text);
+    return /I\/O error|input\/output error|POSIX EIO/i.test(text);
 }
 class TclWaclPerformer implements TerminalPerformerContract {
     private readonly runtimeLoader: WaclRuntimeLoader;
