@@ -378,6 +378,7 @@ interface VerificationOutcome {
     finished: boolean;
     problems: Array<string>;
     terminalText: string;
+    artifactKind?: "zip" | "single-file";
 }
 function resolveChromeBinary(): string | undefined {
     return CHROME_CANDIDATES.find((candidate) => existsSync(candidate));
@@ -398,6 +399,7 @@ class DevToolsSession {
     private readonly requestUrls: Map<string, string> = new Map();
     private nextCallId = 1;
     readonly browserProblems: Array<string> = [];
+    readonly requestLog: Array<string> = [];
     private constructor(socket: WebSocket) {
         this.socket = socket;
     }
@@ -488,6 +490,7 @@ class DevToolsSession {
         if (method === "Network.requestWillBeSent") {
             const details = params as { requestId: string; request: { url: string } };
             this.requestUrls.set(details.requestId, details.request.url);
+            this.requestLog.push(details.request.url);
             return;
         }
         if (method === "Network.loadingFailed") {
@@ -601,6 +604,31 @@ async function fetchExportArchive(sessionIdentifier: string): Promise<Uint8Array
     }
     return new Uint8Array(await response.arrayBuffer());
 }
+async function fetchSingleFileExport(sessionIdentifier: string): Promise<string> {
+    const response = await fetch(
+        `http://127.0.0.1:${APP_PORT}/api/export/${sessionIdentifier}?format=html`,
+        { signal: AbortSignal.timeout(600_000) },
+    );
+    if (!response.ok) {
+        const failure = (await response.json()) as { errorMessage?: string };
+        throw new Error(
+            failure.errorMessage ?? `Single-file export request failed with ${response.status}.`,
+        );
+    }
+    const responseContentType = response.headers.get("content-type") ?? "";
+    if (!responseContentType.startsWith("text/html")) {
+        throw new Error(
+            `Single-file export returned content-type ${responseContentType || "unknown"}.`,
+        );
+    }
+    return await response.text();
+}
+async function stageSingleFileExport(directoryName: string, htmlText: string): Promise<void> {
+    const languageDirectory = join(VERIFICATION_ROOT, directoryName);
+    await rm(languageDirectory, { recursive: true, force: true });
+    await mkdir(languageDirectory, { recursive: true });
+    await writeFile(join(languageDirectory, "index.html"), htmlText);
+}
 async function stageExportArchive(directoryName: string, archiveBytes: Uint8Array): Promise<void> {
     const languageDirectory = join(VERIFICATION_ROOT, directoryName);
     await rm(languageDirectory, { recursive: true, force: true });
@@ -639,6 +667,8 @@ async function sendEnterKey(devTools: DevToolsSession, sessionId: string): Promi
 async function verifyShowcaseInBrowser(
     devTools: DevToolsSession,
     showcase: ShowcaseUnderTest,
+    pageUrl: string,
+    trackNetworkRequests: boolean = false,
 ): Promise<VerificationOutcome> {
     const problems: Array<string> = [];
     const targetCreation = (await devTools.call("Target.createTarget", {
@@ -654,11 +684,8 @@ async function verifyShowcaseInBrowser(
     await devTools.call("Log.enable", {}, sessionId);
     await devTools.call("Network.enable", {}, sessionId);
     const problemBaseline = devTools.browserProblems.length;
-    await devTools.call(
-        "Page.navigate",
-        { url: `http://127.0.0.1:${HOST_PORT}/${showcase.languageIdentifier}/index.html` },
-        sessionId,
-    );
+    const requestBaseline = devTools.requestLog.length;
+    await devTools.call("Page.navigate", { url: pageUrl }, sessionId);
     const deadline = Date.now() + showcase.budgetMilliseconds;
     let terminalText = "";
     let enterPresses = 0;
@@ -685,6 +712,17 @@ async function verifyShowcaseInBrowser(
     }
     if (terminalText.includes("Error:")) {
         problems.push(`the terminal reported an error: ${firstMeaningfulLine(terminalText)}`);
+    }
+    if (trackNetworkRequests) {
+        for (const requestUrl of devTools.requestLog.slice(requestBaseline)) {
+            if (!requestUrl.startsWith("http:") && !requestUrl.startsWith("https:")) {
+                continue;
+            }
+            if (requestUrl === pageUrl) {
+                continue;
+            }
+            problems.push(`the single-file export requested an external asset: ${requestUrl}`);
+        }
     }
     for (const problem of devTools.browserProblems.slice(problemBaseline)) {
         problems.push(problem);
@@ -944,11 +982,33 @@ try {
             activeStep = "stage";
             await stageExportArchive(showcase.languageIdentifier, archiveBytes);
             activeStep = "browser";
-            const outcome = await verifyShowcaseInBrowser(devTools, showcase);
+            const outcome = await verifyShowcaseInBrowser(
+                devTools,
+                showcase,
+                `http://127.0.0.1:${HOST_PORT}/${showcase.languageIdentifier}/index.html`,
+            );
             outcome.zipBytes = archiveBytes.byteLength;
             outcomes.push(outcome);
             matrixRow.showcase = outcome.problems.length === 0 ? "pass" : "fail";
             matrixRow.problems = [...outcome.problems];
+            activeStep = "single-file export";
+            const singleFileHtmlText = await fetchSingleFileExport(sessionIdentifier);
+            activeStep = "single-file stage";
+            const singleFileDirectoryName = `${showcase.languageIdentifier}-singlefile`;
+            await stageSingleFileExport(singleFileDirectoryName, singleFileHtmlText);
+            activeStep = "single-file browser";
+            const singleFileOutcome = await verifyShowcaseInBrowser(
+                devTools,
+                showcase,
+                `http://127.0.0.1:${HOST_PORT}/${singleFileDirectoryName}/index.html`,
+                true,
+            );
+            singleFileOutcome.zipBytes = Buffer.byteLength(singleFileHtmlText, "utf8");
+            singleFileOutcome.artifactKind = "single-file";
+            outcomes.push(singleFileOutcome);
+            for (const problem of singleFileOutcome.problems) {
+                matrixRow.problems.push(`single-file: ${problem}`);
+            }
             if (probe) {
                 const probeDirectoryName = `${showcase.languageIdentifier}-probe`;
                 activeStep = "probe upload";
@@ -1042,18 +1102,28 @@ try {
     }
 } catch {}
 await writeFile(matrixPath, JSON.stringify(mergedMatrixDocument, null, 4) + "\n");
+await new Promise<void>((resolveFormat) => {
+    const formatterProcess = spawn(
+        process.execPath,
+        ["node_modules/oxfmt/bin/oxfmt", matrixPath],
+        { stdio: "ignore" },
+    );
+    formatterProcess.once("close", () => resolveFormat());
+    formatterProcess.once("error", () => resolveFormat());
+});
 let failureCount = 0;
 for (const outcome of outcomes) {
     const sizeInKilobytes = Math.round(outcome.zipBytes / 1024);
+    const artifactLabel = outcome.artifactKind === "single-file" ? "single file" : "export zip";
     if (outcome.problems.length === 0) {
         scopedLogger.logSuccess(
-            `${outcome.languageIdentifier}: clean run, export zip ${sizeInKilobytes} KB`,
+            `${outcome.languageIdentifier}: clean run, ${artifactLabel} ${sizeInKilobytes} KB`,
         );
         continue;
     }
     failureCount += 1;
     scopedLogger.logError(
-        `${outcome.languageIdentifier}: ${outcome.problems.length} problem(s), export zip ${sizeInKilobytes} KB`,
+        `${outcome.languageIdentifier}: ${outcome.problems.length} problem(s), ${artifactLabel} ${sizeInKilobytes} KB`,
     );
     for (const problem of outcome.problems) {
         scopedLogger.logError(`  ${problem}`);
