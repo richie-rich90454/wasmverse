@@ -4,20 +4,24 @@ import { SessionUserFilesClient } from "@clientTheatre/runtimePerformers/Session
 import { isTerminalInputNeeded } from "@clientTheatre/runtimePerformers/ReplayableStdinFile.ts";
 import { ReplayOutputTracker } from "@clientTheatre/runtimePerformers/ReplayOutputTracker.ts";
 import { BrowserProgramHost } from "@clientTheatre/runtimePerformers/BrowserProgramHost.ts";
+import {
+    createRuntimeAssetLocator,
+    type RuntimeAssetLocator,
+} from "@clientTheatre/runtimePerformers/RuntimeAssetLocator.ts";
 const MAXIMUM_REPLAY_INPUTS = 1000;
 interface TypeScriptLoaderModule {
     loadTypeScriptModule(baseUrl: string, attemptIdentifier: string): Promise<unknown>;
 }
 class TypeScriptBundleLoader {
-    private readonly sessionBaseUrl: string;
+    private readonly assetLocator: RuntimeAssetLocator;
     private loaderModule: TypeScriptLoaderModule | undefined;
     constructor(sessionBaseUrl: string) {
-        this.sessionBaseUrl = sessionBaseUrl;
+        this.assetLocator = createRuntimeAssetLocator(sessionBaseUrl);
     }
     async loadLoaderModule(stage: TerminalStageController): Promise<void> {
         stage.writeLine("Loading TypeScript runtime.");
         this.loaderModule = (await import(
-            /* @vite-ignore */ `${this.sessionBaseUrl}/runtime/typescript-loader.js`
+            /* @vite-ignore */ this.assetLocator.resolveAssetUrl("runtime/typescript-loader.js")
         )) as TypeScriptLoaderModule;
     }
     async loadFreshBundle(attemptIdentifier: string): Promise<void> {
@@ -25,7 +29,7 @@ class TypeScriptBundleLoader {
             throw new Error("TypeScript loader not loaded. Call loadLoaderModule first.");
         }
         await this.loaderModule.loadTypeScriptModule(
-            `${this.sessionBaseUrl}/runtime`,
+            this.assetLocator.resolveAssetUrl("runtime"),
             attemptIdentifier,
         );
     }
