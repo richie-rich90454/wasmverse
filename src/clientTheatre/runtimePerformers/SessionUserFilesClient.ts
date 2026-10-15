@@ -31,9 +31,7 @@ class SessionUserFilesClient {
                 continue;
             }
             const fileResponse = await fetch(
-                this.assetLocator.resolveAssetUrl(
-                    `user-code/${encodeUserCodePath(relativePath)}`,
-                ),
+                this.assetLocator.resolveAssetUrl(`user-code/${encodeUserCodePath(relativePath)}`),
             );
             if (!fileResponse.ok) {
                 throw new Error(`User file ${relativePath} is missing from the session.`);
