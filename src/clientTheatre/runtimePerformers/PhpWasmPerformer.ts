@@ -2,6 +2,10 @@ import type { TerminalStageController } from "@clientTheatre/services/TerminalSt
 import type { TerminalPerformerContract } from "@clientTheatre/runtimePerformers/TerminalPerformerContract.ts";
 import { SessionUserFilesClient } from "@clientTheatre/runtimePerformers/SessionUserFilesClient.ts";
 import { ReplayOutputTracker } from "@clientTheatre/runtimePerformers/ReplayOutputTracker.ts";
+import {
+    createRuntimeAssetLocator,
+    type RuntimeAssetLocator,
+} from "@clientTheatre/runtimePerformers/RuntimeAssetLocator.ts";
 const MAXIMUM_REPLAY_INPUTS = 1000;
 interface PhpWebModule {
     PhpWeb: new (args: Record<string, unknown>) => unknown;
@@ -95,9 +99,9 @@ class PhpStdinCursor {
     }
 }
 class PhpWasmLoader {
-    private readonly sessionBaseUrl: string;
+    private readonly assetLocator: RuntimeAssetLocator;
     constructor(sessionBaseUrl: string) {
-        this.sessionBaseUrl = sessionBaseUrl;
+        this.assetLocator = createRuntimeAssetLocator(sessionBaseUrl);
     }
     async loadRuntime(
         stage: TerminalStageController,
@@ -111,9 +115,9 @@ class PhpWasmLoader {
             );
         }
         try {
-            const runtimeBaseUrl = `${this.sessionBaseUrl}/runtime`;
+            const runtimeBaseUrl = this.assetLocator.resolveAssetUrl("runtime");
             const phpWebModule = (await import(
-                /* @vite-ignore */ `${runtimeBaseUrl}/php-wasm/PhpWeb.js`
+                /* @vite-ignore */ this.assetLocator.resolveAssetUrl("runtime/php-wasm/PhpWeb.js")
             )) as PhpWebModule;
             const phpRuntime = new phpWebModule.PhpWeb({
                 version: "8.4",
