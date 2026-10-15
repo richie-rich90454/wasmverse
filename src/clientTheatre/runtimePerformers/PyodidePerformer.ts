@@ -1,6 +1,10 @@
 import type { TerminalStageController } from "@clientTheatre/services/TerminalStageController.ts";
 import type { TerminalPerformerContract } from "@clientTheatre/runtimePerformers/TerminalPerformerContract.ts";
 import { SessionUserFilesClient } from "@clientTheatre/runtimePerformers/SessionUserFilesClient.ts";
+import {
+    createRuntimeAssetLocator,
+    type RuntimeAssetLocator,
+} from "@clientTheatre/runtimePerformers/RuntimeAssetLocator.ts";
 interface PyodideInstance {
     setStdout(options: { batched(output: string): void }): void;
     setStderr(options: { batched(output: string): void }): void;
@@ -10,7 +14,11 @@ interface PyodideInstance {
     runPythonAsync(code: string): Promise<unknown>;
 }
 interface PyodideModule {
-    loadPyodide(options: { indexURL: string; packageBaseUrl: string }): Promise<PyodideInstance>;
+    loadPyodide(options: {
+        indexURL: string;
+        packageBaseUrl: string;
+        createPyodideModule?: (settings: Record<string, unknown>) => Promise<unknown>;
+    }): Promise<PyodideInstance>;
 }
 interface PythonErrorShape {
     type?: string;
@@ -86,18 +94,28 @@ if _entry_should_auto_call_main:
             await _entry_result
 `;
 class PyodideRuntimeLoader {
-    private readonly sessionBaseUrl: string;
+    private readonly assetLocator: RuntimeAssetLocator;
+    private readonly indexUrl: string;
     constructor(sessionBaseUrl: string) {
-        this.sessionBaseUrl = sessionBaseUrl;
+        this.assetLocator = createRuntimeAssetLocator(sessionBaseUrl);
+        this.indexUrl = `${sessionBaseUrl}/runtime/`;
     }
     async loadRuntime(): Promise<PyodideInstance> {
-        const runtimeUrl = `${this.sessionBaseUrl}/runtime/`;
         const pyodideModule = (await import(
-            /* @vite-ignore */ `${this.sessionBaseUrl}/runtime/python-runtime.js`
+            /* @vite-ignore */ this.assetLocator.resolveAssetUrl("runtime/python-runtime.js")
         )) as PyodideModule;
         return pyodideModule.loadPyodide({
-            indexURL: runtimeUrl,
-            packageBaseUrl: runtimeUrl,
+            indexURL: this.indexUrl,
+            packageBaseUrl: this.indexUrl,
+            createPyodideModule: async (settings: Record<string, unknown>) => {
+                const asmModule = await import(
+                    /* @vite-ignore */ this.assetLocator.resolveAssetUrl(
+                        "runtime/python-asm.js",
+                    )
+                );
+                return (asmModule as { default: (settings: Record<string, unknown>) => unknown })
+                    .default(settings);
+            },
         });
     }
 }
