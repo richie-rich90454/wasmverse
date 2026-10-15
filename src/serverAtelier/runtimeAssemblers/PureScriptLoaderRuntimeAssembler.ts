@@ -1,10 +1,12 @@
 import type { BuildContextRecord } from "@sharedKernel/BuildContextRecord.ts";
 import type { RuntimeAssetAssemblerContract } from "@serverAtelier/runtimeAssemblers/RuntimeAssetAssemblerContract.ts";
+import { EMBEDDED_ASSET_RESOLVER_GLUE_SOURCE } from "@serverAtelier/runtimeAssemblers/EmbeddedAssetResolverGlue.ts";
 import { FileSystemOperations } from "@serverAtelier/utilities/FileSystemOperations.ts";
 const PURESCRIPT_LOADER_FILE_NAME = "purescript-loader.js";
 const PURESCRIPT_LOADER_SOURCE = [
+    EMBEDDED_ASSET_RESOLVER_GLUE_SOURCE,
     "export async function loadPureScriptModule(baseUrl, attemptIdentifier) {",
-    "    const moduleNamespace = await import(`${baseUrl}/app.js?attempt=${encodeURIComponent(attemptIdentifier)}`);",
+    "    const moduleNamespace = await import(resolve(`${baseUrl}/app.js?attempt=${encodeURIComponent(attemptIdentifier)}`));",
     "    let runFunction = moduleNamespace.main;",
     "    if (typeof runFunction !== 'function') {",
     "        runFunction = Object.values(moduleNamespace).find((value) => typeof value === 'function');",
