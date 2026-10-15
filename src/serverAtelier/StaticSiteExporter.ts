@@ -3,7 +3,7 @@ import { writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { build } from "esbuild";
-import { zipSync } from "fflate";
+import { gzipSync, zipSync } from "fflate";
 import type { LanguageIdentifier } from "@sharedKernel/LanguageIdentifier.ts";
 import type { SessionDescriptorRecord } from "@sharedKernel/SessionDescriptorRecord.ts";
 import { SessionLifecycleRecord } from "@serverAtelier/SessionLifecycleRecord.ts";
@@ -19,6 +19,7 @@ const EXPORT_STYLE_NAME = "terminal.css";
 const EXPORT_DESCRIPTOR_NAME = "session.json";
 const EXPORT_PAGE_NAME = "index.html";
 const EXPORT_HOST_KEEP_FILE = ".nojekyll";
+const EMBEDDED_ASSETS_GLOBAL_NAME = "__WASMVERSE_EMBEDDED_ASSETS__";
 const ZIP_COMPRESSION_LEVEL = 9;
 const PERFORMER_CLASS_BY_LANGUAGE: Record<LanguageIdentifier, string> = {
     python: "PyodidePerformer",
@@ -165,6 +166,126 @@ class StaticSiteExporter {
         } finally {
             await this.fileSystemOperations.removeRecursively(stagingDirectory);
         }
+    }
+    async exportSessionToSingleFileHtml(sessionRecord: SessionLifecycleRecord): Promise<string> {
+        const descriptor = sessionRecord.convertToDescriptor();
+        const bundleBytes = await this.loadBundleBytes(descriptor.languageIdentifier);
+        const styleText = await this.readExportStyleText();
+        const embeddedAssets: Record<string, string> = {};
+        this.embedAsset(embeddedAssets, EXPORT_BUNDLE_NAME, bundleBytes);
+        this.embedAsset(embeddedAssets, EXPORT_STYLE_NAME, new TextEncoder().encode(styleText));
+        this.embedAsset(
+            embeddedAssets,
+            EXPORT_DESCRIPTOR_NAME,
+            new TextEncoder().encode(JSON.stringify(descriptor)),
+        );
+        await this.embedRuntimeAssets(sessionRecord, embeddedAssets);
+        await this.embedUserCode(sessionRecord, embeddedAssets);
+        const pageMarkup = this.composeSingleFilePage(
+            descriptor,
+            styleText,
+            embeddedAssets,
+            new TextDecoder().decode(bundleBytes),
+        );
+        this.assertNoRemoteAssetOrigins(`${EXPORT_PAGE_NAME} (single file)`, pageMarkup);
+        return pageMarkup;
+    }
+    private async readExportStyleText(): Promise<string> {
+        if (!(await this.fileSystemOperations.pathExists(this.xtermStylePath))) {
+            throw new Error("Terminal stylesheet is missing from node_modules.");
+        }
+        return await this.fileSystemOperations.readTextFile(this.xtermStylePath);
+    }
+    private embedAsset(
+        embeddedAssets: Record<string, string>,
+        relativePath: string,
+        assetBytes: Uint8Array,
+    ): void {
+        embeddedAssets[relativePath] = Buffer.from(
+            gzipSync(assetBytes, { level: ZIP_COMPRESSION_LEVEL }),
+        ).toString("base64");
+    }
+    private async embedRuntimeAssets(
+        sessionRecord: SessionLifecycleRecord,
+        embeddedAssets: Record<string, string>,
+    ): Promise<void> {
+        const runtimeDirectory = `${sessionRecord.sessionDirectory}/dist/runtime`;
+        const runtimeFiles = await this.fileSystemOperations.listFilesRecursively(runtimeDirectory);
+        for (const relativePath of runtimeFiles) {
+            const keepForExport = !UNSHIPPED_RUNTIME_FILE_PATTERNS.some((pattern) =>
+                pattern.test(relativePath),
+            );
+            if (!keepForExport) {
+                continue;
+            }
+            this.embedAsset(
+                embeddedAssets,
+                `runtime/${relativePath}`,
+                await this.fileSystemOperations.readBinaryFile(
+                    `${runtimeDirectory}/${relativePath}`,
+                ),
+            );
+        }
+    }
+    private async embedUserCode(
+        sessionRecord: SessionLifecycleRecord,
+        embeddedAssets: Record<string, string>,
+    ): Promise<void> {
+        const userCodeDirectory = `${sessionRecord.sessionDirectory}/dist/user-code`;
+        const userCodeFiles =
+            await this.fileSystemOperations.listFilesRecursively(userCodeDirectory);
+        for (const relativePath of userCodeFiles) {
+            if (isBuildOutputPath(relativePath)) {
+                continue;
+            }
+            this.embedAsset(
+                embeddedAssets,
+                `user-code/${relativePath}`,
+                await this.fileSystemOperations.readBinaryFile(
+                    `${userCodeDirectory}/${relativePath}`,
+                ),
+            );
+        }
+    }
+    private composeSingleFilePage(
+        descriptor: SessionDescriptorRecord,
+        styleText: string,
+        embeddedAssets: Record<string, string>,
+        bundleText: string,
+    ): string {
+        const pageTitle = `WASM Session (${descriptor.languageIdentifier})`;
+        const escapedStyleText = styleText.replace(/<\/style/gi, "<\\/style");
+        const escapedBundleText = bundleText.replace(/<\/script/gi, "<\\/script");
+        return [
+            "<!doctype html>",
+            '<html lang="en">',
+            "<head>",
+            '<meta charset="UTF-8" />',
+            '<meta name="viewport" content="width=device-width, initial-scale=1.0" />',
+            '<meta name="description" content="A WASMVERSE single-file terminal replay of a compiled session." />',
+            '<meta name="color-scheme" content="dark" />',
+            '<meta name="theme-color" content="#0D0D0D" />',
+            `<title>${pageTitle}</title>`,
+            `<link rel="icon" href="${FAVICON_DATA_URL}" />`,
+            "<style>",
+            escapedStyleText,
+            "</style>",
+            "<style>",
+            "html, body { margin: 0; padding: 0; background: #0D0D0D; height: 100%; }",
+            "#terminal { height: 100vh; padding: 12px; box-sizing: border-box; }",
+            "</style>",
+            "</head>",
+            "<body>",
+            '<div id="terminal"></div>',
+            "<noscript>This replay needs JavaScript enabled.</noscript>",
+            `<script>globalThis.${EMBEDDED_ASSETS_GLOBAL_NAME} = ${JSON.stringify(embeddedAssets)};</script>`,
+            '<script type="module">',
+            escapedBundleText,
+            "</script>",
+            "</body>",
+            "</html>",
+            "",
+        ].join("\n");
     }
     private loadBundleBytes(languageIdentifier: LanguageIdentifier): Promise<Uint8Array> {
         const cachedBundle = this.bundleCache.get(languageIdentifier);
