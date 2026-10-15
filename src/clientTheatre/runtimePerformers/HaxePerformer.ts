@@ -13,7 +13,7 @@ interface HaxePerformerLoaderModule {
     loadHaxeModule(baseUrl: string, attemptIdentifier: string): Promise<unknown>;
 }
 class HaxePerformer implements TerminalPerformerContract {
-    private readonly sessionBaseUrl: string;
+    private readonly assetLocator: RuntimeAssetLocator;
     private readonly userFilesClient: SessionUserFilesClient;
     private readonly outputTracker: ReplayOutputTracker;
     private readonly attemptNamespace: string;
@@ -22,7 +22,7 @@ class HaxePerformer implements TerminalPerformerContract {
     private programArguments: ReadonlyArray<string> = [];
     private userFiles: Map<string, string> = new Map();
     constructor(sessionBaseUrl: string) {
-        this.sessionBaseUrl = sessionBaseUrl;
+        this.assetLocator = createRuntimeAssetLocator(sessionBaseUrl);
         this.userFilesClient = new SessionUserFilesClient(sessionBaseUrl);
         this.outputTracker = new ReplayOutputTracker();
         this.attemptNamespace = Math.random().toString(36).slice(2);
@@ -30,7 +30,7 @@ class HaxePerformer implements TerminalPerformerContract {
     async loadInto(stage: TerminalStageController): Promise<void> {
         stage.writeLine("Loading Haxe runtime.");
         this.loaderModule = (await import(
-            /* @vite-ignore */ `${this.sessionBaseUrl}/runtime/haxe-loader.js`
+            /* @vite-ignore */ this.assetLocator.resolveAssetUrl("runtime/haxe-loader.js")
         )) as HaxePerformerLoaderModule;
         const fetchedFiles = await this.userFilesClient.fetchUserFiles();
         this.entryRelativePath = fetchedFiles.entryRelativePath;
@@ -59,7 +59,7 @@ class HaxePerformer implements TerminalPerformerContract {
                     throw new Error("Haxe loader not loaded. Call loadInto first.");
                 }
                 await this.loaderModule.loadHaxeModule(
-                    `${this.sessionBaseUrl}/runtime`,
+                    this.assetLocator.resolveAssetUrl("runtime"),
                     `${this.attemptNamespace}-${inputCount}`,
                 );
             } catch (runError) {
