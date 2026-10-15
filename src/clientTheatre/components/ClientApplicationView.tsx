@@ -51,6 +51,17 @@ function ClientApplicationView(): React.JSX.Element {
                             Download static site
                         </a>
                     )}
+                    {finishedSession && (
+                        <a
+                            className="static-export-link"
+                            href={applicationController.backendApiClient.constructSingleFileExportUrl(
+                                finishedSession.sessionIdentifier,
+                            )}
+                            download
+                        >
+                            Download single file
+                        </a>
+                    )}
                     {isFinished && (
                         <button
                             className="run-another-button"
