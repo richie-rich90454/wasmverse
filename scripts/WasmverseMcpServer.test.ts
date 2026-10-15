@@ -64,6 +64,7 @@ test("build_session compiles inline python and export_artifact writes a runnable
         sessionIdentifier: descriptor.sessionIdentifier,
         format: "zip",
         outputPath: artifactPath,
+        keepSession: true,
     });
     expect(exportResult.isError).toBeFalsy();
     const artifact = JSON.parse(readToolText(exportResult)) as {
@@ -88,11 +89,34 @@ test("build_session compiles inline python and export_artifact writes a runnable
     ]) {
         expect(zipEntryNames).toContain(expectedEntry);
     }
+    const htmlArtifactPath = join(testArtifactsDirectory, `${descriptor.sessionIdentifier}.html`);
+    const htmlExportResult = await callTool(toolHandlerMap, "export_artifact", {
+        sessionIdentifier: descriptor.sessionIdentifier,
+        format: "html",
+        outputPath: htmlArtifactPath,
+        keepSession: true,
+    });
+    expect(htmlExportResult.isError).toBeFalsy();
+    const htmlArtifact = JSON.parse(readToolText(htmlExportResult)) as {
+        artifactPath: string;
+        byteSize: number;
+        format: string;
+    };
+    expect(htmlArtifact.artifactPath).toBe(htmlArtifactPath);
+    expect(htmlArtifact.format).toBe("html");
+    const htmlText = await readFile(htmlArtifactPath, "utf8");
+    expect(htmlArtifact.byteSize).toBe(new TextEncoder().encode(htmlText).byteLength);
+    expect(htmlText.includes("<!doctype html>")).toBe(true);
+    expect(htmlText.includes("__WASMVERSE_EMBEDDED_ASSETS__")).toBe(true);
     const releaseResult = await callTool(toolHandlerMap, "export_artifact", {
         sessionIdentifier: descriptor.sessionIdentifier,
     });
-    expect(releaseResult.isError).toBe(true);
-    expect(readToolText(releaseResult)).toContain("Unknown session");
+    expect(releaseResult.isError).toBeFalsy();
+    const afterReleaseResult = await callTool(toolHandlerMap, "export_artifact", {
+        sessionIdentifier: descriptor.sessionIdentifier,
+    });
+    expect(afterReleaseResult.isError).toBe(true);
+    expect(readToolText(afterReleaseResult)).toContain("Unknown session");
 }, 240_000);
 test("export_project builds and exports a project directory in one call", async () => {
     const projectDirectory = await createTemporaryDirectory("wasmverse-mcp-project-");
@@ -132,12 +156,12 @@ test("error paths return readable isError results", async () => {
     });
     expect(unknownSession.isError).toBe(true);
     expect(readToolText(unknownSession)).toContain("Unknown session");
-    const htmlFormat = await callTool(toolHandlerMap, "export_artifact", {
+    const badFormat = await callTool(toolHandlerMap, "export_artifact", {
         sessionIdentifier: "any-session",
-        format: "html",
+        format: "tar",
     });
-    expect(htmlFormat.isError).toBe(true);
-    expect(readToolText(htmlFormat)).toContain("not available in this build");
+    expect(badFormat.isError).toBe(true);
+    expect(readToolText(badFormat)).toContain('Use "zip" or "html"');
     const unknownTool = await callTool(toolHandlerMap, "no_such_tool", {});
     expect(unknownTool.isError).toBe(true);
     expect(readToolText(unknownTool)).toContain("Unknown tool");
