@@ -1,16 +1,22 @@
 import { encodeUserCodePath } from "@clientTheatre/runtimePerformers/UserCodeUrl.ts";
+import {
+    createRuntimeAssetLocator,
+    type RuntimeAssetLocator,
+} from "@clientTheatre/runtimePerformers/RuntimeAssetLocator.ts";
 interface SessionUserFiles {
     entryRelativePath: string;
     programArguments: ReadonlyArray<string>;
     userFiles: Map<string, string>;
 }
 class SessionUserFilesClient {
-    private readonly sessionBaseUrl: string;
+    private readonly assetLocator: RuntimeAssetLocator;
     constructor(sessionBaseUrl: string) {
-        this.sessionBaseUrl = sessionBaseUrl;
+        this.assetLocator = createRuntimeAssetLocator(sessionBaseUrl);
     }
     async fetchUserFiles(): Promise<SessionUserFiles> {
-        const manifestResponse = await fetch(`${this.sessionBaseUrl}/user-code/manifest.json`);
+        const manifestResponse = await fetch(
+            this.assetLocator.resolveAssetUrl("user-code/manifest.json"),
+        );
         if (!manifestResponse.ok) {
             throw new Error("Session manifest is missing. Rebuild the session and retry.");
         }
@@ -25,7 +31,9 @@ class SessionUserFilesClient {
                 continue;
             }
             const fileResponse = await fetch(
-                `${this.sessionBaseUrl}/user-code/${encodeUserCodePath(relativePath)}`,
+                this.assetLocator.resolveAssetUrl(
+                    `user-code/${encodeUserCodePath(relativePath)}`,
+                ),
             );
             if (!fileResponse.ok) {
                 throw new Error(`User file ${relativePath} is missing from the session.`);
