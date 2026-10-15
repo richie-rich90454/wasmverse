@@ -1,6 +1,10 @@
 import type { TerminalStageController } from "@clientTheatre/services/TerminalStageController.ts";
 import type { TerminalPerformerContract } from "@clientTheatre/runtimePerformers/TerminalPerformerContract.ts";
 import { SessionUserFilesClient } from "@clientTheatre/runtimePerformers/SessionUserFilesClient.ts";
+import {
+    createRuntimeAssetLocator,
+    type RuntimeAssetLocator,
+} from "@clientTheatre/runtimePerformers/RuntimeAssetLocator.ts";
 import { isTerminalInputNeeded } from "@clientTheatre/runtimePerformers/ReplayableStdinFile.ts";
 import { ReplayOutputTracker } from "@clientTheatre/runtimePerformers/ReplayOutputTracker.ts";
 import { WasmverseProgramGlobalsHost } from "@clientTheatre/runtimePerformers/WasmverseProgramGlobalsHost.ts";
@@ -10,6 +14,7 @@ interface FablePerformerLoaderModule {
 }
 class FablePerformer implements TerminalPerformerContract {
     private readonly sessionBaseUrl: string;
+    private readonly assetLocator: RuntimeAssetLocator;
     private readonly userFilesClient: SessionUserFilesClient;
     private readonly outputTracker: ReplayOutputTracker;
     private readonly attemptNamespace: string;
@@ -19,6 +24,7 @@ class FablePerformer implements TerminalPerformerContract {
     private userFiles: Map<string, string> = new Map();
     constructor(sessionBaseUrl: string) {
         this.sessionBaseUrl = sessionBaseUrl;
+        this.assetLocator = createRuntimeAssetLocator(sessionBaseUrl);
         this.userFilesClient = new SessionUserFilesClient(sessionBaseUrl);
         this.outputTracker = new ReplayOutputTracker();
         this.attemptNamespace = Math.random().toString(36).slice(2);
@@ -26,7 +32,7 @@ class FablePerformer implements TerminalPerformerContract {
     async loadInto(stage: TerminalStageController): Promise<void> {
         stage.writeLine("Loading F# (Fable) runtime.");
         this.loaderModule = (await import(
-            /* @vite-ignore */ `${this.sessionBaseUrl}/runtime/fable-loader.js`
+            /* @vite-ignore */ this.assetLocator.resolveAssetUrl("runtime/fable-loader.js")
         )) as FablePerformerLoaderModule;
         const fetchedFiles = await this.userFilesClient.fetchUserFiles();
         this.entryRelativePath = fetchedFiles.entryRelativePath;
