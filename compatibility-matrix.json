@@ -1,7 +1,20 @@
 {
-    "generatedAt": "2026-10-15T10:48:16.863Z",
+    "generatedAt": "2026-10-15T12:36:14.847Z",
     "source": "verify:export",
     "languages": [
+        {
+            "languageIdentifier": "elm",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "pass"
+            },
+            "exportBytes": 157735,
+            "problems": []
+        },
         {
             "languageIdentifier": "zig",
             "toolchain": "ready",
@@ -12,26 +25,164 @@
                 "arguments": "pass",
                 "fileIo": "pass"
             },
-            "exportBytes": 127619,
+            "exportBytes": 127702,
             "problems": []
         },
         {
-            "languageIdentifier": "forth",
+            "languageIdentifier": "r",
             "toolchain": "ready",
-            "showcase": "fail",
+            "showcase": "pass",
+            "features": {
+                "stdin": "unsupported",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "pass"
+            },
+            "exportBytes": 37823586,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "kotlin",
+            "toolchain": "ready",
+            "showcase": "pass",
             "features": {
                 "stdin": "pass",
                 "multiFile": "pass",
                 "arguments": "pass",
                 "fileIo": "pass"
             },
-            "exportBytes": 106272,
-            "problems": [
-                "the showcase never reached its final line",
-                "the terminal reported an error: Error:",
-                "single-file: the showcase never reached its final line",
-                "single-file: the terminal reported an error: Error:"
-            ]
+            "exportBytes": 196134,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "gleam",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "pass"
+            },
+            "exportBytes": 107319,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "fsharp",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "pass"
+            },
+            "exportBytes": 114763,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "assemblyscript",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "unsupported"
+            },
+            "exportBytes": 112724,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "dart",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "pass"
+            },
+            "exportBytes": 127478,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "csharp",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "pass"
+            },
+            "exportBytes": 2872349,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "java",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "unsupported"
+            },
+            "exportBytes": 133525,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "rust",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "unsupported",
+                "arguments": "pass",
+                "fileIo": "unsupported"
+            },
+            "exportBytes": 119930,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "cpp",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "pass"
+            },
+            "exportBytes": 178864,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "c",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "pass"
+            },
+            "exportBytes": 126368,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "smalltalk",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "pass"
+            },
+            "exportBytes": 108839,
+            "problems": []
         },
         {
             "languageIdentifier": "tcl",
@@ -56,7 +207,20 @@
                 "arguments": "pass",
                 "fileIo": "pass"
             },
-            "exportBytes": 492969,
+            "exportBytes": 492964,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "forth",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "pass"
+            },
+            "exportBytes": 106290,
             "problems": []
         },
         {
@@ -283,32 +447,6 @@
             "problems": []
         },
         {
-            "languageIdentifier": "elm",
-            "toolchain": "ready",
-            "showcase": "pass",
-            "features": {
-                "stdin": "pass",
-                "multiFile": "pass",
-                "arguments": "pass",
-                "fileIo": "pass"
-            },
-            "exportBytes": 154258,
-            "problems": []
-        },
-        {
-            "languageIdentifier": "fsharp",
-            "toolchain": "ready",
-            "showcase": "pass",
-            "features": {
-                "stdin": "pass",
-                "multiFile": "pass",
-                "arguments": "pass",
-                "fileIo": "pass"
-            },
-            "exportBytes": 111269,
-            "problems": []
-        },
-        {
             "languageIdentifier": "perl",
             "toolchain": "ready",
             "showcase": "pass",
@@ -400,19 +538,6 @@
             "problems": []
         },
         {
-            "languageIdentifier": "r",
-            "toolchain": "ready",
-            "showcase": "pass",
-            "features": {
-                "stdin": "unsupported",
-                "multiFile": "pass",
-                "arguments": "pass",
-                "fileIo": "pass"
-            },
-            "exportBytes": 37819857,
-            "problems": []
-        },
-        {
             "languageIdentifier": "purescript",
             "toolchain": "ready",
             "showcase": "pass",
@@ -436,19 +561,6 @@
                 "fileIo": "pass"
             },
             "exportBytes": 103109,
-            "problems": []
-        },
-        {
-            "languageIdentifier": "gleam",
-            "toolchain": "ready",
-            "showcase": "pass",
-            "features": {
-                "stdin": "pass",
-                "multiFile": "pass",
-                "arguments": "pass",
-                "fileIo": "pass"
-            },
-            "exportBytes": 103833,
             "problems": []
         },
         {
@@ -491,45 +603,6 @@
             "problems": []
         },
         {
-            "languageIdentifier": "rust",
-            "toolchain": "ready",
-            "showcase": "pass",
-            "features": {
-                "stdin": "pass",
-                "multiFile": "unsupported",
-                "arguments": "pass",
-                "fileIo": "unsupported"
-            },
-            "exportBytes": 116425,
-            "problems": []
-        },
-        {
-            "languageIdentifier": "c",
-            "toolchain": "ready",
-            "showcase": "pass",
-            "features": {
-                "stdin": "pass",
-                "multiFile": "pass",
-                "arguments": "pass",
-                "fileIo": "pass"
-            },
-            "exportBytes": 122873,
-            "problems": []
-        },
-        {
-            "languageIdentifier": "cpp",
-            "toolchain": "ready",
-            "showcase": "pass",
-            "features": {
-                "stdin": "pass",
-                "multiFile": "pass",
-                "arguments": "pass",
-                "fileIo": "pass"
-            },
-            "exportBytes": 175370,
-            "problems": []
-        },
-        {
             "languageIdentifier": "swift",
             "toolchain": "pending",
             "showcase": "pending",
@@ -543,81 +616,6 @@
             "problems": []
         },
         {
-            "languageIdentifier": "kotlin",
-            "toolchain": "ready",
-            "showcase": "pass",
-            "features": {
-                "stdin": "pending",
-                "arguments": "pending",
-                "fileIo": "pending",
-                "multiFile": "pending"
-            },
-            "exportBytes": 192648,
-            "problems": [
-                "probe upload step failed: Too many uploads. Wait one minute and try again."
-            ]
-        },
-        {
-            "languageIdentifier": "dart",
-            "toolchain": "ready",
-            "showcase": "fail",
-            "features": {
-                "stdin": "pending",
-                "arguments": "pending",
-                "fileIo": "pending",
-                "multiFile": "pending"
-            },
-            "exportBytes": 0,
-            "problems": [
-                "upload step failed: Too many uploads. Wait one minute and try again."
-            ]
-        },
-        {
-            "languageIdentifier": "java",
-            "toolchain": "ready",
-            "showcase": "fail",
-            "features": {
-                "stdin": "pending",
-                "arguments": "pending",
-                "fileIo": "pending",
-                "multiFile": "pending"
-            },
-            "exportBytes": 0,
-            "problems": [
-                "upload step failed: Too many uploads. Wait one minute and try again."
-            ]
-        },
-        {
-            "languageIdentifier": "csharp",
-            "toolchain": "ready",
-            "showcase": "fail",
-            "features": {
-                "stdin": "pending",
-                "arguments": "pending",
-                "fileIo": "pending",
-                "multiFile": "pending"
-            },
-            "exportBytes": 0,
-            "problems": [
-                "upload step failed: Too many uploads. Wait one minute and try again."
-            ]
-        },
-        {
-            "languageIdentifier": "assemblyscript",
-            "toolchain": "ready",
-            "showcase": "fail",
-            "features": {
-                "stdin": "pending",
-                "arguments": "pending",
-                "fileIo": "pending",
-                "multiFile": "pending"
-            },
-            "exportBytes": 0,
-            "problems": [
-                "upload step failed: Too many uploads. Wait one minute and try again."
-            ]
-        },
-        {
             "languageIdentifier": "ocaml",
             "toolchain": "ready",
             "showcase": "fail",
@@ -628,9 +626,7 @@
                 "multiFile": "pending"
             },
             "exportBytes": 0,
-            "problems": [
-                "upload step failed: Too many uploads. Wait one minute and try again."
-            ]
+            "problems": ["upload step failed: Too many uploads. Wait one minute and try again."]
         },
         {
             "languageIdentifier": "haskell",
@@ -643,9 +639,7 @@
                 "multiFile": "pending"
             },
             "exportBytes": 0,
-            "problems": [
-                "upload step failed: Too many uploads. Wait one minute and try again."
-            ]
+            "problems": ["upload step failed: Too many uploads. Wait one minute and try again."]
         },
         {
             "languageIdentifier": "javascript",
@@ -658,9 +652,7 @@
                 "multiFile": "pending"
             },
             "exportBytes": 0,
-            "problems": [
-                "upload step failed: Too many uploads. Wait one minute and try again."
-            ]
+            "problems": ["upload step failed: Too many uploads. Wait one minute and try again."]
         },
         {
             "languageIdentifier": "sql",
@@ -673,9 +665,7 @@
                 "multiFile": "pending"
             },
             "exportBytes": 0,
-            "problems": [
-                "upload step failed: Too many uploads. Wait one minute and try again."
-            ]
+            "problems": ["upload step failed: Too many uploads. Wait one minute and try again."]
         },
         {
             "languageIdentifier": "duckdb",
@@ -688,9 +678,7 @@
                 "multiFile": "pending"
             },
             "exportBytes": 0,
-            "problems": [
-                "upload step failed: Too many uploads. Wait one minute and try again."
-            ]
+            "problems": ["upload step failed: Too many uploads. Wait one minute and try again."]
         },
         {
             "languageIdentifier": "pglite",
@@ -703,9 +691,7 @@
                 "multiFile": "pending"
             },
             "exportBytes": 0,
-            "problems": [
-                "upload step failed: Too many uploads. Wait one minute and try again."
-            ]
+            "problems": ["upload step failed: Too many uploads. Wait one minute and try again."]
         },
         {
             "languageIdentifier": "awk",
@@ -718,9 +704,7 @@
                 "multiFile": "pending"
             },
             "exportBytes": 0,
-            "problems": [
-                "upload step failed: Too many uploads. Wait one minute and try again."
-            ]
+            "problems": ["upload step failed: Too many uploads. Wait one minute and try again."]
         },
         {
             "languageIdentifier": "jq",
@@ -733,9 +717,7 @@
                 "multiFile": "pending"
             },
             "exportBytes": 0,
-            "problems": [
-                "upload step failed: Too many uploads. Wait one minute and try again."
-            ]
+            "problems": ["upload step failed: Too many uploads. Wait one minute and try again."]
         },
         {
             "languageIdentifier": "bash",
@@ -748,9 +730,7 @@
                 "multiFile": "pending"
             },
             "exportBytes": 0,
-            "problems": [
-                "upload step failed: Too many uploads. Wait one minute and try again."
-            ]
+            "problems": ["upload step failed: Too many uploads. Wait one minute and try again."]
         }
     ]
 }
