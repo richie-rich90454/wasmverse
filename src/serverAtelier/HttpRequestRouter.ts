@@ -189,6 +189,16 @@ class HttpRequestRouter {
             return this.buildErrorResponse(404, "Session not found.");
         }
         try {
+            if (requestUrl.searchParams.get("format") === "html") {
+                const htmlText =
+                    await this.staticSiteExporter.exportSessionToSingleFileHtml(sessionRecord);
+                return new Response(htmlText, {
+                    headers: {
+                        "content-type": "text/html; charset=utf-8",
+                        "content-disposition": `attachment; filename="${sessionIdentifier}.html"`,
+                    },
+                });
+            }
             const zipBytes = await this.staticSiteExporter.exportSessionToZip(sessionRecord);
             const zipBody = zipBytes.slice().buffer as ArrayBuffer;
             return new Response(zipBody, {
