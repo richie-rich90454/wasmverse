@@ -1,7 +1,54 @@
 {
-    "generatedAt": "2026-10-14T12:14:36.232Z",
+    "generatedAt": "2026-10-14T15:22:27.041Z",
     "source": "verify:export",
     "languages": [
+        {
+            "languageIdentifier": "tcl",
+            "toolchain": "ready",
+            "showcase": "fail",
+            "features": {
+                "stdin": "fail",
+                "multiFile": "fail",
+                "arguments": "fail",
+                "fileIo": "fail"
+            },
+            "exportBytes": 1444672,
+            "problems": [
+                "the showcase never reached its final line",
+                "the terminal reported an error: Error:",
+                "console error: wacl stderr: trying binaryen method: native-wasm",
+                "console error: wacl stderr: binaryen method succeeded.",
+                "console error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+                "uncaught exception: Error: Not Found : http://127.0.0.1:4072/tcl/runtime/tcl/http://127.0.0.1:4072/tcl/runtime/tcl/wacl-library.data\n    at XMLHttpRequest.<anonymous> (<anonymous>:1:4831)",
+                "console error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+                "uncaught exception: Error: Not Found : http://127.0.0.1:4072/tcl/runtime/tcl/http://127.0.0.1:4072/tcl/runtime/tcl/wacl-custom.data\n    at XMLHttpRequest.<anonymous> (<anonymous>:1:35625)",
+                "probe: the probe never reached its final line",
+                "probe: the terminal reported an error: Error:",
+                "probe: missing expected line: greet:helper:Ada",
+                "probe: missing expected line: arg0:alpha",
+                "probe: missing expected line: file:probe-data",
+                "probe: missing expected line: PROBE-DONE",
+                "probe: console error: wacl stderr: trying binaryen method: native-wasm",
+                "probe: console error: wacl stderr: binaryen method succeeded.",
+                "probe: console error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+                "probe: uncaught exception: Error: Not Found : http://127.0.0.1:4072/tcl-probe/runtime/tcl/http://127.0.0.1:4072/tcl-probe/runtime/tcl/wacl-library.data\n    at XMLHttpRequest.<anonymous> (<anonymous>:1:4837)",
+                "probe: console error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+                "probe: uncaught exception: Error: Not Found : http://127.0.0.1:4072/tcl-probe/runtime/tcl/http://127.0.0.1:4072/tcl-probe/runtime/tcl/wacl-custom.data\n    at XMLHttpRequest.<anonymous> (<anonymous>:1:35637)"
+            ]
+        },
+        {
+            "languageIdentifier": "commonlisp",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "pass"
+            },
+            "exportBytes": 492927,
+            "problems": []
+        },
         {
             "languageIdentifier": "solidity",
             "toolchain": "ready",
