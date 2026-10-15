@@ -2,6 +2,10 @@
     "name": "wasmverse",
     "type": "module",
     "private": true,
+    "bin": {
+        "wasmverse": "./bin/wasmverse.mjs",
+        "wasmverse-mcp": "./bin/wasmverse-mcp.mjs"
+    },
     "packageManager": "pnpm@12.4.1",
     "engines": {
         "node": ">=22"
@@ -9,6 +13,8 @@
     "scripts": {
         "dev": "tsx scripts/DevelopmentLauncherScript.ts",
         "build": "tsx scripts/ProductionBuildScript.ts",
+        "cli": "tsx scripts/WasmverseCliScript.ts",
+        "mcp": "tsx scripts/WasmverseMcpServer.ts",
         "start": "node dist/server/ServerEntryPoint.js",
         "setup": "tsx scripts/SetupLocalToolchainsScript.ts",
         "format": "oxfmt .",
