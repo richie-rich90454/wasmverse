@@ -25,6 +25,10 @@ Open `http://localhost:5173`, press Run plate on the Python plate, and answer th
 8. `bun test` runs the unit test suite.
 9. `bun run verify:export` builds every showcase, exports it, then serves each bundle from a deliberately hostile static host (`.wasm` as `application/octet-stream`, `nosniff`, subdirectory paths) and drives real headless Chrome over the DevTools protocol. It fails on any console error, uncaught exception, failed request, or missing output line. Pass a language name to check one plate.
 
+### Command Line Builds
+
+`pnpm cli build ./my-project --entry main.py` compiles a local project directory through the same pipeline the web app uses and writes a static-site export zip to `<entry-base>.zip` in the working directory. `--out exports/my-app.zip` picks the output path and `--args "first\nsecond"` passes newline-separated program arguments. `pnpm cli --list-languages` prints every registered language identifier. Once the package is linked (`pnpm link --global`), the same commands are available as the installed `wasmverse` binary.
+
 `bun install` runs `setup` automatically through `postinstall`. Missing toolchains never fail the install. Languages without a toolchain report a clear error at build time until the toolchain is provisioned.
 
 ## Supported Languages
@@ -91,3 +95,25 @@ Uploads are rate limited per client. Security headers apply to every response. A
 ## Design
 
 Flat drafting-table aesthetic: warm paper background, deep-blue actions, 1px rules, EB Garamond display type with Noto Sans body, platform monospace terminal. No shadows, no gradients, no animation beyond 100ms hover transitions, and no transitions at all under `prefers-reduced-motion`. Tokens live in `src/clientTheatre/styles/UniversalBlueprint.css`. Fonts ship locally through Fontsource with no CDN calls, and `bun run build` fails if any remote asset origin survives into `dist/`.
+
+## Agent Access (MCP)
+
+External agents can drive WASMVerse through a stdio MCP server. It reuses the exact server pipeline (`ServerComposition`, `BuildOrchestrator.produceBuildOutcome`, `StaticSiteExporter.exportSessionToZip`) and is built on the official `@modelcontextprotocol/sdk`, using its low-level `Server` API because zod is not a direct project dependency.
+
+Run it with `pnpm exec tsx scripts/WasmverseMcpServer.ts`, or through `node bin/wasmverse-mcp.mjs`, which spawns the same script with the working directory pinned to the repository root. Register it in opencode:
+
+```json
+{
+    "mcp": {
+        "wasmverse": {
+            "type": "local",
+            "command": ["node", "bin/wasmverse-mcp.mjs"],
+            "enabled": true
+        }
+    }
+}
+```
+
+Tools: `list_languages` returns every registered language with its entry extensions; `build_session` compiles inline `files` or a `directoryPath` into a live session under `sessions/<id>`; `export_artifact` writes a session to a `zip` artifact (default: system temp, override with `outputPath`) and answers with the absolute path and byte size; `export_project` builds and exports in one call and returns `{ artifactPath, byteSize, languageIdentifier, entryFileRelativePath }`. Sessions are released after export unless `keepSession` is true. Example: call `export_project` with `directoryPath: "userSourceTemplates"` and `entry: "main.py"`; the returned zip holds `index.html`, `app.js`, `terminal.css`, `session.json`, `.nojekyll`, and the `runtime/` plus `user-code/` folders. Single-file `html` export is reserved but not implemented yet, so `format` accepts `zip` only.
+
+The matching agent skill lives at `.opencode/skills/wasmverse/SKILL.md`: when to use, the tool list, the CLI equivalents, and the full language table.
