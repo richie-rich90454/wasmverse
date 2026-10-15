@@ -4,27 +4,34 @@ import { SessionUserFilesClient } from "@clientTheatre/runtimePerformers/Session
 import { isTerminalInputNeeded } from "@clientTheatre/runtimePerformers/ReplayableStdinFile.ts";
 import { ReplayOutputTracker } from "@clientTheatre/runtimePerformers/ReplayOutputTracker.ts";
 import { WasmverseProgramGlobalsHost } from "@clientTheatre/runtimePerformers/WasmverseProgramGlobalsHost.ts";
+import {
+    createRuntimeAssetLocator,
+    type RuntimeAssetLocator,
+} from "@clientTheatre/runtimePerformers/RuntimeAssetLocator.ts";
 const MAXIMUM_REPLAY_INPUTS = 1000;
 interface ElmLoaderModule {
     loadElmModule(baseUrl: string, attemptIdentifier: string): Promise<void>;
 }
 class ElmBundleLoader {
-    private readonly sessionBaseUrl: string;
+    private readonly assetLocator: RuntimeAssetLocator;
     private loaderModule: ElmLoaderModule | undefined;
     constructor(sessionBaseUrl: string) {
-        this.sessionBaseUrl = sessionBaseUrl;
+        this.assetLocator = createRuntimeAssetLocator(sessionBaseUrl);
     }
     async loadLoaderModule(stage: TerminalStageController): Promise<void> {
         stage.writeLine("Loading Elm runtime.");
         this.loaderModule = (await import(
-            /* @vite-ignore */ `${this.sessionBaseUrl}/runtime/elm-loader.js`
+            /* @vite-ignore */ this.assetLocator.resolveAssetUrl("runtime/elm-loader.js")
         )) as ElmLoaderModule;
     }
     async loadFreshApp(attemptIdentifier: string): Promise<void> {
         if (!this.loaderModule) {
             throw new Error("Elm loader not loaded. Call loadLoaderModule first.");
         }
-        await this.loaderModule.loadElmModule(`${this.sessionBaseUrl}/runtime`, attemptIdentifier);
+        await this.loaderModule.loadElmModule(
+            this.assetLocator.resolveAssetUrl("runtime"),
+            attemptIdentifier,
+        );
     }
 }
 class ElmPerformer implements TerminalPerformerContract {
