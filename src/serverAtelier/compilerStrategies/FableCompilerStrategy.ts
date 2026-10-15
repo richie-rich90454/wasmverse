@@ -5,7 +5,9 @@ import type { CompilerStrategyContract } from "@serverAtelier/compilerStrategies
 import { FileSystemOperations } from "@serverAtelier/utilities/FileSystemOperations.ts";
 import { ProcessRunner } from "@serverAtelier/utilities/ProcessRunner.ts";
 const DEFAULT_FABLE_BINARY_PATH =
-    process.platform === "win32" ? "./.tools/dotnet-tools/fable.exe" : "./.tools/dotnet-tools/fable";
+    process.platform === "win32"
+        ? "./.tools/dotnet-tools/fable.exe"
+        : "./.tools/dotnet-tools/fable";
 const DOTNET_DIRECTORY = "./.tools/dotnet";
 const DOTNET_CLI_HOME_DIRECTORY = "./.tools/dotnet-cli-home";
 const NUGET_PACKAGES_DIRECTORY = "./.tools/nuget-packages";
@@ -23,7 +25,8 @@ function fableProjectText(sourceFiles: ReadonlyArray<string>): string {
         "    <ItemGroup>\n" +
         sourceFiles
             .map(
-                (relativePath) => `        <Compile Include="${relativePath.replace(/\//g, "\\")}" />\n`,
+                (relativePath) =>
+                    `        <Compile Include="${relativePath.replace(/\//g, "\\")}" />\n`,
             )
             .join("") +
         "    </ItemGroup>\n" +
