@@ -2,6 +2,10 @@ import type { TerminalStageController } from "@clientTheatre/services/TerminalSt
 import type { TerminalPerformerContract } from "@clientTheatre/runtimePerformers/TerminalPerformerContract.ts";
 import { SessionUserFilesClient } from "@clientTheatre/runtimePerformers/SessionUserFilesClient.ts";
 import { ReplayOutputTracker } from "@clientTheatre/runtimePerformers/ReplayOutputTracker.ts";
+import {
+    createRuntimeAssetLocator,
+    type RuntimeAssetLocator,
+} from "@clientTheatre/runtimePerformers/RuntimeAssetLocator.ts";
 const WEBR_RUNTIME_DIRECTORY_NAME = "webr";
 const WEBR_USER_HOME_DIRECTORY = "/home/web_user";
 const R_STARTUP_BANNER_LINE_PREFIXES: ReadonlyArray<string> = [
@@ -40,18 +44,20 @@ interface WebRRuntimeModule {
     WebR: new (options: { baseUrl: string; interactive: boolean }) => WebRInstance;
 }
 class WebRRuntimeLoader {
-    private readonly sessionBaseUrl: string;
+    private readonly assetLocator: RuntimeAssetLocator;
     private runtimeModule: WebRRuntimeModule | undefined;
     constructor(sessionBaseUrl: string) {
-        this.sessionBaseUrl = sessionBaseUrl.replace(/\/+$/, "");
+        this.assetLocator = createRuntimeAssetLocator(sessionBaseUrl.replace(/\/+$/, ""));
     }
     get runtimeBaseUrl(): string {
-        return `${this.sessionBaseUrl}/runtime/${WEBR_RUNTIME_DIRECTORY_NAME}`;
+        return this.assetLocator.resolveAssetUrl(`runtime/${WEBR_RUNTIME_DIRECTORY_NAME}`);
     }
     async loadRuntimeModule(stage: TerminalStageController): Promise<void> {
         stage.writeLine("Loading R runtime.");
         this.runtimeModule = (await import(
-            /* @vite-ignore */ `${this.runtimeBaseUrl}/webr.js`
+            /* @vite-ignore */ this.assetLocator.resolveAssetUrl(
+                `runtime/${WEBR_RUNTIME_DIRECTORY_NAME}/webr.js`,
+            )
         )) as WebRRuntimeModule;
     }
     async createInstance(): Promise<WebRInstance> {
