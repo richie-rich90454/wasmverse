@@ -13,7 +13,6 @@ interface FablePerformerLoaderModule {
     loadFableModule(baseUrl: string, attemptIdentifier: string): Promise<unknown>;
 }
 class FablePerformer implements TerminalPerformerContract {
-    private readonly sessionBaseUrl: string;
     private readonly assetLocator: RuntimeAssetLocator;
     private readonly userFilesClient: SessionUserFilesClient;
     private readonly outputTracker: ReplayOutputTracker;
@@ -23,7 +22,6 @@ class FablePerformer implements TerminalPerformerContract {
     private programArguments: ReadonlyArray<string> = [];
     private userFiles: Map<string, string> = new Map();
     constructor(sessionBaseUrl: string) {
-        this.sessionBaseUrl = sessionBaseUrl;
         this.assetLocator = createRuntimeAssetLocator(sessionBaseUrl);
         this.userFilesClient = new SessionUserFilesClient(sessionBaseUrl);
         this.outputTracker = new ReplayOutputTracker();
@@ -61,7 +59,7 @@ class FablePerformer implements TerminalPerformerContract {
                     throw new Error("F# (Fable) loader not loaded. Call loadInto first.");
                 }
                 await this.loaderModule.loadFableModule(
-                    `${this.sessionBaseUrl}/runtime`,
+                    this.assetLocator.resolveAssetUrl("runtime"),
                     `${this.attemptNamespace}-${inputCount}`,
                 );
             } catch (runError) {
