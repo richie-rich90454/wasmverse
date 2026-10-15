@@ -40,9 +40,15 @@ interface WebRInstance {
     read(): Promise<WebRMessageRecord>;
     FS: WebRFileSystem;
 }
-interface WebRRuntimeModule {
-    WebR: new (options: { baseUrl: string; interactive: boolean }) => WebRInstance;
+interface WebRRuntimeOptions {
+    baseUrl: string;
+    interactive: boolean;
+    wasmverseEmbeddedAssetUrls?: Record<string, string>;
 }
+interface WebRRuntimeModule {
+    WebR: new (options: WebRRuntimeOptions) => WebRInstance;
+}
+const WEBR_RUNTIME_ASSET_PREFIX = `runtime/${WEBR_RUNTIME_DIRECTORY_NAME}/`;
 class WebRRuntimeLoader {
     private readonly assetLocator: RuntimeAssetLocator;
     private runtimeModule: WebRRuntimeModule | undefined;
@@ -64,12 +70,30 @@ class WebRRuntimeLoader {
         if (!this.runtimeModule) {
             throw new Error("R runtime not loaded. Call loadRuntimeModule first.");
         }
+        const embeddedAssetUrls = this.embeddedAssetUrls();
         const webRInstance = new this.runtimeModule.WebR({
             baseUrl: `${this.runtimeBaseUrl}/`,
             interactive: false,
+            ...(embeddedAssetUrls ? { wasmverseEmbeddedAssetUrls: embeddedAssetUrls } : {}),
         });
         await webRInstance.init();
         return webRInstance;
+    }
+    private embeddedAssetUrls(): Record<string, string> | undefined {
+        const embeddedAssets = (globalThis as Record<string, unknown>)[
+            "__WASMVERSE_EMBEDDED_ASSETS__"
+        ];
+        if (!embeddedAssets || typeof embeddedAssets !== "object") {
+            return undefined;
+        }
+        const assetUrls: Record<string, string> = {};
+        for (const assetPath of Object.keys(embeddedAssets)) {
+            if (assetPath.startsWith(WEBR_RUNTIME_ASSET_PREFIX)) {
+                assetUrls[assetPath.slice(WEBR_RUNTIME_ASSET_PREFIX.length)] =
+                    this.assetLocator.resolveAssetUrl(assetPath);
+            }
+        }
+        return assetUrls;
     }
 }
 class WebRPerformer implements TerminalPerformerContract {
