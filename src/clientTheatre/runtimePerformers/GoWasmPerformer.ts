@@ -1,6 +1,10 @@
 import type { TerminalStageController } from "@clientTheatre/services/TerminalStageController.ts";
 import type { TerminalPerformerContract } from "@clientTheatre/runtimePerformers/TerminalPerformerContract.ts";
 import { SessionUserFilesClient } from "@clientTheatre/runtimePerformers/SessionUserFilesClient.ts";
+import {
+    createRuntimeAssetLocator,
+    type RuntimeAssetLocator,
+} from "@clientTheatre/runtimePerformers/RuntimeAssetLocator.ts";
 import { isTerminalInputNeeded } from "@clientTheatre/runtimePerformers/ReplayableStdinFile.ts";
 import { ReplayOutputTracker } from "@clientTheatre/runtimePerformers/ReplayOutputTracker.ts";
 import { GoWasmFileSystemShim } from "@clientTheatre/runtimePerformers/GoWasmFileSystemShim.ts";
@@ -16,15 +20,15 @@ interface GoRunnerLoaderModule {
     createGoRunner(): GoRunnerHandle;
 }
 class GoWasmExecScriptLoader {
-    private readonly sessionBaseUrl: string;
+    private readonly assetLocator: RuntimeAssetLocator;
     private loaderModule: GoRunnerLoaderModule | undefined;
     constructor(sessionBaseUrl: string) {
-        this.sessionBaseUrl = sessionBaseUrl;
+        this.assetLocator = createRuntimeAssetLocator(sessionBaseUrl);
     }
     async loadRunnerFactory(stage: TerminalStageController): Promise<void> {
         stage.writeLine("Loading Go WASM runner.");
         this.loaderModule = (await import(
-            /* @vite-ignore */ `${this.sessionBaseUrl}/runtime/go-loader.js`
+            /* @vite-ignore */ this.assetLocator.resolveAssetUrl("runtime/go-loader.js")
         )) as GoRunnerLoaderModule;
     }
     createRunner(): GoRunnerHandle {
@@ -35,14 +39,14 @@ class GoWasmExecScriptLoader {
     }
 }
 class GoWasmModuleLoader {
-    private readonly sessionBaseUrl: string;
+    private readonly assetLocator: RuntimeAssetLocator;
     private compiledModule: WebAssembly.Module | undefined;
     constructor(sessionBaseUrl: string) {
-        this.sessionBaseUrl = sessionBaseUrl;
+        this.assetLocator = createRuntimeAssetLocator(sessionBaseUrl);
     }
     async loadModule(stage: TerminalStageController): Promise<void> {
         stage.writeLine("Loading Go WASM module.");
-        const response = await fetch(`${this.sessionBaseUrl}/runtime/app.wasm`);
+        const response = await fetch(this.assetLocator.resolveAssetUrl("runtime/app.wasm"));
         if (!response.ok) {
             throw new Error(`app.wasm request failed with status ${response.status}.`);
         }
