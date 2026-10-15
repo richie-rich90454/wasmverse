@@ -4,12 +4,16 @@ import { SessionUserFilesClient } from "@clientTheatre/runtimePerformers/Session
 import { isTerminalInputNeeded } from "@clientTheatre/runtimePerformers/ReplayableStdinFile.ts";
 import { ReplayOutputTracker } from "@clientTheatre/runtimePerformers/ReplayOutputTracker.ts";
 import { WasmverseProgramGlobalsHost } from "@clientTheatre/runtimePerformers/WasmverseProgramGlobalsHost.ts";
+import {
+    createRuntimeAssetLocator,
+    type RuntimeAssetLocator,
+} from "@clientTheatre/runtimePerformers/RuntimeAssetLocator.ts";
 const MAXIMUM_REPLAY_INPUTS = 1000;
 interface PureScriptPerformerLoaderModule {
     loadPureScriptModule(baseUrl: string, attemptIdentifier: string): Promise<unknown>;
 }
 class PureScriptPerformer implements TerminalPerformerContract {
-    private readonly sessionBaseUrl: string;
+    private readonly assetLocator: RuntimeAssetLocator;
     private readonly userFilesClient: SessionUserFilesClient;
     private readonly outputTracker: ReplayOutputTracker;
     private readonly attemptNamespace: string;
@@ -18,7 +22,7 @@ class PureScriptPerformer implements TerminalPerformerContract {
     private programArguments: ReadonlyArray<string> = [];
     private userFiles: Map<string, string> = new Map();
     constructor(sessionBaseUrl: string) {
-        this.sessionBaseUrl = sessionBaseUrl;
+        this.assetLocator = createRuntimeAssetLocator(sessionBaseUrl);
         this.userFilesClient = new SessionUserFilesClient(sessionBaseUrl);
         this.outputTracker = new ReplayOutputTracker();
         this.attemptNamespace = Math.random().toString(36).slice(2);
@@ -26,7 +30,7 @@ class PureScriptPerformer implements TerminalPerformerContract {
     async loadInto(stage: TerminalStageController): Promise<void> {
         stage.writeLine("Loading PureScript runtime.");
         this.loaderModule = (await import(
-            /* @vite-ignore */ `${this.sessionBaseUrl}/runtime/purescript-loader.js`
+            /* @vite-ignore */ this.assetLocator.resolveAssetUrl("runtime/purescript-loader.js")
         )) as PureScriptPerformerLoaderModule;
         const fetchedFiles = await this.userFilesClient.fetchUserFiles();
         this.entryRelativePath = fetchedFiles.entryRelativePath;
@@ -55,7 +59,7 @@ class PureScriptPerformer implements TerminalPerformerContract {
                     throw new Error("PureScript loader not loaded. Call loadInto first.");
                 }
                 await this.loaderModule.loadPureScriptModule(
-                    `${this.sessionBaseUrl}/runtime`,
+                    this.assetLocator.resolveAssetUrl("runtime"),
                     `${this.attemptNamespace}-${inputCount}`,
                 );
             } catch (runError) {
