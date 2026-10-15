@@ -1,6 +1,10 @@
 import type { TerminalStageController } from "@clientTheatre/services/TerminalStageController.ts";
 import type { TerminalPerformerContract } from "@clientTheatre/runtimePerformers/TerminalPerformerContract.ts";
 import { SessionUserFilesClient } from "@clientTheatre/runtimePerformers/SessionUserFilesClient.ts";
+import {
+    createRuntimeAssetLocator,
+    type RuntimeAssetLocator,
+} from "@clientTheatre/runtimePerformers/RuntimeAssetLocator.ts";
 import { isTerminalInputNeeded } from "@clientTheatre/runtimePerformers/ReplayableStdinFile.ts";
 import { ReplayOutputTracker } from "@clientTheatre/runtimePerformers/ReplayOutputTracker.ts";
 const MAXIMUM_REPLAY_INPUTS = 1000;
@@ -36,15 +40,17 @@ class EmscriptenFedLineCursor {
     }
 }
 class EmscriptenGlueScriptLoader {
-    private readonly sessionBaseUrl: string;
+    private readonly assetLocator: RuntimeAssetLocator;
+    private readonly runtimeBaseUrl: string;
     private loaderModule: EmscriptenLoaderModule | undefined;
     constructor(sessionBaseUrl: string) {
-        this.sessionBaseUrl = sessionBaseUrl;
+        this.assetLocator = createRuntimeAssetLocator(sessionBaseUrl);
+        this.runtimeBaseUrl = sessionBaseUrl;
     }
     async loadGlue(stage: TerminalStageController): Promise<void> {
         stage.writeLine("Loading Emscripten module.");
         this.loaderModule = (await import(
-            /* @vite-ignore */ `${this.sessionBaseUrl}/runtime/emscripten-loader.js`
+            /* @vite-ignore */ this.assetLocator.resolveAssetUrl("runtime/emscripten-loader.js")
         )) as EmscriptenLoaderModule;
     }
     async instantiateAttempt(overrides: Record<string, unknown>): Promise<EmscriptenModuleHandle> {
@@ -52,7 +58,7 @@ class EmscriptenGlueScriptLoader {
             throw new Error("Emscripten module not loaded. Call loadGlue first.");
         }
         const moduleHandle = await this.loaderModule.loadEmscriptenModule(
-            `${this.sessionBaseUrl}/runtime`,
+            `${this.runtimeBaseUrl}/runtime`,
             overrides,
         );
         return moduleHandle as EmscriptenModuleHandle;
@@ -95,11 +101,11 @@ class EmscriptenPerformer implements TerminalPerformerContract {
     private readonly entryInvoker: EmscriptenEntryInvoker;
     private readonly outputTracker: ReplayOutputTracker;
     private readonly userFilesClient: SessionUserFilesClient;
-    private readonly sessionBaseUrl: string;
+    private readonly assetLocator: RuntimeAssetLocator;
     private programArguments: ReadonlyArray<string> = [];
     private userFiles: Map<string, string> = new Map();
     constructor(sessionBaseUrl: string) {
-        this.sessionBaseUrl = sessionBaseUrl;
+        this.assetLocator = createRuntimeAssetLocator(sessionBaseUrl);
         this.glueScriptLoader = new EmscriptenGlueScriptLoader(sessionBaseUrl);
         this.userFileWriter = new EmscriptenUserFileWriter();
         this.entryInvoker = new EmscriptenEntryInvoker();
@@ -164,7 +170,6 @@ class EmscriptenPerformer implements TerminalPerformerContract {
         }
     }
     private buildFactoryOverrides(inputCursor: EmscriptenFedLineCursor): Record<string, unknown> {
-        const runtimeBaseUrl = this.sessionBaseUrl;
         return {
             print: (text: unknown) => this.appendShownText(inputCursor, text),
             printErr: (text: unknown) => this.appendShownText(inputCursor, text),
@@ -175,7 +180,7 @@ class EmscriptenPerformer implements TerminalPerformerContract {
                     module: WebAssembly.Module,
                 ) => void,
             ) => {
-                void fetch(`${runtimeBaseUrl}/runtime/app.wasm`)
+                void fetch(this.assetLocator.resolveAssetUrl("runtime/app.wasm"))
                     .then((wasmResponse) => wasmResponse.arrayBuffer())
                     .then((wasmBytes) => WebAssembly.instantiate(wasmBytes, importObject))
                     .then(({ instance, module }) => successCallback(instance, module));
