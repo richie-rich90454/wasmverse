@@ -1103,11 +1103,9 @@ try {
 } catch {}
 await writeFile(matrixPath, JSON.stringify(mergedMatrixDocument, null, 4) + "\n");
 await new Promise<void>((resolveFormat) => {
-    const formatterProcess = spawn(
-        process.execPath,
-        ["node_modules/oxfmt/bin/oxfmt", matrixPath],
-        { stdio: "ignore" },
-    );
+    const formatterProcess = spawn(process.execPath, ["node_modules/oxfmt/bin/oxfmt", matrixPath], {
+        stdio: "ignore",
+    });
     formatterProcess.once("close", () => resolveFormat());
     formatterProcess.once("error", () => resolveFormat());
 });
