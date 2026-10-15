@@ -4,6 +4,10 @@ import type { TerminalStageController } from "@clientTheatre/services/TerminalSt
 import type { TerminalPerformerContract } from "@clientTheatre/runtimePerformers/TerminalPerformerContract.ts";
 import { SessionUserFilesClient } from "@clientTheatre/runtimePerformers/SessionUserFilesClient.ts";
 import { ReplayOutputTracker } from "@clientTheatre/runtimePerformers/ReplayOutputTracker.ts";
+import {
+    createRuntimeAssetLocator,
+    type RuntimeAssetLocator,
+} from "@clientTheatre/runtimePerformers/RuntimeAssetLocator.ts";
 import { loadSolidityCompiler } from "@clientTheatre/runtimePerformers/SolidityCompiler.ts";
 import type { SolidityCompilerInstance } from "@clientTheatre/runtimePerformers/SolidityCompiler.ts";
 import {
@@ -48,7 +52,7 @@ interface SolidityExecutionResult {
     };
 }
 class SolidityPerformer implements TerminalPerformerContract {
-    private readonly sessionBaseUrl: string;
+    private readonly assetLocator: RuntimeAssetLocator;
     private readonly userFilesClient: SessionUserFilesClient;
     private readonly outputTracker: ReplayOutputTracker;
     private compiler: SolidityCompilerInstance | undefined;
@@ -56,7 +60,7 @@ class SolidityPerformer implements TerminalPerformerContract {
     private programArguments: ReadonlyArray<string> = [];
     private userFiles: Map<string, string> = new Map();
     constructor(sessionBaseUrl: string) {
-        this.sessionBaseUrl = sessionBaseUrl;
+        this.assetLocator = createRuntimeAssetLocator(sessionBaseUrl);
         this.userFilesClient = new SessionUserFilesClient(sessionBaseUrl);
         this.outputTracker = new ReplayOutputTracker();
     }
@@ -64,7 +68,9 @@ class SolidityPerformer implements TerminalPerformerContract {
         stage.writeLine("Loading the Solidity compiler.");
         try {
             this.compiler = await loadSolidityCompiler(
-                `${this.sessionBaseUrl}/runtime/${SOLIDITY_RUNTIME_DIRECTORY_NAME}/soljson.js`,
+                this.assetLocator.resolveAssetUrl(
+                    `runtime/${SOLIDITY_RUNTIME_DIRECTORY_NAME}/soljson.js`,
+                ),
             );
         } catch (loadError) {
             throw new Error(
