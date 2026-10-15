@@ -1,11 +1,13 @@
 import type { BuildContextRecord } from "@sharedKernel/BuildContextRecord.ts";
 import type { RuntimeAssetAssemblerContract } from "@serverAtelier/runtimeAssemblers/RuntimeAssetAssemblerContract.ts";
+import { EMBEDDED_ASSET_RESOLVER_GLUE_SOURCE } from "@serverAtelier/runtimeAssemblers/EmbeddedAssetResolverGlue.ts";
 import { FileSystemOperations } from "@serverAtelier/utilities/FileSystemOperations.ts";
 const ELM_LOADER_FILE_NAME = "elm-loader.js";
 const ELM_LOADER_SOURCE = [
+    EMBEDDED_ASSET_RESOLVER_GLUE_SOURCE,
     "export async function loadElmModule(baseUrl, attemptIdentifier) {",
     "    delete globalThis.Elm;",
-    "    await import(`${baseUrl}/app.js?attempt=${encodeURIComponent(attemptIdentifier)}`);",
+    "    await import(resolve(`${baseUrl}/app.js?attempt=${encodeURIComponent(attemptIdentifier)}`));",
     "    const elmExports = globalThis.Elm;",
     "    delete globalThis.Elm;",
     "    if (!elmExports) {",
