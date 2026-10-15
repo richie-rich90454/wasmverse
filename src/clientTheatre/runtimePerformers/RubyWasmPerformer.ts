@@ -4,6 +4,10 @@ import { RubyVM } from "@ruby/wasm-wasi";
 import { WASI, Fd, ConsoleStdout, wasi } from "@bjorn3/browser_wasi_shim";
 import { SessionUserFilesClient } from "@clientTheatre/runtimePerformers/SessionUserFilesClient.ts";
 import { ReplayOutputTracker } from "@clientTheatre/runtimePerformers/ReplayOutputTracker.ts";
+import {
+    createRuntimeAssetLocator,
+    type RuntimeAssetLocator,
+} from "@clientTheatre/runtimePerformers/RuntimeAssetLocator.ts";
 import { buildPreopenDirectory } from "@clientTheatre/runtimePerformers/UserFileInodeTree.ts";
 const TERMINAL_INPUT_MARKER = "TERMINAL_INPUT_NEEDED";
 const MAXIMUM_REPLAY_INPUTS = 1000;
@@ -52,15 +56,17 @@ class TerminalStdinFile extends Fd {
     }
 }
 class RubyWasmLoader {
-    private readonly sessionBaseUrl: string;
+    private readonly assetLocator: RuntimeAssetLocator;
     private compiledModule: WebAssembly.Module | undefined;
     constructor(sessionBaseUrl: string) {
-        this.sessionBaseUrl = sessionBaseUrl;
+        this.assetLocator = createRuntimeAssetLocator(sessionBaseUrl);
     }
     async loadRuntime(stage: TerminalStageController): Promise<void> {
         stage.writeLine("Loading Ruby runtime.");
         try {
-            const binaryResponse = await fetch(`${this.sessionBaseUrl}/runtime/ruby.wasm`);
+            const binaryResponse = await fetch(
+                this.assetLocator.resolveAssetUrl("runtime/ruby.wasm"),
+            );
             if (!binaryResponse.ok) {
                 throw new Error("Ruby binary is missing from the session.");
             }
