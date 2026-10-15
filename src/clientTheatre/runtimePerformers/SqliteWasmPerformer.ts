@@ -2,6 +2,10 @@ import type { TerminalStageController } from "@clientTheatre/services/TerminalSt
 import type { TerminalPerformerContract } from "@clientTheatre/runtimePerformers/TerminalPerformerContract.ts";
 import { SessionUserFilesClient } from "@clientTheatre/runtimePerformers/SessionUserFilesClient.ts";
 import { ReplayOutputTracker } from "@clientTheatre/runtimePerformers/ReplayOutputTracker.ts";
+import {
+    createRuntimeAssetLocator,
+    type RuntimeAssetLocator,
+} from "@clientTheatre/runtimePerformers/RuntimeAssetLocator.ts";
 interface SqliteDatabase {
     pointer: number;
     close(): void;
@@ -27,15 +31,15 @@ interface SqliteRuntimeModule {
     default: (config: { locateFile: (fileName: string) => string }) => Promise<SqliteInstance>;
 }
 class SqliteRuntimeLoader {
-    private readonly sessionBaseUrl: string;
+    private readonly assetLocator: RuntimeAssetLocator;
     private runtimeModule: SqliteRuntimeModule | undefined;
     constructor(sessionBaseUrl: string) {
-        this.sessionBaseUrl = sessionBaseUrl;
+        this.assetLocator = createRuntimeAssetLocator(sessionBaseUrl);
     }
     async loadRuntimeModule(stage: TerminalStageController): Promise<void> {
         stage.writeLine("Loading SQLite runtime.");
         this.runtimeModule = (await import(
-            /* @vite-ignore */ `${this.sessionBaseUrl}/runtime/sqlite/sqlite-runtime.js`
+            /* @vite-ignore */ this.assetLocator.resolveAssetUrl("runtime/sqlite/sqlite-runtime.js")
         )) as SqliteRuntimeModule;
     }
     async createInstance(): Promise<SqliteInstance> {
@@ -43,7 +47,8 @@ class SqliteRuntimeLoader {
             throw new Error("SQLite runtime not loaded. Call loadRuntimeModule first.");
         }
         return await this.runtimeModule.default({
-            locateFile: (fileName: string) => `${this.sessionBaseUrl}/runtime/sqlite/${fileName}`,
+            locateFile: (fileName: string) =>
+                this.assetLocator.resolveAssetUrl(`runtime/sqlite/${fileName}`),
         });
     }
 }
