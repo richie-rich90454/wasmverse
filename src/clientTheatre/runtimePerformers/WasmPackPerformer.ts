@@ -6,6 +6,10 @@ import {
     isTerminalInputNeeded,
 } from "@clientTheatre/runtimePerformers/ReplayableStdinFile.ts";
 import { ReplayOutputTracker } from "@clientTheatre/runtimePerformers/ReplayOutputTracker.ts";
+import {
+    createRuntimeAssetLocator,
+    type RuntimeAssetLocator,
+} from "@clientTheatre/runtimePerformers/RuntimeAssetLocator.ts";
 const MAXIMUM_REPLAY_INPUTS = 1000;
 interface WasmPackLoaderModule {
     loadWasmPackModule(baseUrl: string, attempt?: number): Promise<Record<string, unknown>>;
@@ -48,10 +52,10 @@ class WasmPackRunGlobals {
     }
 }
 class WasmPackGlueModuleLoader {
-    private readonly sessionBaseUrl: string;
+    private readonly assetLocator: RuntimeAssetLocator;
     private loaderModule: WasmPackLoaderModule | undefined;
     constructor(sessionBaseUrl: string) {
-        this.sessionBaseUrl = sessionBaseUrl;
+        this.assetLocator = createRuntimeAssetLocator(sessionBaseUrl);
     }
     async loadModuleForAttempt(
         stage: TerminalStageController,
@@ -60,10 +64,13 @@ class WasmPackGlueModuleLoader {
         if (!this.loaderModule) {
             stage.writeLine("Loading WASM module.");
             this.loaderModule = (await import(
-                /* @vite-ignore */ `${this.sessionBaseUrl}/runtime/wasm-pack-loader.js`
+                /* @vite-ignore */ this.assetLocator.resolveAssetUrl("runtime/wasm-pack-loader.js")
             )) as WasmPackLoaderModule;
         }
-        return this.loaderModule.loadWasmPackModule(`${this.sessionBaseUrl}/runtime`, attempt);
+        return this.loaderModule.loadWasmPackModule(
+            this.assetLocator.resolveAssetUrl("runtime"),
+            attempt,
+        );
     }
 }
 class WasmPackExportedFunctionInvoker {
