@@ -54,5 +54,8 @@ class BackendApiClient {
     constructStaticExportUrl(sessionIdentifier: string): string {
         return `/api/export/${sessionIdentifier}`;
     }
+    constructSingleFileExportUrl(sessionIdentifier: string): string {
+        return `/api/export/${sessionIdentifier}?format=html`;
+    }
 }
 export { BackendApiClient };
