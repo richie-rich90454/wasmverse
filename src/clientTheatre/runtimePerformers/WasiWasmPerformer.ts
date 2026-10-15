@@ -3,6 +3,10 @@ import type { TerminalPerformerContract } from "@clientTheatre/runtimePerformers
 import { ConsoleStdout, WASI } from "@bjorn3/browser_wasi_shim";
 import { SessionUserFilesClient } from "@clientTheatre/runtimePerformers/SessionUserFilesClient.ts";
 import {
+    createRuntimeAssetLocator,
+    type RuntimeAssetLocator,
+} from "@clientTheatre/runtimePerformers/RuntimeAssetLocator.ts";
+import {
     ReplayableStdinFile,
     isTerminalInputNeeded,
 } from "@clientTheatre/runtimePerformers/ReplayableStdinFile.ts";
@@ -14,14 +18,14 @@ interface WasiInstanceHandle {
     wasiInstance: WASI;
 }
 class WasiWasmModuleLoader {
-    private readonly sessionBaseUrl: string;
+    private readonly assetLocator: RuntimeAssetLocator;
     private compiledModule: WebAssembly.Module | undefined;
     constructor(sessionBaseUrl: string) {
-        this.sessionBaseUrl = sessionBaseUrl;
+        this.assetLocator = createRuntimeAssetLocator(sessionBaseUrl);
     }
     async loadModule(stage: TerminalStageController): Promise<void> {
         stage.writeLine("Loading WASI module.");
-        const response = await fetch(`${this.sessionBaseUrl}/runtime/app.wasm`);
+        const response = await fetch(this.assetLocator.resolveAssetUrl("runtime/app.wasm"));
         if (!response.ok) {
             throw new Error(`app.wasm request failed with status ${response.status}.`);
         }
