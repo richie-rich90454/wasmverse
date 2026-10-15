@@ -1,40 +1,50 @@
 {
-    "generatedAt": "2026-10-14T15:22:27.041Z",
+    "generatedAt": "2026-10-15T10:48:16.863Z",
     "source": "verify:export",
     "languages": [
         {
-            "languageIdentifier": "tcl",
+            "languageIdentifier": "zig",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "pass"
+            },
+            "exportBytes": 127619,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "forth",
             "toolchain": "ready",
             "showcase": "fail",
             "features": {
-                "stdin": "fail",
-                "multiFile": "fail",
-                "arguments": "fail",
-                "fileIo": "fail"
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "pass"
             },
-            "exportBytes": 1444672,
+            "exportBytes": 106272,
             "problems": [
                 "the showcase never reached its final line",
                 "the terminal reported an error: Error:",
-                "console error: wacl stderr: trying binaryen method: native-wasm",
-                "console error: wacl stderr: binaryen method succeeded.",
-                "console error: Failed to load resource: the server responded with a status of 404 (Not Found)",
-                "uncaught exception: Error: Not Found : http://127.0.0.1:4072/tcl/runtime/tcl/http://127.0.0.1:4072/tcl/runtime/tcl/wacl-library.data\n    at XMLHttpRequest.<anonymous> (<anonymous>:1:4831)",
-                "console error: Failed to load resource: the server responded with a status of 404 (Not Found)",
-                "uncaught exception: Error: Not Found : http://127.0.0.1:4072/tcl/runtime/tcl/http://127.0.0.1:4072/tcl/runtime/tcl/wacl-custom.data\n    at XMLHttpRequest.<anonymous> (<anonymous>:1:35625)",
-                "probe: the probe never reached its final line",
-                "probe: the terminal reported an error: Error:",
-                "probe: missing expected line: greet:helper:Ada",
-                "probe: missing expected line: arg0:alpha",
-                "probe: missing expected line: file:probe-data",
-                "probe: missing expected line: PROBE-DONE",
-                "probe: console error: wacl stderr: trying binaryen method: native-wasm",
-                "probe: console error: wacl stderr: binaryen method succeeded.",
-                "probe: console error: Failed to load resource: the server responded with a status of 404 (Not Found)",
-                "probe: uncaught exception: Error: Not Found : http://127.0.0.1:4072/tcl-probe/runtime/tcl/http://127.0.0.1:4072/tcl-probe/runtime/tcl/wacl-library.data\n    at XMLHttpRequest.<anonymous> (<anonymous>:1:4837)",
-                "probe: console error: Failed to load resource: the server responded with a status of 404 (Not Found)",
-                "probe: uncaught exception: Error: Not Found : http://127.0.0.1:4072/tcl-probe/runtime/tcl/http://127.0.0.1:4072/tcl-probe/runtime/tcl/wacl-custom.data\n    at XMLHttpRequest.<anonymous> (<anonymous>:1:35637)"
+                "single-file: the showcase never reached its final line",
+                "single-file: the terminal reported an error: Error:"
             ]
+        },
+        {
+            "languageIdentifier": "tcl",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "pass"
+            },
+            "exportBytes": 1444827,
+            "problems": []
         },
         {
             "languageIdentifier": "commonlisp",
@@ -46,7 +56,59 @@
                 "arguments": "pass",
                 "fileIo": "pass"
             },
-            "exportBytes": 492927,
+            "exportBytes": 492969,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "go",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "pass"
+            },
+            "exportBytes": 891198,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "typescript",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "pass"
+            },
+            "exportBytes": 105371,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "python",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "pass"
+            },
+            "exportBytes": 6559998,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "php",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "pass"
+            },
+            "exportBytes": 3851141,
             "problems": []
         },
         {
@@ -403,19 +465,6 @@
             "problems": []
         },
         {
-            "languageIdentifier": "python",
-            "toolchain": "ready",
-            "showcase": "pass",
-            "features": {
-                "stdin": "pass",
-                "multiFile": "pass",
-                "arguments": "pass",
-                "fileIo": "pass"
-            },
-            "exportBytes": 6556500,
-            "problems": []
-        },
-        {
             "languageIdentifier": "ruby",
             "toolchain": "ready",
             "showcase": "pass",
@@ -439,19 +488,6 @@
                 "fileIo": "pass"
             },
             "exportBytes": 251897,
-            "problems": []
-        },
-        {
-            "languageIdentifier": "php",
-            "toolchain": "ready",
-            "showcase": "pass",
-            "features": {
-                "stdin": "pass",
-                "multiFile": "pass",
-                "arguments": "pass",
-                "fileIo": "pass"
-            },
-            "exportBytes": 3847714,
             "problems": []
         },
         {
@@ -492,34 +528,6 @@
             },
             "exportBytes": 175370,
             "problems": []
-        },
-        {
-            "languageIdentifier": "go",
-            "toolchain": "ready",
-            "showcase": "pass",
-            "features": {
-                "stdin": "pass",
-                "multiFile": "pass",
-                "arguments": "pass",
-                "fileIo": "pass"
-            },
-            "exportBytes": 887812,
-            "problems": []
-        },
-        {
-            "languageIdentifier": "zig",
-            "toolchain": "ready",
-            "showcase": "pass",
-            "features": {
-                "stdin": "pass",
-                "multiFile": "pass",
-                "arguments": "pass",
-                "fileIo": "pass"
-            },
-            "exportBytes": 124280,
-            "problems": [
-                "probe: missing expected line: greet:helper:Ada"
-            ]
         },
         {
             "languageIdentifier": "swift",
@@ -641,21 +649,6 @@
         },
         {
             "languageIdentifier": "javascript",
-            "toolchain": "ready",
-            "showcase": "fail",
-            "features": {
-                "stdin": "pending",
-                "arguments": "pending",
-                "fileIo": "pending",
-                "multiFile": "pending"
-            },
-            "exportBytes": 0,
-            "problems": [
-                "upload step failed: Too many uploads. Wait one minute and try again."
-            ]
-        },
-        {
-            "languageIdentifier": "typescript",
             "toolchain": "ready",
             "showcase": "fail",
             "features": {
