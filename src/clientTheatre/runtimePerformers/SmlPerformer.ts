@@ -6,6 +6,10 @@ import {
     isTerminalInputNeeded,
 } from "@clientTheatre/runtimePerformers/ReplayableStdinFile.ts";
 import { ReplayOutputTracker } from "@clientTheatre/runtimePerformers/ReplayOutputTracker.ts";
+import {
+    createRuntimeAssetLocator,
+    type RuntimeAssetLocator,
+} from "@clientTheatre/runtimePerformers/RuntimeAssetLocator.ts";
 const MAXIMUM_REPLAY_INPUTS = 1000;
 const SML_RUNTIME_FILE_NAME = "app.js";
 class SmlFedLineReader {
@@ -24,7 +28,7 @@ class SmlFedLineReader {
     }
 }
 class SmlPerformer implements TerminalPerformerContract {
-    private readonly sessionBaseUrl: string;
+    private readonly assetLocator: RuntimeAssetLocator;
     private readonly userFilesClient: SessionUserFilesClient;
     private readonly outputTracker: ReplayOutputTracker;
     private entryRelativePath: string = "";
@@ -32,7 +36,7 @@ class SmlPerformer implements TerminalPerformerContract {
     private userFiles: Map<string, string> = new Map();
     private runtimeSourceText: string | undefined;
     constructor(sessionBaseUrl: string) {
-        this.sessionBaseUrl = sessionBaseUrl.replace(/\/+$/, "");
+        this.assetLocator = createRuntimeAssetLocator(sessionBaseUrl.replace(/\/+$/, ""));
         this.userFilesClient = new SessionUserFilesClient(sessionBaseUrl);
         this.outputTracker = new ReplayOutputTracker();
     }
@@ -88,7 +92,9 @@ class SmlPerformer implements TerminalPerformerContract {
         if (this.runtimeSourceText !== undefined) {
             return this.runtimeSourceText;
         }
-        const response = await fetch(`${this.sessionBaseUrl}/runtime/${SML_RUNTIME_FILE_NAME}`);
+        const response = await fetch(
+            this.assetLocator.resolveAssetUrl(`runtime/${SML_RUNTIME_FILE_NAME}`),
+        );
         if (!response.ok) {
             throw new Error(
                 "Standard ML runtime is missing from this session. Run pnpm run setup to provision ./.tools/sml/ and rebuild.",
