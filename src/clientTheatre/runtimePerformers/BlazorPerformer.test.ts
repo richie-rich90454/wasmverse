@@ -44,8 +44,10 @@ class RecordingStage {
 }
 const FAKE_DOTNET_SOURCE = [
     "export const dotnet = {",
-    "    withApplicationArguments: (...applicationArguments) => ({",
-    "        create: async () => {",
+    "    withApplicationArguments: (...applicationArguments) => {",
+    "        const builder = {};",
+    "        builder.withResourceLoader = () => builder;",
+    "        builder.create = async () => {",
     "            globalThis.$blazorAttemptCount = (globalThis.$blazorAttemptCount ?? 0) + 1;",
     "            globalThis.$blazorApplicationArguments = applicationArguments;",
     "            globalThis.$blazorInjectedFiles = [];",
@@ -75,8 +77,9 @@ const FAKE_DOTNET_SOURCE = [
     "                    return 0;",
     "                },",
     "            };",
-    "        },",
-    "    }),",
+    "        };",
+    "        return builder;",
+    "    },",
     "};",
     "",
 ].join("\n");
