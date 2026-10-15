@@ -6,6 +6,10 @@ import {
     isTerminalInputNeeded,
 } from "@clientTheatre/runtimePerformers/ReplayableStdinFile.ts";
 import { ReplayOutputTracker } from "@clientTheatre/runtimePerformers/ReplayOutputTracker.ts";
+import {
+    createRuntimeAssetLocator,
+    type RuntimeAssetLocator,
+} from "@clientTheatre/runtimePerformers/RuntimeAssetLocator.ts";
 const MAXIMUM_REPLAY_INPUTS = 1000;
 const APL_RUNTIME_DIRECTORY_NAME = "ngn-apl";
 const APL_RUNTIME_FILE_NAME = "apl.js";
@@ -22,15 +26,17 @@ interface NgnAplRuntimeModule {
     default: NgnAplNamespace;
 }
 class NgnAplRuntimeLoader {
-    private readonly sessionBaseUrl: string;
+    private readonly assetLocator: RuntimeAssetLocator;
     private runtimeNamespace: NgnAplNamespace | undefined;
     constructor(sessionBaseUrl: string) {
-        this.sessionBaseUrl = sessionBaseUrl.replace(/\/+$/, "");
+        this.assetLocator = createRuntimeAssetLocator(sessionBaseUrl.replace(/\/+$/, ""));
     }
     async loadRuntimeModule(stage: TerminalStageController): Promise<void> {
         stage.writeLine("Loading APL runtime.");
         const runtimeModule = (await import(
-            /* @vite-ignore */ `${this.sessionBaseUrl}/runtime/${APL_RUNTIME_DIRECTORY_NAME}/${APL_RUNTIME_FILE_NAME}`
+            /* @vite-ignore */ this.assetLocator.resolveAssetUrl(
+                `runtime/${APL_RUNTIME_DIRECTORY_NAME}/${APL_RUNTIME_FILE_NAME}`,
+            )
         )) as NgnAplRuntimeModule;
         this.runtimeNamespace = runtimeModule.default;
     }
