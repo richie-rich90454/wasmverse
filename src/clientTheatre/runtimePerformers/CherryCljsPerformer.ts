@@ -8,6 +8,10 @@ import {
 import { ReplayOutputTracker } from "@clientTheatre/runtimePerformers/ReplayOutputTracker.ts";
 import { CherryModuleLinker } from "@clientTheatre/runtimePerformers/CherryModuleLinker.ts";
 import {
+    createRuntimeAssetLocator,
+    type RuntimeAssetLocator,
+} from "@clientTheatre/runtimePerformers/RuntimeAssetLocator.ts";
+import {
     directoryOf,
     joinRelativePath,
     normalizeWithinRoot,
@@ -26,18 +30,20 @@ interface CherryCompilerModule {
     compileString(sourceText: string): string;
 }
 class CherryCompilerLoader {
-    private readonly sessionBaseUrl: string;
+    private readonly assetLocator: RuntimeAssetLocator;
     private compilerModule: CherryCompilerModule | undefined;
     constructor(sessionBaseUrl: string) {
-        this.sessionBaseUrl = sessionBaseUrl.replace(/\/+$/, "");
+        this.assetLocator = createRuntimeAssetLocator(sessionBaseUrl.replace(/\/+$/, ""));
     }
     get runtimeBaseUrl(): string {
-        return `${this.sessionBaseUrl}/runtime/${CLOJURESCRIPT_RUNTIME_DIRECTORY_NAME}`;
+        return this.assetLocator.resolveAssetUrl(`runtime/${CLOJURESCRIPT_RUNTIME_DIRECTORY_NAME}`);
     }
     async loadCompilerModule(stage: TerminalStageController): Promise<void> {
         stage.writeLine("Loading ClojureScript compiler.");
         this.compilerModule = (await import(
-            /* @vite-ignore */ `${this.runtimeBaseUrl}/lib/compiler.js`
+            /* @vite-ignore */ this.assetLocator.resolveAssetUrl(
+                `runtime/${CLOJURESCRIPT_RUNTIME_DIRECTORY_NAME}/lib/compiler.js`,
+            )
         )) as CherryCompilerModule;
     }
     compileModule(sourceText: string): string {
