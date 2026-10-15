@@ -1,10 +1,12 @@
 import type { BuildContextRecord } from "@sharedKernel/BuildContextRecord.ts";
 import type { RuntimeAssetAssemblerContract } from "@serverAtelier/runtimeAssemblers/RuntimeAssetAssemblerContract.ts";
+import { EMBEDDED_ASSET_RESOLVER_GLUE_SOURCE } from "@serverAtelier/runtimeAssemblers/EmbeddedAssetResolverGlue.ts";
 import { FileSystemOperations } from "@serverAtelier/utilities/FileSystemOperations.ts";
 const FABLE_LOADER_FILE_NAME = "fable-loader.js";
 const FABLE_LOADER_SOURCE = [
+    EMBEDDED_ASSET_RESOLVER_GLUE_SOURCE,
     "export async function loadFableModule(baseUrl, attemptIdentifier) {",
-    "    return await import(`${baseUrl}/app.js?attempt=${encodeURIComponent(attemptIdentifier)}`);",
+    "    return await import(resolve(`${baseUrl}/app.js?attempt=${encodeURIComponent(attemptIdentifier)}`));",
     "}",
     "",
 ].join("\n");
