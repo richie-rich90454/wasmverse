@@ -2,6 +2,10 @@ import type { TerminalStageController } from "@clientTheatre/services/TerminalSt
 import type { TerminalPerformerContract } from "@clientTheatre/runtimePerformers/TerminalPerformerContract.ts";
 import { SessionUserFilesClient } from "@clientTheatre/runtimePerformers/SessionUserFilesClient.ts";
 import { ReplayOutputTracker } from "@clientTheatre/runtimePerformers/ReplayOutputTracker.ts";
+import {
+    createRuntimeAssetLocator,
+    type RuntimeAssetLocator,
+} from "@clientTheatre/runtimePerformers/RuntimeAssetLocator.ts";
 interface PgliteQueryResult {
     rows: Array<Record<string, unknown>>;
 }
@@ -13,13 +17,13 @@ interface PgliteRuntimeModule {
     PGlite: new (options: Record<string, unknown>) => PgliteDatabase;
 }
 class PglitePerformer implements TerminalPerformerContract {
-    private readonly sessionBaseUrl: string;
+    private readonly assetLocator: RuntimeAssetLocator;
     private readonly userFilesClient: SessionUserFilesClient;
     private readonly outputTracker: ReplayOutputTracker;
     private runtimeModule: PgliteRuntimeModule | undefined;
     private entrySourceText: string = "";
     constructor(sessionBaseUrl: string) {
-        this.sessionBaseUrl = sessionBaseUrl;
+        this.assetLocator = createRuntimeAssetLocator(sessionBaseUrl);
         this.userFilesClient = new SessionUserFilesClient(sessionBaseUrl);
         this.outputTracker = new ReplayOutputTracker();
     }
@@ -27,7 +31,9 @@ class PglitePerformer implements TerminalPerformerContract {
         stage.writeLine("Loading PGlite runtime.");
         try {
             this.runtimeModule = (await import(
-                /* @vite-ignore */ `${this.sessionBaseUrl}/runtime/pglite/pglite-runtime.js`
+                /* @vite-ignore */ this.assetLocator.resolveAssetUrl(
+                    "runtime/pglite/pglite-runtime.js",
+                )
             )) as PgliteRuntimeModule;
         } catch (loadError) {
             const loadMessage = loadError instanceof Error ? loadError.message : String(loadError);
@@ -50,10 +56,15 @@ class PglitePerformer implements TerminalPerformerContract {
         stage.writeLine("Running SQL script.");
         this.outputTracker.beginRun();
         try {
-            const runtimeBaseUrl = `${this.sessionBaseUrl}/runtime/pglite`;
-            const wasmModule = await this.compileWasmModule(`${runtimeBaseUrl}/pglite.wasm`);
-            const initdbWasmModule = await this.compileWasmModule(`${runtimeBaseUrl}/initdb.wasm`);
-            const dataBundle = await this.fetchBinary(`${runtimeBaseUrl}/pglite.data`);
+            const wasmModule = await this.compileWasmModule(
+                this.assetLocator.resolveAssetUrl("runtime/pglite/pglite.wasm"),
+            );
+            const initdbWasmModule = await this.compileWasmModule(
+                this.assetLocator.resolveAssetUrl("runtime/pglite/initdb.wasm"),
+            );
+            const dataBundle = await this.fetchBinary(
+                this.assetLocator.resolveAssetUrl("runtime/pglite/pglite.data"),
+            );
             const database = new this.runtimeModule.PGlite({
                 pgliteWasmModule: wasmModule,
                 initdbWasmModule,
