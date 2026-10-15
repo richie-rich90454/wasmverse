@@ -71,7 +71,7 @@ function buildToolDefinitions(): Array<McpToolDefinition> {
         {
             name: "export_artifact",
             description:
-                'Export a built session as a self-contained static site artifact. format "zip" writes the archive to outputPath (defaults to a path under the system temp directory) and returns the absolute artifactPath plus byteSize. The session is released after export unless keepSession is true. format "html" (single-file HTML) is reserved but not available in this build.',
+                'Export a built session as a self-contained static site artifact. format "zip" writes the archive and format "html" writes the single-file HTML page to outputPath (defaults to a path under the system temp directory), returning the absolute artifactPath plus byteSize. The session is released after export unless keepSession is true.',
             inputSchema: {
                 type: "object",
                 properties: {
@@ -82,7 +82,7 @@ function buildToolDefinitions(): Array<McpToolDefinition> {
                     format: {
                         type: "string",
                         enum: ["zip", "html"],
-                        description: 'Artifact format. Only "zip" is available.',
+                        description: 'Artifact format. "zip" or "html".',
                     },
                     outputPath: {
                         type: "string",
@@ -120,7 +120,7 @@ function buildToolDefinitions(): Array<McpToolDefinition> {
                     format: {
                         type: "string",
                         enum: ["zip", "html"],
-                        description: 'Artifact format. Only "zip" is available.',
+                        description: 'Artifact format. "zip" or "html".',
                     },
                     outputPath: {
                         type: "string",
@@ -190,17 +190,12 @@ function readStringRecordArgument(
     }
     return stringRecord;
 }
-function readArtifactFormat(argumentsRecord: Record<string, unknown>): string {
+function readArtifactFormat(argumentsRecord: Record<string, unknown>): "zip" | "html" {
     const format = (readOptionalString(argumentsRecord, "format") ?? "zip").toLowerCase();
-    if (format === "zip") {
+    if (format === "zip" || format === "html") {
         return format;
     }
-    if (format === "html") {
-        throw new Error(
-            'Format "html" is not available in this build (single-file HTML export is not implemented yet). Use "zip".',
-        );
-    }
-    throw new Error(`Unsupported format "${format}". Use "zip".`);
+    throw new Error(`Unsupported format "${format}". Use "zip" or "html".`);
 }
 function resolveArtifactPath(requestedOutputPath: unknown, defaultFileName: string): string {
     if (typeof requestedOutputPath === "string" && requestedOutputPath.trim().length > 0) {
@@ -285,6 +280,7 @@ async function exportSessionToArtifact(
     composition: ServerComposition,
     sessionIdentifier: string,
     argumentsRecord: Record<string, unknown>,
+    format: "zip" | "html",
 ): Promise<{ artifactPath: string; byteSize: number }> {
     const sessionRecord = composition.sessionRegistry.findByIdentifier(sessionIdentifier);
     if (!sessionRecord) {
@@ -295,7 +291,14 @@ async function exportSessionToArtifact(
     const keepSession = argumentsRecord["keepSession"] === true;
     let artifactBytes: Uint8Array;
     try {
-        artifactBytes = await composition.staticSiteExporter.exportSessionToZip(sessionRecord);
+        artifactBytes =
+            format === "html"
+                ? new TextEncoder().encode(
+                      await composition.staticSiteExporter.exportSessionToSingleFileHtml(
+                          sessionRecord,
+                      ),
+                  )
+                : await composition.staticSiteExporter.exportSessionToZip(sessionRecord);
     } finally {
         if (!keepSession) {
             await composition.sessionRegistry.releaseSession(sessionIdentifier);
@@ -303,7 +306,7 @@ async function exportSessionToArtifact(
     }
     const artifactPath = resolveArtifactPath(
         argumentsRecord["outputPath"],
-        `${sessionIdentifier}.zip`,
+        `${sessionIdentifier}.${format}`,
     );
     await composition.fileSystemOperations.writeBinaryFile(artifactPath, artifactBytes);
     return { artifactPath, byteSize: artifactBytes.byteLength };
@@ -314,7 +317,12 @@ async function handleExportArtifact(
 ): Promise<unknown> {
     const format = readArtifactFormat(argumentsRecord);
     const sessionIdentifier = readRequiredString(argumentsRecord, "sessionIdentifier");
-    const artifact = await exportSessionToArtifact(composition, sessionIdentifier, argumentsRecord);
+    const artifact = await exportSessionToArtifact(
+        composition,
+        sessionIdentifier,
+        argumentsRecord,
+        format,
+    );
     return { ...artifact, format, sessionIdentifier };
 }
 async function handleExportProject(
@@ -335,6 +343,7 @@ async function handleExportProject(
         composition,
         descriptor.sessionIdentifier,
         argumentsRecord,
+        readArtifactFormat(argumentsRecord),
     );
     return {
         artifactPath: artifact.artifactPath,
