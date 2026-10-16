@@ -106,9 +106,9 @@ const FEATURE_PROBES: ReadonlyArray<FeatureProbeDefinition> = [
     },
     {
         languageIdentifier: "prolog",
-        entryFileName: "main.pl",
+        entryFileName: "main.pro",
         sourceFiles: {
-            "main.pl":
+            "main.pro":
                 "main :-\n" +
                 "    read_input_line(NameLine),\n" +
                 "    atom_chars(Name, NameLine),\n" +
