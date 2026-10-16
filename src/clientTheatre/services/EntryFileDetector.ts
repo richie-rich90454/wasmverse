@@ -7,6 +7,7 @@ const CODE_FILE_EXTENSIONS: ReadonlyArray<string> = [
     ".pl",
     ".rb",
     ".pl",
+    ".pro",
     ".pm",
     ".pas",
     ".cob",
