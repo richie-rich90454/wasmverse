@@ -9,7 +9,7 @@ const packageAvailable = existsSync(
     join(process.cwd(), "node_modules/@electric-sql/pglite/dist/index.js"),
 );
 describe.skipIf(!packageAvailable)("PgliteRuntimeAssembler", () => {
-    test("copies the runtime, patches streaming instantiation, and renames the entry", async () => {
+    test("bundles the runtime, patches streaming instantiation, and copies the assets", async () => {
         const fixtureDirectory = await mkdtemp(join(tmpdir(), "wasmverse-pglite-"));
         try {
             const runtimeDirectory = join(fixtureDirectory, "runtime");
@@ -28,23 +28,18 @@ describe.skipIf(!packageAvailable)("PgliteRuntimeAssembler", () => {
                 join(runtimeDirectory, "pglite/pglite-runtime.js"),
                 "utf8",
             );
-            expect(loaderText).toContain("./chunk-");
+            expect(loaderText).not.toMatch(/WebAssembly\.instantiateStreaming\(/);
+            expect(loaderText).toContain("WebAssembly.instantiate(await");
+            expect(loaderText).not.toContain("./chunk-");
             for (const assetFileName of ["pglite.wasm", "initdb.wasm", "pglite.data"]) {
                 await expect(
                     readFile(join(runtimeDirectory, `pglite/${assetFileName}`)),
                 ).resolves.toBeTruthy();
             }
-            const chunkFileNames = (await readdir(join(runtimeDirectory, "pglite"))).filter(
-                (fileName) => fileName.startsWith("chunk-") && fileName.endsWith(".js"),
+            const runtimeFileNames = await readdir(join(runtimeDirectory, "pglite"));
+            expect(runtimeFileNames.filter((fileName) => fileName.startsWith("chunk-"))).toEqual(
+                [],
             );
-            expect(chunkFileNames.length).toBeGreaterThan(0);
-            for (const chunkFileName of chunkFileNames) {
-                const chunkText = await readFile(
-                    join(runtimeDirectory, `pglite/${chunkFileName}`),
-                    "utf8",
-                );
-                expect(chunkText).not.toMatch(/WebAssembly\.instantiateStreaming\(/);
-            }
         } finally {
             await rm(fixtureDirectory, { recursive: true, force: true });
         }
