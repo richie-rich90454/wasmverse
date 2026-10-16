@@ -73,7 +73,7 @@ const SHOWCASES: ReadonlyArray<ShowcaseUnderTest> = [
     },
     {
         languageIdentifier: "prolog",
-        entryFileName: "main.pl",
+        entryFileName: "main.pro",
         budgetMilliseconds: 120_000,
     },
     {
