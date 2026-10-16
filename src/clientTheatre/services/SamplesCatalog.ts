@@ -62,10 +62,10 @@ const SAMPLE_PLATES: ReadonlyArray<SamplePlate> = [
     {
         languageIdentifier: "prolog",
         languageLabel: "Prolog",
-        entryFileName: "main.pl",
+        entryFileName: "main.pro",
         programTitle: "Logical inference over generated facts",
         description: "Recursive rules, negation, and findall build and query a generated ledger.",
-        sourceText: sourceTextFor("main.pl"),
+        sourceText: sourceTextFor("main.pro"),
     },
     {
         languageIdentifier: "ruby",
