@@ -1,9 +1,9 @@
 {
-    "generatedAt": "2026-10-15T12:36:14.847Z",
+    "generatedAt": "2026-10-16T10:05:24.867Z",
     "source": "verify:export",
     "languages": [
         {
-            "languageIdentifier": "elm",
+            "languageIdentifier": "prolog",
             "toolchain": "ready",
             "showcase": "pass",
             "features": {
@@ -12,438 +12,46 @@
                 "arguments": "pass",
                 "fileIo": "pass"
             },
-            "exportBytes": 157735,
+            "exportBytes": 161217,
             "problems": []
         },
         {
-            "languageIdentifier": "zig",
-            "toolchain": "ready",
-            "showcase": "pass",
-            "features": {
-                "stdin": "pass",
-                "multiFile": "pass",
-                "arguments": "pass",
-                "fileIo": "pass"
-            },
-            "exportBytes": 127702,
-            "problems": []
-        },
-        {
-            "languageIdentifier": "r",
+            "languageIdentifier": "pglite",
             "toolchain": "ready",
             "showcase": "pass",
             "features": {
                 "stdin": "unsupported",
-                "multiFile": "pass",
-                "arguments": "pass",
-                "fileIo": "pass"
-            },
-            "exportBytes": 37823586,
-            "problems": []
-        },
-        {
-            "languageIdentifier": "kotlin",
-            "toolchain": "ready",
-            "showcase": "pass",
-            "features": {
-                "stdin": "pass",
-                "multiFile": "pass",
-                "arguments": "pass",
-                "fileIo": "pass"
-            },
-            "exportBytes": 196134,
-            "problems": []
-        },
-        {
-            "languageIdentifier": "gleam",
-            "toolchain": "ready",
-            "showcase": "pass",
-            "features": {
-                "stdin": "pass",
-                "multiFile": "pass",
-                "arguments": "pass",
-                "fileIo": "pass"
-            },
-            "exportBytes": 107319,
-            "problems": []
-        },
-        {
-            "languageIdentifier": "fsharp",
-            "toolchain": "ready",
-            "showcase": "pass",
-            "features": {
-                "stdin": "pass",
-                "multiFile": "pass",
-                "arguments": "pass",
-                "fileIo": "pass"
-            },
-            "exportBytes": 114763,
-            "problems": []
-        },
-        {
-            "languageIdentifier": "assemblyscript",
-            "toolchain": "ready",
-            "showcase": "pass",
-            "features": {
-                "stdin": "pass",
-                "multiFile": "pass",
-                "arguments": "pass",
-                "fileIo": "unsupported"
-            },
-            "exportBytes": 112724,
-            "problems": []
-        },
-        {
-            "languageIdentifier": "dart",
-            "toolchain": "ready",
-            "showcase": "pass",
-            "features": {
-                "stdin": "pass",
-                "multiFile": "pass",
-                "arguments": "pass",
-                "fileIo": "pass"
-            },
-            "exportBytes": 127478,
-            "problems": []
-        },
-        {
-            "languageIdentifier": "csharp",
-            "toolchain": "ready",
-            "showcase": "pass",
-            "features": {
-                "stdin": "pass",
-                "multiFile": "pass",
-                "arguments": "pass",
-                "fileIo": "pass"
-            },
-            "exportBytes": 2872349,
-            "problems": []
-        },
-        {
-            "languageIdentifier": "java",
-            "toolchain": "ready",
-            "showcase": "pass",
-            "features": {
-                "stdin": "pass",
-                "multiFile": "pass",
-                "arguments": "pass",
-                "fileIo": "unsupported"
-            },
-            "exportBytes": 133525,
-            "problems": []
-        },
-        {
-            "languageIdentifier": "rust",
-            "toolchain": "ready",
-            "showcase": "pass",
-            "features": {
-                "stdin": "pass",
                 "multiFile": "unsupported",
-                "arguments": "pass",
+                "arguments": "unsupported",
                 "fileIo": "unsupported"
             },
-            "exportBytes": 119930,
+            "exportBytes": 5825895,
             "problems": []
         },
         {
-            "languageIdentifier": "cpp",
+            "languageIdentifier": "duckdb",
             "toolchain": "ready",
             "showcase": "pass",
             "features": {
-                "stdin": "pass",
-                "multiFile": "pass",
-                "arguments": "pass",
-                "fileIo": "pass"
+                "stdin": "unsupported",
+                "multiFile": "unsupported",
+                "arguments": "unsupported",
+                "fileIo": "unsupported"
             },
-            "exportBytes": 178864,
-            "problems": []
-        },
-        {
-            "languageIdentifier": "c",
-            "toolchain": "ready",
-            "showcase": "pass",
-            "features": {
-                "stdin": "pass",
-                "multiFile": "pass",
-                "arguments": "pass",
-                "fileIo": "pass"
-            },
-            "exportBytes": 126368,
-            "problems": []
-        },
-        {
-            "languageIdentifier": "smalltalk",
-            "toolchain": "ready",
-            "showcase": "pass",
-            "features": {
-                "stdin": "pass",
-                "multiFile": "pass",
-                "arguments": "pass",
-                "fileIo": "pass"
-            },
-            "exportBytes": 108839,
-            "problems": []
-        },
-        {
-            "languageIdentifier": "tcl",
-            "toolchain": "ready",
-            "showcase": "pass",
-            "features": {
-                "stdin": "pass",
-                "multiFile": "pass",
-                "arguments": "pass",
-                "fileIo": "pass"
-            },
-            "exportBytes": 1444827,
-            "problems": []
-        },
-        {
-            "languageIdentifier": "commonlisp",
-            "toolchain": "ready",
-            "showcase": "pass",
-            "features": {
-                "stdin": "pass",
-                "multiFile": "pass",
-                "arguments": "pass",
-                "fileIo": "pass"
-            },
-            "exportBytes": 492964,
-            "problems": []
-        },
-        {
-            "languageIdentifier": "forth",
-            "toolchain": "ready",
-            "showcase": "pass",
-            "features": {
-                "stdin": "pass",
-                "multiFile": "pass",
-                "arguments": "pass",
-                "fileIo": "pass"
-            },
-            "exportBytes": 106290,
-            "problems": []
-        },
-        {
-            "languageIdentifier": "go",
-            "toolchain": "ready",
-            "showcase": "pass",
-            "features": {
-                "stdin": "pass",
-                "multiFile": "pass",
-                "arguments": "pass",
-                "fileIo": "pass"
-            },
-            "exportBytes": 891198,
-            "problems": []
-        },
-        {
-            "languageIdentifier": "typescript",
-            "toolchain": "ready",
-            "showcase": "pass",
-            "features": {
-                "stdin": "pass",
-                "multiFile": "pass",
-                "arguments": "pass",
-                "fileIo": "pass"
-            },
-            "exportBytes": 105371,
-            "problems": []
-        },
-        {
-            "languageIdentifier": "python",
-            "toolchain": "ready",
-            "showcase": "pass",
-            "features": {
-                "stdin": "pass",
-                "multiFile": "pass",
-                "arguments": "pass",
-                "fileIo": "pass"
-            },
-            "exportBytes": 6559998,
-            "problems": []
-        },
-        {
-            "languageIdentifier": "php",
-            "toolchain": "ready",
-            "showcase": "pass",
-            "features": {
-                "stdin": "pass",
-                "multiFile": "pass",
-                "arguments": "pass",
-                "fileIo": "pass"
-            },
-            "exportBytes": 3851141,
+            "exportBytes": 8372501,
             "problems": []
         },
         {
             "languageIdentifier": "solidity",
             "toolchain": "ready",
-            "showcase": "fail",
-            "features": {
-                "stdin": "pending",
-                "arguments": "pending",
-                "fileIo": "pending",
-                "multiFile": "pending"
-            },
-            "exportBytes": 0,
-            "problems": [
-                "upload step failed: Solc runtime file soljson.js is missing. Run pnpm install."
-            ]
-        },
-        {
-            "languageIdentifier": "vimscript",
-            "toolchain": "ready",
             "showcase": "pass",
             "features": {
                 "stdin": "unsupported",
                 "multiFile": "pass",
                 "arguments": "pass",
-                "fileIo": "pass"
-            },
-            "exportBytes": 2282149,
-            "problems": []
-        },
-        {
-            "languageIdentifier": "verilog",
-            "toolchain": "ready",
-            "showcase": "pass",
-            "features": {
-                "stdin": "unsupported",
-                "multiFile": "pass",
-                "arguments": "pass",
-                "fileIo": "pass"
-            },
-            "exportBytes": 1129975,
-            "problems": []
-        },
-        {
-            "languageIdentifier": "riscv",
-            "toolchain": "ready",
-            "showcase": "pass",
-            "features": {
-                "stdin": "pass",
-                "multiFile": "pass",
-                "arguments": "pass",
-                "fileIo": "pass"
-            },
-            "exportBytes": 106331,
-            "problems": []
-        },
-        {
-            "languageIdentifier": "m6502",
-            "toolchain": "ready",
-            "showcase": "pass",
-            "features": {
-                "stdin": "pass",
-                "multiFile": "pass",
-                "arguments": "unsupported",
                 "fileIo": "unsupported"
             },
-            "exportBytes": 105214,
-            "problems": []
-        },
-        {
-            "languageIdentifier": "sml",
-            "toolchain": "pending",
-            "showcase": "pending",
-            "features": {
-                "stdin": "pending",
-                "arguments": "pending",
-                "fileIo": "pending",
-                "multiFile": "pending"
-            },
-            "exportBytes": 0,
-            "problems": []
-        },
-        {
-            "languageIdentifier": "gwbasic",
-            "toolchain": "ready",
-            "showcase": "pass",
-            "features": {
-                "stdin": "pass",
-                "multiFile": "unsupported",
-                "arguments": "unsupported",
-                "fileIo": "unsupported"
-            },
-            "exportBytes": 105449,
-            "problems": []
-        },
-        {
-            "languageIdentifier": "logo",
-            "toolchain": "ready",
-            "showcase": "pass",
-            "features": {
-                "stdin": "pass",
-                "multiFile": "unsupported",
-                "arguments": "pass",
-                "fileIo": "unsupported"
-            },
-            "exportBytes": 103698,
-            "problems": []
-        },
-        {
-            "languageIdentifier": "apl",
-            "toolchain": "ready",
-            "showcase": "pass",
-            "features": {
-                "stdin": "pass",
-                "multiFile": "pass",
-                "arguments": "pass",
-                "fileIo": "unsupported"
-            },
-            "exportBytes": 120288,
-            "problems": []
-        },
-        {
-            "languageIdentifier": "brainfuck",
-            "toolchain": "ready",
-            "showcase": "pass",
-            "features": {
-                "stdin": "pass",
-                "multiFile": "unsupported",
-                "arguments": "unsupported",
-                "fileIo": "unsupported"
-            },
-            "exportBytes": 99498,
-            "problems": []
-        },
-        {
-            "languageIdentifier": "lolcode",
-            "toolchain": "ready",
-            "showcase": "pass",
-            "features": {
-                "stdin": "pass",
-                "multiFile": "unsupported",
-                "arguments": "unsupported",
-                "fileIo": "unsupported"
-            },
-            "exportBytes": 102367,
-            "problems": []
-        },
-        {
-            "languageIdentifier": "befunge",
-            "toolchain": "ready",
-            "showcase": "pass",
-            "features": {
-                "stdin": "pass",
-                "multiFile": "unsupported",
-                "arguments": "unsupported",
-                "fileIo": "unsupported"
-            },
-            "exportBytes": 99960,
-            "problems": []
-        },
-        {
-            "languageIdentifier": "scala",
-            "toolchain": "ready",
-            "showcase": "pass",
-            "features": {
-                "stdin": "pass",
-                "multiFile": "pass",
-                "arguments": "pass",
-                "fileIo": "pass"
-            },
-            "exportBytes": 189042,
+            "exportBytes": 6956421,
             "problems": []
         },
         {
@@ -456,11 +64,89 @@
                 "arguments": "pass",
                 "fileIo": "pass"
             },
-            "exportBytes": 4312056,
+            "exportBytes": 4315491,
             "problems": []
         },
         {
-            "languageIdentifier": "fortran",
+            "languageIdentifier": "clojurescript",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "pass"
+            },
+            "exportBytes": 294492,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "scala",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "pass"
+            },
+            "exportBytes": 122827,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "python",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "pass"
+            },
+            "exportBytes": 6559996,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "r",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "unsupported",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "pass"
+            },
+            "exportBytes": 37823585,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "scheme",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "pass"
+            },
+            "exportBytes": 167889,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "ruby",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "pass"
+            },
+            "exportBytes": 9346782,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "pascal",
             "toolchain": "pending",
             "showcase": "pending",
             "features": {
@@ -486,7 +172,7 @@
             "problems": []
         },
         {
-            "languageIdentifier": "pascal",
+            "languageIdentifier": "fortran",
             "toolchain": "pending",
             "showcase": "pending",
             "features": {
@@ -499,7 +185,7 @@
             "problems": []
         },
         {
-            "languageIdentifier": "prolog",
+            "languageIdentifier": "lua",
             "toolchain": "ready",
             "showcase": "pass",
             "features": {
@@ -508,11 +194,11 @@
                 "arguments": "pass",
                 "fileIo": "pass"
             },
-            "exportBytes": 158329,
+            "exportBytes": 255321,
             "problems": []
         },
         {
-            "languageIdentifier": "scheme",
+            "languageIdentifier": "fsharp",
             "toolchain": "ready",
             "showcase": "pass",
             "features": {
@@ -521,11 +207,11 @@
                 "arguments": "pass",
                 "fileIo": "pass"
             },
-            "exportBytes": 164490,
+            "exportBytes": 114763,
             "problems": []
         },
         {
-            "languageIdentifier": "clojurescript",
+            "languageIdentifier": "elm",
             "toolchain": "ready",
             "showcase": "pass",
             "features": {
@@ -534,11 +220,11 @@
                 "arguments": "pass",
                 "fileIo": "pass"
             },
-            "exportBytes": 291193,
+            "exportBytes": 157733,
             "problems": []
         },
         {
-            "languageIdentifier": "purescript",
+            "languageIdentifier": "php",
             "toolchain": "ready",
             "showcase": "pass",
             "features": {
@@ -547,20 +233,7 @@
                 "arguments": "pass",
                 "fileIo": "pass"
             },
-            "exportBytes": 104030,
-            "problems": []
-        },
-        {
-            "languageIdentifier": "haxe",
-            "toolchain": "ready",
-            "showcase": "pass",
-            "features": {
-                "stdin": "pass",
-                "multiFile": "pass",
-                "arguments": "pass",
-                "fileIo": "pass"
-            },
-            "exportBytes": 103109,
+            "exportBytes": 3851141,
             "problems": []
         },
         {
@@ -573,11 +246,11 @@
                 "arguments": "pass",
                 "fileIo": "pass"
             },
-            "exportBytes": 168363,
+            "exportBytes": 171871,
             "problems": []
         },
         {
-            "languageIdentifier": "ruby",
+            "languageIdentifier": "purescript",
             "toolchain": "ready",
             "showcase": "pass",
             "features": {
@@ -586,11 +259,11 @@
                 "arguments": "pass",
                 "fileIo": "pass"
             },
-            "exportBytes": 9343323,
+            "exportBytes": 107511,
             "problems": []
         },
         {
-            "languageIdentifier": "lua",
+            "languageIdentifier": "gleam",
             "toolchain": "ready",
             "showcase": "pass",
             "features": {
@@ -599,7 +272,280 @@
                 "arguments": "pass",
                 "fileIo": "pass"
             },
-            "exportBytes": 251897,
+            "exportBytes": 107316,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "haxe",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "pass"
+            },
+            "exportBytes": 106593,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "rust",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "unsupported",
+                "arguments": "pass",
+                "fileIo": "unsupported"
+            },
+            "exportBytes": 119929,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "commonlisp",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "pass"
+            },
+            "exportBytes": 492964,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "tcl",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "pass"
+            },
+            "exportBytes": 1444826,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "forth",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "pass"
+            },
+            "exportBytes": 106291,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "smalltalk",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "pass"
+            },
+            "exportBytes": 108839,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "c",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "pass"
+            },
+            "exportBytes": 126368,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "brainfuck",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "unsupported",
+                "arguments": "unsupported",
+                "fileIo": "unsupported"
+            },
+            "exportBytes": 102911,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "befunge",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "unsupported",
+                "arguments": "unsupported",
+                "fileIo": "unsupported"
+            },
+            "exportBytes": 103386,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "lolcode",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "unsupported",
+                "arguments": "unsupported",
+                "fileIo": "unsupported"
+            },
+            "exportBytes": 105761,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "apl",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "unsupported"
+            },
+            "exportBytes": 123721,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "cpp",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "pass"
+            },
+            "exportBytes": 178865,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "riscv",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "pass"
+            },
+            "exportBytes": 109694,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "verilog",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "unsupported",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "pass"
+            },
+            "exportBytes": 1133394,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "vimscript",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "unsupported",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "pass"
+            },
+            "exportBytes": 2285574,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "go",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "pass"
+            },
+            "exportBytes": 891183,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "logo",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "unsupported",
+                "arguments": "pass",
+                "fileIo": "unsupported"
+            },
+            "exportBytes": 107043,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "gwbasic",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "unsupported",
+                "arguments": "unsupported",
+                "fileIo": "unsupported"
+            },
+            "exportBytes": 108765,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "sml",
+            "toolchain": "pending",
+            "showcase": "pending",
+            "features": {
+                "stdin": "pending",
+                "arguments": "pending",
+                "fileIo": "pending",
+                "multiFile": "pending"
+            },
+            "exportBytes": 0,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "m6502",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "unsupported",
+                "fileIo": "unsupported"
+            },
+            "exportBytes": 108544,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "zig",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "pass"
+            },
+            "exportBytes": 127703,
             "problems": []
         },
         {
@@ -616,9 +562,74 @@
             "problems": []
         },
         {
-            "languageIdentifier": "ocaml",
+            "languageIdentifier": "kotlin",
             "toolchain": "ready",
-            "showcase": "fail",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "pass"
+            },
+            "exportBytes": 196135,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "dart",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "pass"
+            },
+            "exportBytes": 127477,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "java",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "unsupported"
+            },
+            "exportBytes": 133526,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "csharp",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "pass"
+            },
+            "exportBytes": 2872344,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "assemblyscript",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "unsupported"
+            },
+            "exportBytes": 112724,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "ocaml",
+            "toolchain": "pending",
+            "showcase": "pending",
             "features": {
                 "stdin": "pending",
                 "arguments": "pending",
@@ -626,12 +637,12 @@
                 "multiFile": "pending"
             },
             "exportBytes": 0,
-            "problems": ["upload step failed: Too many uploads. Wait one minute and try again."]
+            "problems": []
         },
         {
             "languageIdentifier": "haskell",
-            "toolchain": "ready",
-            "showcase": "fail",
+            "toolchain": "pending",
+            "showcase": "pending",
             "features": {
                 "stdin": "pending",
                 "arguments": "pending",
@@ -639,98 +650,85 @@
                 "multiFile": "pending"
             },
             "exportBytes": 0,
-            "problems": ["upload step failed: Too many uploads. Wait one minute and try again."]
+            "problems": []
         },
         {
             "languageIdentifier": "javascript",
             "toolchain": "ready",
-            "showcase": "fail",
+            "showcase": "pass",
             "features": {
-                "stdin": "pending",
-                "arguments": "pending",
-                "fileIo": "pending",
-                "multiFile": "pending"
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "pass"
             },
-            "exportBytes": 0,
-            "problems": ["upload step failed: Too many uploads. Wait one minute and try again."]
+            "exportBytes": 103910,
+            "problems": []
+        },
+        {
+            "languageIdentifier": "typescript",
+            "toolchain": "ready",
+            "showcase": "pass",
+            "features": {
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "pass"
+            },
+            "exportBytes": 105371,
+            "problems": []
         },
         {
             "languageIdentifier": "sql",
             "toolchain": "ready",
-            "showcase": "fail",
+            "showcase": "pass",
             "features": {
-                "stdin": "pending",
-                "arguments": "pending",
-                "fileIo": "pending",
-                "multiFile": "pending"
+                "stdin": "unsupported",
+                "multiFile": "unsupported",
+                "arguments": "unsupported",
+                "fileIo": "unsupported"
             },
-            "exportBytes": 0,
-            "problems": ["upload step failed: Too many uploads. Wait one minute and try again."]
-        },
-        {
-            "languageIdentifier": "duckdb",
-            "toolchain": "ready",
-            "showcase": "fail",
-            "features": {
-                "stdin": "pending",
-                "arguments": "pending",
-                "fileIo": "pending",
-                "multiFile": "pending"
-            },
-            "exportBytes": 0,
-            "problems": ["upload step failed: Too many uploads. Wait one minute and try again."]
-        },
-        {
-            "languageIdentifier": "pglite",
-            "toolchain": "ready",
-            "showcase": "fail",
-            "features": {
-                "stdin": "pending",
-                "arguments": "pending",
-                "fileIo": "pending",
-                "multiFile": "pending"
-            },
-            "exportBytes": 0,
-            "problems": ["upload step failed: Too many uploads. Wait one minute and try again."]
+            "exportBytes": 695125,
+            "problems": []
         },
         {
             "languageIdentifier": "awk",
             "toolchain": "ready",
-            "showcase": "fail",
+            "showcase": "pass",
             "features": {
-                "stdin": "pending",
-                "arguments": "pending",
-                "fileIo": "pending",
-                "multiFile": "pending"
+                "stdin": "pass",
+                "multiFile": "unsupported",
+                "arguments": "pass",
+                "fileIo": "pass"
             },
-            "exportBytes": 0,
-            "problems": ["upload step failed: Too many uploads. Wait one minute and try again."]
+            "exportBytes": 306566,
+            "problems": []
         },
         {
             "languageIdentifier": "jq",
             "toolchain": "ready",
-            "showcase": "fail",
+            "showcase": "pass",
             "features": {
-                "stdin": "pending",
-                "arguments": "pending",
-                "fileIo": "pending",
-                "multiFile": "pending"
+                "stdin": "unsupported",
+                "multiFile": "unsupported",
+                "arguments": "pass",
+                "fileIo": "unsupported"
             },
-            "exportBytes": 0,
-            "problems": ["upload step failed: Too many uploads. Wait one minute and try again."]
+            "exportBytes": 643128,
+            "problems": []
         },
         {
             "languageIdentifier": "bash",
             "toolchain": "ready",
-            "showcase": "fail",
+            "showcase": "pass",
             "features": {
-                "stdin": "pending",
-                "arguments": "pending",
-                "fileIo": "pending",
-                "multiFile": "pending"
+                "stdin": "pass",
+                "multiFile": "pass",
+                "arguments": "pass",
+                "fileIo": "pass"
             },
-            "exportBytes": 0,
-            "problems": ["upload step failed: Too many uploads. Wait one minute and try again."]
+            "exportBytes": 306682,
+            "problems": []
         }
     ]
 }
