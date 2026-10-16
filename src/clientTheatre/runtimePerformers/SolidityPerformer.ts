@@ -17,12 +17,9 @@ import {
     encodeFunctionSelector,
     encodeStringArrayArgument,
 } from "@clientTheatre/runtimePerformers/SolidityAbiCodec.ts";
-import {
-    directoryOf,
-    joinRelativePath,
-    normalizeWithinRoot,
-} from "@clientTheatre/runtimePerformers/UserFilePathResolver.ts";
 const SOLIDITY_RUNTIME_DIRECTORY_NAME = "solidity";
+const SOLC_WORKER_FILE_NAME = "solc-worker.js";
+const SOLC_BUNDLE_FILE_NAME = "soljson.js";
 const CALL_GAS_LIMIT = 10_000_000n;
 const DEPLOYER_ADDRESS = "0x00000000000000000000000000000000000000ee";
 const REVERT_SELECTOR = "0x08c379a0";
@@ -69,7 +66,10 @@ class SolidityPerformer implements TerminalPerformerContract {
         try {
             this.compiler = await loadSolidityCompiler(
                 this.assetLocator.resolveAssetUrl(
-                    `runtime/${SOLIDITY_RUNTIME_DIRECTORY_NAME}/soljson.js`,
+                    `runtime/${SOLIDITY_RUNTIME_DIRECTORY_NAME}/${SOLC_WORKER_FILE_NAME}`,
+                ),
+                this.assetLocator.resolveAssetUrl(
+                    `runtime/${SOLIDITY_RUNTIME_DIRECTORY_NAME}/${SOLC_BUNDLE_FILE_NAME}`,
                 ),
             );
         } catch (loadError) {
@@ -90,7 +90,7 @@ class SolidityPerformer implements TerminalPerformerContract {
         stage.writeLine("Compiling and running the Solidity contract.");
         this.outputTracker.beginRun();
         try {
-            const compilationOutput = this.compileProject();
+            const compilationOutput = await this.compileProject();
             const contractOutput = this.selectEntryContract(compilationOutput);
             const mainEntry = this.selectMainFunction(contractOutput);
             const evm = await createEVM();
@@ -110,7 +110,7 @@ class SolidityPerformer implements TerminalPerformerContract {
             this.outputTracker.flushShownInto(stage);
         }
     }
-    private compileProject(): SolidityCompilationOutput {
+    private async compileProject(): Promise<SolidityCompilationOutput> {
         const sources: Record<string, { content: string }> = {};
         for (const [relativePath, sourceText] of this.userFiles) {
             sources[relativePath] = { content: sourceText };
@@ -124,15 +124,9 @@ class SolidityPerformer implements TerminalPerformerContract {
                 },
             },
         };
-        const outputJson = (this.compiler as SolidityCompilerInstance).compileStandardJson(
+        const outputJson = await (this.compiler as SolidityCompilerInstance).compileStandardJson(
             JSON.stringify(compileInput),
-            (importPath) => {
-                const resolvedPath = this.resolveImportedSource(importPath);
-                const contents = resolvedPath ? this.userFiles.get(resolvedPath) : undefined;
-                return contents === undefined
-                    ? { error: `Source not found: ${importPath}` }
-                    : { contents };
-            },
+            this.entryRelativePath,
         );
         const compilationOutput = JSON.parse(outputJson) as SolidityCompilationOutput;
         const fatalErrors = (compilationOutput.errors ?? []).filter(
@@ -144,22 +138,6 @@ class SolidityPerformer implements TerminalPerformerContract {
             );
         }
         return compilationOutput;
-    }
-    private resolveImportedSource(importPath: string): string | undefined {
-        const entryDirectory = directoryOf(this.entryRelativePath);
-        const candidates = [
-            normalizeWithinRoot(joinRelativePath(entryDirectory, importPath)),
-            normalizeWithinRoot(importPath),
-        ];
-        for (const candidatePath of candidates) {
-            if (this.userFiles.has(candidatePath)) {
-                return candidatePath;
-            }
-        }
-        const basename = importPath.split("/").pop() as string;
-        return [...this.userFiles.keys()].find(
-            (relativePath) => relativePath.split("/").pop() === basename,
-        );
     }
     private selectEntryContract(
         compilationOutput: SolidityCompilationOutput,
