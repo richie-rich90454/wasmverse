@@ -2,9 +2,11 @@ import type { BuildContextRecord } from "@sharedKernel/BuildContextRecord.ts";
 import type { CompilerStrategyContract } from "@serverAtelier/compilerStrategies/CompilerStrategyContract.ts";
 import { FileSystemOperations } from "@serverAtelier/utilities/FileSystemOperations.ts";
 import { ProcessRunner } from "@serverAtelier/utilities/ProcessRunner.ts";
+import { ToolchainLocator } from "@serverAtelier/utilities/ToolchainLocator.ts";
 class OcamlWasmCompilerStrategy implements CompilerStrategyContract {
     private readonly processRunner: ProcessRunner;
     private readonly fileSystemOperations: FileSystemOperations;
+    private readonly toolchainLocator: ToolchainLocator;
     private readonly ocamlCompilerPath: string;
     constructor(
         processRunner: ProcessRunner,
@@ -13,26 +15,31 @@ class OcamlWasmCompilerStrategy implements CompilerStrategyContract {
     ) {
         this.processRunner = processRunner;
         this.fileSystemOperations = fileSystemOperations;
+        this.toolchainLocator = new ToolchainLocator(fileSystemOperations);
         this.ocamlCompilerPath = ocamlCompilerPath;
     }
     async compileSourceInto(context: BuildContextRecord): Promise<void> {
-        const toolchainExists = await this.fileSystemOperations.pathExists(this.ocamlCompilerPath);
-        if (!toolchainExists) {
-            throw new Error(
-                "OCaml WASM toolchain not found. Run pnpm run setup to provision ./.tools/ocaml-wasm/.",
-            );
-        }
+        const ocamlCompiler = await this.toolchainLocator.resolveCommandVector(
+            this.ocamlCompilerPath,
+            "ocamlopt",
+            "OCaml WASM",
+        );
         const outcome = await this.processRunner.runToCompletion(
             [
-                this.ocamlCompilerPath,
+                ...ocamlCompiler,
                 "-o",
                 `${context.runtimeDirectory}/app.wasm`,
                 context.entryFileRelativePath,
+                "-linkall",
             ],
             { workingDirectory: context.sourceDirectory },
         );
         if (outcome.exitCode !== 0) {
-            throw new Error(`OCaml WASM build failed: ${outcome.standardError}`);
+            const detail =
+                outcome.standardError.trim().length > 0
+                    ? outcome.standardError
+                    : outcome.standardOutput;
+            throw new Error(`OCaml WASM build failed: ${detail}`);
         }
     }
 }

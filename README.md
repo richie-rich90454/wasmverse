@@ -26,7 +26,7 @@ Open `http://localhost:5173`, press Run plate on the Python plate, and answer th
 6. `pnpm format:check` verifies formatting without writing.
 7. `pnpm typecheck` runs `tsc --noEmit`.
 8. `pnpm test` runs the unit test suite with vitest.
-9. `pnpm verify:export` builds every showcase, exports it as a zip and as a single-file HTML page, then serves each bundle from a deliberately hostile static host (`.wasm` as `application/octet-stream`, `nosniff`, subdirectory paths) and drives real headless Chrome over the DevTools protocol. It fails on any console error, uncaught exception, failed request, or missing output line, and it writes `compatibility-matrix.json`. Pass a language name to check one plate.
+9. `pnpm verify:export` builds every showcase, exports it as a zip and as a single-file HTML page, then serves each bundle from a deliberately hostile static host (`.wasm` as `application/octet-stream`, `nosniff`, subdirectory paths) and drives real headless Chrome over the DevTools protocol. It fails on any console error, uncaught exception, failed request, or missing output line, and it writes `compatibility-matrix.json`. Pass a language name to check one plate. Each run claims its own ports and staging directory, so several verifications can run side by side. A plate whose toolchain has no build for the current host is reported as not covered, with the reason, rather than counted as a failure.
 
 ### Command Line Builds
 
@@ -45,9 +45,9 @@ Python, Ruby, Lua, PHP, Rust, C, C++, Go, Zig, Swift, Kotlin, Dart, Java, C#, As
 Everything runs in the browser; nothing is installed system-wide. `pnpm setup` provisions into the repository:
 
 1. Client-side runtimes (no server compiler): Python (Pyodide), Ruby (ruby-wasm-wasi), Lua (wasmoon), PHP (php-wasm), SQL (SQLite WASM), DuckDB, PGlite, jq, Perl (zeroperl), Common Lisp (JSCL), Scheme (BiwaScheme), ClojureScript (cherry-cljs), Prolog (tau-prolog), APL (ngn/apl), plus JavaScript, TypeScript (esbuild-bundled), and the hand-written interpreters (Forth, Smalltalk, GW-BASIC, Logo, Brainfuck, Befunge, LOLCODE, RISC-V, 6502).
-2. Server-compiled WebAssembly: C and C++ (Emscripten), Go, Zig, Rust (wasm-pack), AssemblyScript, Java (TeaVM via Maven), C# (dotnet browser-wasm), Dart, Kotlin (compiled to JavaScript with `kotlinc-js`), Swift, OCaml, Haskell, Fortran (LFortran), Pascal (Free Pascal WASM), COBOL (GnuCOBOL through emcc), Verilog (Icarus WASM), Solidity (solc + an in-memory EVM), Vimscript (vim.wasm), Bash and AWK (busybox WASI), Tcl (WACL).
+2. Server-compiled WebAssembly: C and C++ (Emscripten), Go, Zig, Rust (wasm-pack from `./.tools/`, falling back to a `wasm-pack` on PATH), AssemblyScript, Java (TeaVM via Maven), C# (dotnet browser-wasm), Dart (`./.tools/dart-sdk/`, falling back to a `dart` on PATH), Kotlin (compiled to JavaScript with `kotlinc-js`), Swift, OCaml, Haskell, Fortran (LFortran), Pascal (Free Pascal WASM), COBOL (GnuCOBOL through emcc), Verilog (Icarus WASM), Solidity (solc + an in-memory EVM), Vimscript (vim.wasm), Bash and AWK (busybox WASI), Tcl (WACL).
 3. Server-compiled JavaScript: Scala.js, F#, Elm, ReScript, PureScript, Gleam, Haxe — compiled to ES modules and run like TypeScript.
-4. Swift, OCaml, Haskell, Fortran, Pascal, and COBOL have no fully working prebuilt Windows toolchain; their plates report a readable toolchain-pending line with the reason until a suitable SDK is placed under `./.tools/`.
+4. Swift, OCaml, Haskell, Fortran, Pascal, and COBOL have no fully working prebuilt Windows toolchain; their plates report a readable toolchain-pending line with the reason until a suitable SDK is placed under `./.tools/`. Swift's showcase is written against the WASI target alone, with no Foundation, because the WASI SDK does not ship it.
 
 A plate whose toolchain is absent fails fast with a readable terminal line that names the missing toolchain. First Rust, Java, and C# builds fetch their dependencies once, so they take longer than later builds.
 
@@ -92,6 +92,7 @@ Composition only: no `extends`, no abstract classes. Contracts are interfaces. B
 6. Write a client performer and add it to `TerminalPerformerFactory`.
 7. Add a showcase template in `userSourceTemplates/` and a plate in `SamplesCatalog.ts`.
 8. Add the language to `PERFORMER_CLASS_BY_LANGUAGE` in `StaticSiteExporter.ts` so static exports bundle only that performer.
+9. Add the language to `SHOWCASES` in `scripts/VerifyStaticExportsScript.ts` so the export verifier covers it. The verifier attempts every entry, so a language added here cannot silently fall out of coverage.
 
 ## API
 
@@ -101,6 +102,19 @@ Composition only: no `extends`, no abstract classes. Contracts are interfaces. B
 4. `GET /api/export/<id>` downloads the static site bundle for a session; add `?format=html` for the single-file HTML artifact.
 
 Uploads are rate limited per client. Security headers apply to every response. Asset paths that escape the session directory are rejected.
+
+## Configuration
+
+| Variable                        | Default         | Purpose                                |
+| ------------------------------- | --------------- | -------------------------------------- |
+| `PORT`                          | `3000`          | Port the server listens on.            |
+| `HOST`                          | `0.0.0.0`       | Address the server binds.              |
+| `SESSIONS_DIRECTORY`            | `./sessions`    | Where session directories are created. |
+| `CLIENT_BUILD_DIRECTORY`        | `./dist/client` | Client assets served in production.    |
+| `SESSION_TTL_MILLISECONDS`      | `1800000`       | How long an idle session survives.     |
+| `MAX_UPLOAD_BYTES`              | `26214400`      | Largest accepted archive.              |
+| `REQUEST_IDLE_TIMEOUT_SECONDS`  | `255`           | Request idle timeout.                  |
+| `UPLOADS_PER_MINUTE_PER_CLIENT` | `10`            | Upload budget per client per minute.   |
 
 ## Design
 

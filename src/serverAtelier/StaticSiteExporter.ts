@@ -87,6 +87,12 @@ const UNSHIPPED_RUNTIME_FILE_PATTERNS: ReadonlyArray<RegExp> = [
     /(^|\/)\.gitignore$/,
     /^pyodide\.js$/,
     /^console.*\.html$/,
+    // Native toolchain leftovers a replay never loads. A browser-wasm publish
+    // emits dozens of static archives and headers next to the assembly bundle,
+    // which is most of what makes an export large. `.js.symbols` is deliberately
+    // absent: a .NET app bundle lists it in its resource manifest and the runtime
+    // fetches everything the manifest names, so dropping it fails the boot.
+    /\.(a|lib|h|c|def|rsp)$/,
 ];
 const SCANNED_TEXT_FILE_PATTERN = /\.(js|css|html|json)$/;
 const NODE_ONLY_MODULE_SPECIFIERS = [

@@ -74,7 +74,7 @@ class HttpRequestRouter {
         this.scopedLogger = scopedLogger;
         this.pathGuard = pathGuard;
         this.sessionUploadRateGuard = new RateLimitGuard(
-            serverConfiguration.sessionUploadsPerMinute,
+            serverConfiguration.uploadsPerMinutePerClient,
             60_000,
         );
     }

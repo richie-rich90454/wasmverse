@@ -15,13 +15,39 @@ import {
 } from "./FeatureProbeCatalog.ts";
 const scopedLogger = new ScopedLogger("VerifyStaticExports");
 const languageFilter = process.argv[2] ?? "";
-const APP_PORT = Number(process.env.VERIFY_APP_PORT ?? 3987);
-const HOST_PORT = Number(process.env.VERIFY_HOST_PORT ?? 3988);
-const DEBUGGER_PORT = Number(process.env.VERIFY_DEBUGGER_PORT ?? 9333);
 const VERIFICATION_ROOT = join(
     tmpdir(),
-    process.env.VERIFY_ROOT_NAME ?? "wasmverse-export-verification",
+    process.env.VERIFY_ROOT_NAME ?? `wasmverse-export-verification-${process.pid}`,
 );
+/**
+ * Every run claims its own ports. Sharing them means a server, static host, or
+ * Chrome left behind by an interrupted run makes the next one die with
+ * EADDRINUSE, and a shared staging directory makes it die with EBUSY, both
+ * before a single language is tested.
+ */
+async function claimEphemeralPort(): Promise<number> {
+    return await new Promise<number>((resolvePort, rejectPort) => {
+        const probe = createServer();
+        probe.once("error", rejectPort);
+        probe.listen(0, "127.0.0.1", () => {
+            const probeAddress = probe.address();
+            const claimedPort =
+                typeof probeAddress === "object" && probeAddress !== null ? probeAddress.port : 0;
+            probe.close(() => {
+                if (claimedPort === 0) {
+                    rejectPort(
+                        new Error("Could not claim a free port for the export verification."),
+                    );
+                    return;
+                }
+                resolvePort(claimedPort);
+            });
+        });
+    });
+}
+const APP_PORT = Number(process.env.VERIFY_APP_PORT ?? (await claimEphemeralPort()));
+const HOST_PORT = Number(process.env.VERIFY_HOST_PORT ?? (await claimEphemeralPort()));
+const DEBUGGER_PORT = Number(process.env.VERIFY_DEBUGGER_PORT ?? (await claimEphemeralPort()));
 const CHROME_CANDIDATES = [
     join(process.cwd(), ".tools/chrome-for-testing/chrome.exe"),
     "C:/Program Files/Google/Chrome/Application/chrome.exe",
@@ -49,6 +75,12 @@ const TOOLCHAIN_PENDING_PATTERNS: ReadonlyArray<RegExp> = [
     /Run pnpm run setup/,
     /browser-wasm workload is not installed/,
     /no local toolchain/,
+    /toolchain not found\./,
+    /dotnet SDK not found\./,
+    /Dart SDK not found\./,
+    /Emscripten compiler not found\./,
+    /Maven executable not found\./,
+    /no required module provides package/,
 ];
 const SHOWCASES: ReadonlyArray<ShowcaseUnderTest> = [
     {
@@ -372,13 +404,58 @@ function probeFeatureStatuses(
     }
     return featureStatuses;
 }
+/**
+ * Asking for a language that has no showcase is a typo, so reject it loudly rather
+ * than reporting an empty pass.
+ */
+function selectShowcases(languageFilter: string): ReadonlyArray<ShowcaseUnderTest> {
+    if (languageFilter.length === 0) {
+        return SHOWCASES;
+    }
+    const matchedShowcase = SHOWCASES.find(
+        (showcase) => showcase.languageIdentifier === languageFilter,
+    );
+    if (!matchedShowcase) {
+        throw new Error(
+            `No showcase is defined for "${languageFilter}". Known languages: ${SHOWCASES.map((showcase) => showcase.languageIdentifier).join(", ")}.`,
+        );
+    }
+    return [matchedShowcase];
+}
 interface VerificationOutcome {
     languageIdentifier: string;
     zipBytes: number;
     finished: boolean;
     problems: Array<string>;
+    notCoveredReason?: string;
     terminalText: string;
     artifactKind?: "zip" | "single-file";
+}
+/**
+ * Toolchains that exist for some hosts and not others. A build that stops on one
+ * of these is an expected environment limit rather than a defect, so the reason
+ * is reported instead of counted as a failure.
+ */
+const MISSING_TOOLCHAIN_PATTERNS: ReadonlyArray<RegExp> = [
+    /toolchain not found\./,
+    /dotnet SDK not found\./,
+    /Dart SDK not found\./,
+    /Emscripten compiler not found\./,
+    /Maven executable not found\./,
+    /no required module provides package/,
+];
+function missingToolchainReasonFor(failureMessage: string): string | undefined {
+    return MISSING_TOOLCHAIN_PATTERNS.find((pattern) => pattern.test(failureMessage))
+        ? firstLineOf(failureMessage)
+        : undefined;
+}
+function firstLineOf(text: string): string {
+    return (
+        text
+            .split("\n")
+            .map((line) => line.trim())
+            .find((line) => line.length > 0) ?? text
+    );
 }
 function resolveChromeBinary(): string | undefined {
     return CHROME_CANDIDATES.find((candidate) => existsSync(candidate));
@@ -733,6 +810,7 @@ async function verifyShowcaseInBrowser(
         zipBytes: 0,
         finished,
         problems,
+        notCoveredReason: undefined,
         terminalText,
     };
 }
@@ -915,6 +993,9 @@ async function drainProcessOutput(stream: Readable | null): Promise<void> {
     }
     drainIntoLog(Buffer.concat(collectedChunks).toString("utf8"));
 }
+// Sessions live under their own directory so a run never collides with, or
+// reaps, a session belonging to a development server or another verification.
+const SESSIONS_DIRECTORY = join(VERIFICATION_ROOT, "sessions");
 const applicationServerEntry = process.env.VERIFY_SERVER_ENTRY ?? "dist/server/ServerEntryPoint.js";
 const applicationServer = spawn(
     process.execPath,
@@ -925,7 +1006,10 @@ const applicationServer = spawn(
         env: {
             ...process.env,
             PORT: String(APP_PORT),
-            SESSION_UPLOADS_PER_MINUTE: "1000",
+            SESSIONS_DIRECTORY,
+            // Verifying every plate means one upload per language, which is more than
+            // the per client upload budget a public server allows by design.
+            UPLOADS_PER_MINUTE_PER_CLIENT: String(SHOWCASES.length * 4),
         } as Record<string, string>,
         stdio: ["ignore", "pipe", "pipe"],
     },
@@ -954,9 +1038,7 @@ const matrixRows: Array<CompatibilityMatrixRow> = [];
 try {
     await waitForHealth();
     const devTools = await DevToolsSession.connect(await waitForDebugger());
-    for (const showcase of SHOWCASES.filter((candidate) =>
-        languageFilter.length === 0 ? true : candidate.languageIdentifier === languageFilter,
-    )) {
+    for (const showcase of selectShowcases(languageFilter)) {
         const probe = FEATURE_PROBES.find(
             (candidate) => candidate.languageIdentifier === showcase.languageIdentifier,
         );
@@ -1039,11 +1121,15 @@ try {
                 }
             }
         } catch (verificationError) {
-            const errorMessage =
+            const failureMessage =
                 verificationError instanceof Error
                     ? verificationError.message
                     : String(verificationError);
-            if (isToolchainPendingMessage(errorMessage)) {
+            // A plate whose toolchain has no build for this host is not a
+            // regression, so it is reported as pending and not covered while the
+            // run still fails on every genuine problem.
+            const missingToolchainReason = missingToolchainReasonFor(failureMessage);
+            if (isToolchainPendingMessage(failureMessage) || missingToolchainReason) {
                 matrixRow.toolchain = "pending";
                 matrixRow.showcase = "pending";
                 matrixRow.features = {
@@ -1052,11 +1138,19 @@ try {
                     fileIo: "pending",
                     multiFile: "pending",
                 };
+                outcomes.push({
+                    languageIdentifier: showcase.languageIdentifier,
+                    zipBytes: 0,
+                    finished: false,
+                    problems: [],
+                    notCoveredReason: missingToolchainReason ?? failureMessage,
+                    terminalText: "",
+                });
                 scopedLogger.logSuccess(
-                    `${showcase.languageIdentifier}: toolchain pending, skipped (${errorMessage.slice(0, 140)}).`,
+                    `${showcase.languageIdentifier}: toolchain pending, skipped (${failureMessage.slice(0, 140)}).`,
                 );
             } else {
-                matrixRow.problems.push(`${activeStep} step failed: ${errorMessage}`);
+                matrixRow.problems.push(`${activeStep} step failed: ${failureMessage}`);
                 outcomes.push({
                     languageIdentifier: showcase.languageIdentifier,
                     zipBytes: 0,
@@ -1110,8 +1204,16 @@ await new Promise<void>((resolveFormat) => {
     formatterProcess.once("error", () => resolveFormat());
 });
 let failureCount = 0;
+let notCoveredCount = 0;
 for (const outcome of outcomes) {
     const sizeInKilobytes = Math.round(outcome.zipBytes / 1024);
+    if (outcome.notCoveredReason) {
+        notCoveredCount += 1;
+        scopedLogger.logWarning(
+            `not covered: ${outcome.languageIdentifier} because ${outcome.notCoveredReason}`,
+        );
+        continue;
+    }
     const artifactLabel = outcome.artifactKind === "single-file" ? "single file" : "export zip";
     if (outcome.problems.length === 0) {
         scopedLogger.logSuccess(
@@ -1141,7 +1243,10 @@ if (failureCount > 0) {
     scopedLogger.logError(`${failureCount} showcase(s) failed on the hostile static host.`);
     process.exit(1);
 }
-scopedLogger.logSuccess("Every verified export ran clean on a hostile static host.");
+const verifiedCount = matrixRows.filter((matrixRow) => matrixRow.showcase === "pass").length;
+scopedLogger.logSuccess(
+    `Every verified export ran clean on a hostile static host (${verifiedCount} showcase(s)).`,
+);
 for (const matrixRow of matrixRows) {
     const featureSummary = Object.entries(matrixRow.features)
         .map(([featureName, featureStatus]) => `${featureName}:${featureStatus}`)

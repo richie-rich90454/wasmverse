@@ -3,8 +3,9 @@ import type { BuildContextRecord } from "@sharedKernel/BuildContextRecord.ts";
 import type { CompilerStrategyContract } from "@serverAtelier/compilerStrategies/CompilerStrategyContract.ts";
 import { FileSystemOperations } from "@serverAtelier/utilities/FileSystemOperations.ts";
 import { ProcessRunner } from "@serverAtelier/utilities/ProcessRunner.ts";
-const WASM_PACK_BINARY_PATH = "./.tools/wasm-pack/wasm-pack.exe";
-const RUST_CARGO_BINARY_PATH = "./.tools/cargo/bin/cargo.exe";
+import { ToolchainLocator } from "@serverAtelier/utilities/ToolchainLocator.ts";
+const WASM_PACK_BINARY_PATH = "./.tools/wasm-pack/wasm-pack";
+const RUST_CARGO_BINARY_PATH = "./.tools/cargo/bin/cargo";
 const RUST_CARGO_DIRECTORY = "./.tools/cargo";
 const RUST_RUSTUP_DIRECTORY = "./.tools/rustup";
 const WASM_PACK_CACHE_DIRECTORY = "./.tools/wasm-pack-cache";
@@ -29,26 +30,40 @@ function packageNameForSession(sessionIdentifier: string): string {
 class WasmPackCompilerStrategy implements CompilerStrategyContract {
     private readonly processRunner: ProcessRunner;
     private readonly fileSystemOperations: FileSystemOperations;
+    private readonly toolchainLocator: ToolchainLocator;
     constructor(processRunner: ProcessRunner, fileSystemOperations: FileSystemOperations) {
         this.processRunner = processRunner;
         this.fileSystemOperations = fileSystemOperations;
+        this.toolchainLocator = new ToolchainLocator(fileSystemOperations);
     }
     async compileSourceInto(context: BuildContextRecord): Promise<void> {
-        if (!(await this.fileSystemOperations.pathExists(WASM_PACK_BINARY_PATH))) {
-            throw new Error(
-                "wasm-pack not found. Run pnpm run setup to provision ./.tools/wasm-pack/.",
-            );
-        }
-        if (!(await this.fileSystemOperations.pathExists(RUST_CARGO_BINARY_PATH))) {
-            throw new Error(
-                "Rust toolchain not found. Run pnpm run setup to provision ./.tools/cargo/.",
-            );
-        }
         await this.ensureCargoProject(context);
-        const cargoHomeDirectory = resolve(process.cwd(), RUST_CARGO_DIRECTORY);
+        // The provisioned binary is preferred, but a wasm-pack on PATH is used
+        // when ./.tools/ was never populated, so the plate works without setup.
+        const wasmPackCommand = await this.toolchainLocator.resolveCommandVector(
+            WASM_PACK_BINARY_PATH,
+            "wasm-pack",
+            "wasm-pack",
+        );
+        const usesProvisionedWasmPack = wasmPackCommand[0] !== "wasm-pack";
+        let environmentOverrides: Record<string, string> | undefined;
+        if (usesProvisionedWasmPack) {
+            if (!(await this.toolchainLocator.resolveExistingPath(RUST_CARGO_BINARY_PATH))) {
+                throw new Error(
+                    "Rust toolchain not found. Run pnpm run setup to provision ./.tools/cargo/.",
+                );
+            }
+            const cargoHomeDirectory = resolve(process.cwd(), RUST_CARGO_DIRECTORY);
+            environmentOverrides = {
+                CARGO_HOME: cargoHomeDirectory,
+                RUSTUP_HOME: resolve(process.cwd(), RUST_RUSTUP_DIRECTORY),
+                WASM_PACK_CACHE: resolve(process.cwd(), WASM_PACK_CACHE_DIRECTORY),
+                PATH: `${resolve(cargoHomeDirectory, "bin")}${delimiter}${process.env.PATH ?? ""}`,
+            };
+        }
         const outcome = await this.processRunner.runToCompletion(
             [
-                WASM_PACK_BINARY_PATH,
+                ...wasmPackCommand,
                 "build",
                 context.sourceDirectory,
                 "--target",
@@ -60,12 +75,7 @@ class WasmPackCompilerStrategy implements CompilerStrategyContract {
             ],
             {
                 workingDirectory: context.sourceDirectory,
-                environmentOverrides: {
-                    CARGO_HOME: cargoHomeDirectory,
-                    RUSTUP_HOME: resolve(process.cwd(), RUST_RUSTUP_DIRECTORY),
-                    WASM_PACK_CACHE: resolve(process.cwd(), WASM_PACK_CACHE_DIRECTORY),
-                    PATH: `${resolve(cargoHomeDirectory, "bin")}${delimiter}${process.env.PATH ?? ""}`,
-                },
+                ...(environmentOverrides ? { environmentOverrides } : {}),
             },
         );
         if (outcome.exitCode !== 0) {

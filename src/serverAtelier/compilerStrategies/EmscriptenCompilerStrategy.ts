@@ -1,40 +1,42 @@
-import { resolve } from "node:path";
 import type { BuildContextRecord } from "@sharedKernel/BuildContextRecord.ts";
 import type { CompilerStrategyContract } from "@serverAtelier/compilerStrategies/CompilerStrategyContract.ts";
 import { FileSystemOperations } from "@serverAtelier/utilities/FileSystemOperations.ts";
 import { ProcessRunner } from "@serverAtelier/utilities/ProcessRunner.ts";
-const EMSCRIPTEN_COMPILER_CANDIDATE_PATHS: ReadonlyArray<string> =
-    process.platform === "win32"
-        ? [
-              "./.emsdk/upstream/emscripten/emcc.exe",
-              "./.emsdk/upstream/emscripten/emcc.bat",
-              "./.emsdk/upstream/emscripten/emcc",
-          ]
-        : ["./.emsdk/upstream/emscripten/emcc"];
+import { ToolchainLocator } from "@serverAtelier/utilities/ToolchainLocator.ts";
 class EmscriptenCompilerStrategy implements CompilerStrategyContract {
     private readonly processRunner: ProcessRunner;
     private readonly fileSystemOperations: FileSystemOperations;
-    private readonly emscriptenCompilerPath: string | undefined;
+    private readonly toolchainLocator: ToolchainLocator;
+    private readonly emscriptenCompilerPath: string;
     private readonly forceCppMode: boolean;
     constructor(
         processRunner: ProcessRunner,
         fileSystemOperations: FileSystemOperations,
-        emscriptenCompilerPath?: string,
+        emscriptenCompilerPath: string = "./.emsdk/upstream/emscripten/emcc",
         forceCppMode: boolean = false,
     ) {
         this.processRunner = processRunner;
         this.fileSystemOperations = fileSystemOperations;
+        this.toolchainLocator = new ToolchainLocator(fileSystemOperations);
         this.emscriptenCompilerPath = emscriptenCompilerPath;
         this.forceCppMode = forceCppMode;
     }
     async compileSourceInto(context: BuildContextRecord): Promise<void> {
-        const compilerPath = await this.resolveCompilerPath();
+        const emscriptenCompiler = await this.toolchainLocator.resolveCommandVector(
+            this.emscriptenCompilerPath,
+            "emcc",
+            "Emscripten",
+        );
         const compilationArguments = [
             "-O2",
             "-s",
             "WASM=1",
             "-s",
             "MODULARIZE=1",
+            // The glue loads the module with a dynamic `import()` and reads
+            // `.default`, which only exists when Emscripten emits an ES module.
+            // Without this the output is a CommonJS shim that a browser cannot
+            // import at all.
             "-s",
             "EXPORT_ES6=1",
             "-s",
@@ -45,39 +47,20 @@ class EmscriptenCompilerStrategy implements CompilerStrategyContract {
             "INVOKE_RUN=0",
             "-s",
             "ENVIRONMENT=web",
+            // C++ needs its runtime linked in, which C does not. `emcc` needs
+            // this switch; `em++` would set it implicitly.
             ...(this.forceCppMode ? ["-s", "DEFAULT_TO_CXX=1"] : []),
             context.entryFileRelativePath,
             "-o",
             `${context.runtimeDirectory}/app.js`,
         ];
-        const resolvedCompilerPath = resolve(process.cwd(), compilerPath);
         const outcome = await this.processRunner.runToCompletion(
-            process.platform === "win32" && compilerPath.endsWith(".bat")
-                ? ["cmd", "/c", resolvedCompilerPath, ...compilationArguments]
-                : [resolvedCompilerPath, ...compilationArguments],
+            [...emscriptenCompiler, ...compilationArguments],
             { workingDirectory: context.sourceDirectory },
         );
         if (outcome.exitCode !== 0) {
             throw new Error(`Emscripten compilation failed: ${outcome.standardError}`);
         }
-    }
-    private async resolveCompilerPath(): Promise<string> {
-        if (this.emscriptenCompilerPath) {
-            if (await this.fileSystemOperations.pathExists(this.emscriptenCompilerPath)) {
-                return this.emscriptenCompilerPath;
-            }
-            throw new Error(
-                "Emscripten compiler not found. Run pnpm run setup to provision ./.emsdk/.",
-            );
-        }
-        for (const candidatePath of EMSCRIPTEN_COMPILER_CANDIDATE_PATHS) {
-            if (await this.fileSystemOperations.pathExists(candidatePath)) {
-                return candidatePath;
-            }
-        }
-        throw new Error(
-            "Emscripten compiler not found. Run pnpm run setup to provision ./.emsdk/.",
-        );
     }
 }
 export { EmscriptenCompilerStrategy };

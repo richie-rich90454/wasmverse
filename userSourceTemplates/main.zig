@@ -23,7 +23,7 @@ fn parseSmall(text: []const u8) ParseError!u32 {
     return total;
 }
 
-pub fn main() void {
+pub export fn main() void {
     std.debug.print("WASMVerse Zig showcase\n", .{});
     std.debug.print("Stage one: compile-time squares:", .{});
     for (squares) |value| {
@@ -41,10 +41,7 @@ pub fn main() void {
         }
     }
     std.debug.print("Stage three: bounded sieve\n", .{});
-    var flags: [301]bool = undefined;
-    for (&flags) |*flag| {
-        flag.* = true;
-    }
+    var flags: [301]bool = @splat(true);
     flags[0] = false;
     flags[1] = false;
     var number: usize = 2;

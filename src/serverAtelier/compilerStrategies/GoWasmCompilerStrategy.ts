@@ -53,7 +53,13 @@ class GoWasmCompilerStrategy implements CompilerStrategyContract {
             },
         );
         if (outcome.exitCode !== 0) {
-            throw new Error(`Go WASM build failed: ${outcome.standardError}`);
+            // `go build` reports some failures, such as a contended build cache, on
+            // standard output only, so both streams are needed for a real reason.
+            const detail =
+                outcome.standardError.trim().length > 0
+                    ? outcome.standardError
+                    : outcome.standardOutput;
+            throw new Error(`Go WASM build failed: ${detail}`);
         }
     }
 }
