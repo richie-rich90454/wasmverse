@@ -1,7 +1,14 @@
+import { delimiter, resolve } from "node:path";
 import type { BuildContextRecord } from "@sharedKernel/BuildContextRecord.ts";
 import type { CompilerStrategyContract } from "@serverAtelier/compilerStrategies/CompilerStrategyContract.ts";
 import { FileSystemOperations } from "@serverAtelier/utilities/FileSystemOperations.ts";
 import { ProcessRunner } from "@serverAtelier/utilities/ProcessRunner.ts";
+import { ToolchainLocator } from "@serverAtelier/utilities/ToolchainLocator.ts";
+const WASM_PACK_BINARY_PATH = "./.tools/wasm-pack/wasm-pack";
+const RUST_CARGO_BINARY_PATH = "./.tools/cargo/bin/cargo";
+const RUST_CARGO_DIRECTORY = "./.tools/cargo";
+const RUST_RUSTUP_DIRECTORY = "./.tools/rustup";
+const WASM_PACK_CACHE_DIRECTORY = "./.tools/wasm-pack-cache";
 function cargoManifestText(packageName: string): string {
     return (
         "[package]\n" +
@@ -23,30 +30,53 @@ function packageNameForSession(sessionIdentifier: string): string {
 class WasmPackCompilerStrategy implements CompilerStrategyContract {
     private readonly processRunner: ProcessRunner;
     private readonly fileSystemOperations: FileSystemOperations;
+    private readonly toolchainLocator: ToolchainLocator;
     constructor(processRunner: ProcessRunner, fileSystemOperations: FileSystemOperations) {
         this.processRunner = processRunner;
         this.fileSystemOperations = fileSystemOperations;
+        this.toolchainLocator = new ToolchainLocator(fileSystemOperations);
     }
     async compileSourceInto(context: BuildContextRecord): Promise<void> {
         await this.ensureCargoProject(context);
-        const wasmPackArguments = [
-            "build",
-            context.sourceDirectory,
-            "--target",
-            "web",
-            "--out-dir",
-            context.runtimeDirectory,
-            "--out-name",
-            "app",
-        ];
-        // `wasm-pack` is often absent but always runnable through `bunx`, so a
-        // missing binary is not fatal. Prefer a real binary and fall back to bunx,
-        // which downloads it on demand.
-        const hasWasmPackOnPath = await this.isWasmPackOnPath();
-        const wasmPackPrefix = hasWasmPackOnPath ? ["wasm-pack"] : ["bunx", "wasm-pack"];
+        // The provisioned binary is preferred, but a wasm-pack on PATH is used
+        // when ./.tools/ was never populated, so the plate works without setup.
+        const wasmPackCommand = await this.toolchainLocator.resolveCommandVector(
+            WASM_PACK_BINARY_PATH,
+            "wasm-pack",
+            "wasm-pack",
+        );
+        const usesProvisionedWasmPack = wasmPackCommand[0] !== "wasm-pack";
+        let environmentOverrides: Record<string, string> | undefined;
+        if (usesProvisionedWasmPack) {
+            if (!(await this.toolchainLocator.resolveExistingPath(RUST_CARGO_BINARY_PATH))) {
+                throw new Error(
+                    "Rust toolchain not found. Run pnpm run setup to provision ./.tools/cargo/.",
+                );
+            }
+            const cargoHomeDirectory = resolve(process.cwd(), RUST_CARGO_DIRECTORY);
+            environmentOverrides = {
+                CARGO_HOME: cargoHomeDirectory,
+                RUSTUP_HOME: resolve(process.cwd(), RUST_RUSTUP_DIRECTORY),
+                WASM_PACK_CACHE: resolve(process.cwd(), WASM_PACK_CACHE_DIRECTORY),
+                PATH: `${resolve(cargoHomeDirectory, "bin")}${delimiter}${process.env.PATH ?? ""}`,
+            };
+        }
         const outcome = await this.processRunner.runToCompletion(
-            [...wasmPackPrefix, ...wasmPackArguments],
-            { workingDirectory: context.sourceDirectory },
+            [
+                ...wasmPackCommand,
+                "build",
+                context.sourceDirectory,
+                "--target",
+                "web",
+                "--out-dir",
+                context.runtimeDirectory,
+                "--out-name",
+                "app",
+            ],
+            {
+                workingDirectory: context.sourceDirectory,
+                ...(environmentOverrides ? { environmentOverrides } : {}),
+            },
         );
         if (outcome.exitCode !== 0) {
             const detail =
@@ -54,17 +84,6 @@ class WasmPackCompilerStrategy implements CompilerStrategyContract {
                     ? outcome.standardError
                     : outcome.standardOutput;
             throw new Error(`wasm-pack build failed: ${detail}`);
-        }
-    }
-    private async isWasmPackOnPath(): Promise<boolean> {
-        try {
-            const probe = await this.processRunner.runToCompletion([
-                process.platform === "win32" ? "where" : "which",
-                "wasm-pack",
-            ]);
-            return probe.exitCode === 0;
-        } catch {
-            return false;
         }
     }
     private async ensureCargoProject(context: BuildContextRecord): Promise<void> {

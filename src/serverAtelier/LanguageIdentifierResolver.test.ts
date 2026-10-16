@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test } from "vitest";
 import type { LanguageIdentifier } from "@sharedKernel/LanguageIdentifier.ts";
 import { LanguageIdentifierResolver } from "@serverAtelier/LanguageIdentifierResolver.ts";
 describe("LanguageIdentifierResolver", () => {
@@ -7,8 +7,18 @@ describe("LanguageIdentifierResolver", () => {
         const expectedPairs: Array<[string, LanguageIdentifier]> = [
             ["main.py", "python"],
             ["main.rb", "ruby"],
+            ["main.pl", "perl"],
+            ["helper.pm", "perl"],
+            ["main.pro", "prolog"],
+            ["main.pas", "pascal"],
+            ["main.cob", "cobol"],
+            ["main.f90", "fortran"],
             ["main.lua", "lua"],
             ["main.php", "php"],
+            ["Main.res", "rescript"],
+            ["Main.purs", "purescript"],
+            ["main.gleam", "gleam"],
+            ["Main.hx", "haxe"],
             ["main.rs", "rust"],
             ["main.c", "c"],
             ["main.cpp", "cpp"],
@@ -19,9 +29,14 @@ describe("LanguageIdentifierResolver", () => {
             ["main.dart", "dart"],
             ["Main.java", "java"],
             ["Program.cs", "csharp"],
-            ["main.ts", "assemblyscript"],
+            ["main.as", "assemblyscript"],
             ["main.ml", "ocaml"],
             ["main.hs", "haskell"],
+            ["main.js", "javascript"],
+            ["main.mjs", "javascript"],
+            ["main.ts", "typescript"],
+            ["main.mts", "typescript"],
+            ["main.sql", "sql"],
         ];
         for (const [fileName, language] of expectedPairs) {
             expect(resolver.resolveFromFileName(fileName)).toBe(language);

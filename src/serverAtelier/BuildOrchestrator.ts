@@ -1,3 +1,4 @@
+import { unzipSync } from "fflate";
 import type { SessionDescriptorRecord } from "@sharedKernel/SessionDescriptorRecord.ts";
 import { LanguageIdentifierResolver } from "@serverAtelier/LanguageIdentifierResolver.ts";
 import { SessionRegistry } from "@serverAtelier/SessionRegistry.ts";
@@ -5,6 +6,7 @@ import { ZipArchiveExtractor } from "@serverAtelier/ZipArchiveExtractor.ts";
 import { LanguagePluginRegistry } from "@serverAtelier/pluginHost/LanguagePluginRegistry.ts";
 import { FileSystemOperations } from "@serverAtelier/utilities/FileSystemOperations.ts";
 import { ScopedLogger } from "@serverAtelier/ScopedLogger.ts";
+import { detectEntryFile } from "@serverAtelier/utilities/EntryFileAutoDetector.ts";
 class BuildOrchestrator {
     private readonly languageIdentifierResolver: LanguageIdentifierResolver;
     private readonly sessionRegistry: SessionRegistry;
@@ -30,13 +32,19 @@ class BuildOrchestrator {
     async produceBuildOutcome(
         zipBuffer: Uint8Array,
         entryFileName: string,
+        programArguments: ReadonlyArray<string> = [],
     ): Promise<SessionDescriptorRecord> {
+        const normalizedEntryName = entryFileName.replace(/\\/g, "/").replace(/^\/+/, "").trim();
+        const effectiveEntryName =
+            normalizedEntryName.length > 0
+                ? normalizedEntryName
+                : this.detectEntryNameFromArchive(zipBuffer);
         const languageIdentifier =
-            this.languageIdentifierResolver.resolveFromFileName(entryFileName);
-        const normalizedEntryName = entryFileName.replace(/\\/g, "/").replace(/^\/+/, "");
+            this.languageIdentifierResolver.resolveFromFileName(effectiveEntryName);
         const sessionRecord = await this.sessionRegistry.allocateSession(
             languageIdentifier,
-            normalizedEntryName,
+            effectiveEntryName,
+            programArguments,
         );
         try {
             const extraction = await this.zipArchiveExtractor.extractInto(
@@ -45,13 +53,14 @@ class BuildOrchestrator {
             );
             const resolvedEntryPath = this.resolveEntryFilePath(
                 extraction.includedFileRelativePaths,
-                normalizedEntryName,
+                effectiveEntryName,
             );
             if (!resolvedEntryPath) {
                 throw new Error(
-                    `Entry file ${normalizedEntryName} not found in archive. Included files: ${extraction.includedFileRelativePaths.join(", ") || "(none)"}.`,
+                    `Entry file ${effectiveEntryName} not found in archive. Included files: ${extraction.includedFileRelativePaths.join(", ") || "(none)"}.`,
                 );
             }
+            sessionRecord.assignEntryFile(resolvedEntryPath);
             const pluginInstance = this.languagePluginRegistry.findByIdentifier(languageIdentifier);
             await pluginInstance.buildIntoSession({
                 sessionIdentifier: sessionRecord.sessionIdentifier,
@@ -60,6 +69,7 @@ class BuildOrchestrator {
                 runtimeDirectory: sessionRecord.runtimeDirectory,
                 userCodeDirectory: sessionRecord.userCodeDirectory,
                 entryFileRelativePath: resolvedEntryPath,
+                programArguments,
                 languageIdentifier,
             });
             this.scopedLogger.logSuccess(
@@ -69,12 +79,25 @@ class BuildOrchestrator {
                 sessionIdentifier: sessionRecord.sessionIdentifier,
                 languageIdentifier: sessionRecord.languageIdentifier,
                 entryFileRelativePath: resolvedEntryPath,
+                programArguments,
                 creationTimestamp: sessionRecord.creationTimestamp,
             };
         } catch (buildError) {
             await this.sessionRegistry.releaseSession(sessionRecord.sessionIdentifier);
             throw buildError;
         }
+    }
+    private detectEntryNameFromArchive(zipBuffer: Uint8Array): string {
+        const archiveFilePaths = Object.keys(unzipSync(zipBuffer))
+            .map((entryName) => entryName.replace(/\\/g, "/"))
+            .filter((entryName) => entryName.length > 0 && !entryName.endsWith("/"));
+        const detectedEntryName = detectEntryFile(archiveFilePaths);
+        if (detectedEntryName.length === 0) {
+            throw new Error(
+                "No entry file could be detected in the archive. Name the entry file explicitly.",
+            );
+        }
+        return detectedEntryName;
     }
     private resolveEntryFilePath(
         includedFileRelativePaths: ReadonlyArray<string>,

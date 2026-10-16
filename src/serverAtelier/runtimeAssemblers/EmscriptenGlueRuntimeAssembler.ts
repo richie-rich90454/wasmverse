@@ -1,5 +1,6 @@
 import type { BuildContextRecord } from "@sharedKernel/BuildContextRecord.ts";
 import type { RuntimeAssetAssemblerContract } from "@serverAtelier/runtimeAssemblers/RuntimeAssetAssemblerContract.ts";
+import { EMBEDDED_ASSET_RESOLVER_GLUE_SOURCE } from "@serverAtelier/runtimeAssemblers/EmbeddedAssetResolverGlue.ts";
 import { FileSystemOperations } from "@serverAtelier/utilities/FileSystemOperations.ts";
 class EmscriptenGlueRuntimeAssembler implements RuntimeAssetAssemblerContract {
     private readonly fileSystemOperations: FileSystemOperations;
@@ -10,7 +11,8 @@ class EmscriptenGlueRuntimeAssembler implements RuntimeAssetAssemblerContract {
         await this.fileSystemOperations.ensureDirectoryExists(context.runtimeDirectory);
         await this.fileSystemOperations.writeTextFile(
             `${context.runtimeDirectory}/emscripten-loader.js`,
-            "export async function loadEmscriptenModule(baseUrl){ const factory = (await import(`${baseUrl}/app.js`)).default; return factory({ locateFile: (fileName) => `${baseUrl}/${fileName}` }); }\n",
+            `${EMBEDDED_ASSET_RESOLVER_GLUE_SOURCE}\n` +
+                "export async function loadEmscriptenModule(baseUrl, overrides){ const factory = (await import(resolve(`${baseUrl}/app.js`))).default; return factory({ locateFile: (fileName) => resolve(`${baseUrl}/${fileName}`), ...overrides }); }\n",
         );
     }
 }

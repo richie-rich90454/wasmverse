@@ -1,31 +1,55 @@
+import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
-import { mkdir, rm, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { createServer } from "node:http";
+import type { IncomingMessage, Server, ServerResponse } from "node:http";
+import { isAbsolute, join, relative, resolve } from "node:path";
 import { tmpdir } from "node:os";
+import type { Readable } from "node:stream";
 import { unzipSync, zipSync } from "fflate";
 import { ScopedLogger } from "@serverAtelier/ScopedLogger.ts";
+import {
+    FEATURE_PROBES,
+    type FeatureName,
+    type FeatureProbeDefinition,
+} from "./FeatureProbeCatalog.ts";
 const scopedLogger = new ScopedLogger("VerifyStaticExports");
 const languageFilter = process.argv[2] ?? "";
-const VERIFICATION_ROOT = join(tmpdir(), `wasmverse-export-verification-${process.pid}`);
+const VERIFICATION_ROOT = join(
+    tmpdir(),
+    process.env.VERIFY_ROOT_NAME ?? `wasmverse-export-verification-${process.pid}`,
+);
 /**
  * Every run claims its own ports. Sharing them means a server, static host, or
  * Chrome left behind by an interrupted run makes the next one die with
  * EADDRINUSE, and a shared staging directory makes it die with EBUSY, both
  * before a single language is tested.
  */
-function claimEphemeralPort(): number {
-    const probe = Bun.serve({ port: 0, fetch: () => new Response("probe") });
-    const claimedPort = probe.port ?? 0;
-    probe.stop(true);
-    if (claimedPort === 0) {
-        throw new Error("Could not claim a free port for the export verification.");
-    }
-    return claimedPort;
+async function claimEphemeralPort(): Promise<number> {
+    return await new Promise<number>((resolvePort, rejectPort) => {
+        const probe = createServer();
+        probe.once("error", rejectPort);
+        probe.listen(0, "127.0.0.1", () => {
+            const probeAddress = probe.address();
+            const claimedPort =
+                typeof probeAddress === "object" && probeAddress !== null ? probeAddress.port : 0;
+            probe.close(() => {
+                if (claimedPort === 0) {
+                    rejectPort(
+                        new Error("Could not claim a free port for the export verification."),
+                    );
+                    return;
+                }
+                resolvePort(claimedPort);
+            });
+        });
+    });
 }
-const APP_PORT = claimEphemeralPort();
-const HOST_PORT = claimEphemeralPort();
-const DEBUGGER_PORT = claimEphemeralPort();
+const APP_PORT = Number(process.env.VERIFY_APP_PORT ?? (await claimEphemeralPort()));
+const HOST_PORT = Number(process.env.VERIFY_HOST_PORT ?? (await claimEphemeralPort()));
+const DEBUGGER_PORT = Number(process.env.VERIFY_DEBUGGER_PORT ?? (await claimEphemeralPort()));
 const CHROME_CANDIDATES = [
+    join(process.cwd(), ".tools/chrome-for-testing/chrome.exe"),
     "C:/Program Files/Google/Chrome/Application/chrome.exe",
     "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe",
     "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe",
@@ -47,44 +71,353 @@ interface ShowcaseUnderTest {
     entryFileName: string;
     budgetMilliseconds: number;
 }
-/**
- * Every showcase under test, one per supported language. The verifier now attempts
- * all seventeen and reports the ones whose toolchain is genuinely absent, so a
- * plate cannot silently fall out of coverage.
- */
-const SHOWCASE_SPECIFICATIONS: ReadonlyArray<ShowcaseUnderTest> = [
-    { languageIdentifier: "python", entryFileName: "main.py", budgetMilliseconds: 150_000 },
-    { languageIdentifier: "ruby", entryFileName: "main.rb", budgetMilliseconds: 150_000 },
-    { languageIdentifier: "lua", entryFileName: "main.lua", budgetMilliseconds: 90_000 },
-    { languageIdentifier: "php", entryFileName: "main.php", budgetMilliseconds: 120_000 },
-    { languageIdentifier: "rust", entryFileName: "main.rs", budgetMilliseconds: 180_000 },
-    { languageIdentifier: "c", entryFileName: "main.c", budgetMilliseconds: 180_000 },
-    { languageIdentifier: "cpp", entryFileName: "main.cpp", budgetMilliseconds: 180_000 },
-    { languageIdentifier: "go", entryFileName: "main.go", budgetMilliseconds: 90_000 },
-    { languageIdentifier: "zig", entryFileName: "main.zig", budgetMilliseconds: 120_000 },
-    { languageIdentifier: "swift", entryFileName: "main.swift", budgetMilliseconds: 240_000 },
-    { languageIdentifier: "kotlin", entryFileName: "main.kt", budgetMilliseconds: 300_000 },
-    { languageIdentifier: "dart", entryFileName: "main.dart", budgetMilliseconds: 120_000 },
-    { languageIdentifier: "java", entryFileName: "Main.java", budgetMilliseconds: 180_000 },
-    { languageIdentifier: "csharp", entryFileName: "Program.cs", budgetMilliseconds: 300_000 },
-    { languageIdentifier: "assemblyscript", entryFileName: "main.ts", budgetMilliseconds: 90_000 },
-    { languageIdentifier: "ocaml", entryFileName: "main.ml", budgetMilliseconds: 240_000 },
-    { languageIdentifier: "haskell", entryFileName: "main.hs", budgetMilliseconds: 240_000 },
+const TOOLCHAIN_PENDING_PATTERNS: ReadonlyArray<RegExp> = [
+    /Run pnpm run setup/,
+    /browser-wasm workload is not installed/,
+    /no local toolchain/,
+    /toolchain not found\./,
+    /dotnet SDK not found\./,
+    /Dart SDK not found\./,
+    /Emscripten compiler not found\./,
+    /Maven executable not found\./,
+    /no required module provides package/,
 ];
+const SHOWCASES: ReadonlyArray<ShowcaseUnderTest> = [
+    {
+        languageIdentifier: "python",
+        entryFileName: "main.py",
+        budgetMilliseconds: 150_000,
+    },
+    {
+        languageIdentifier: "r",
+        entryFileName: "main.r",
+        budgetMilliseconds: 300_000,
+    },
+    {
+        languageIdentifier: "clojurescript",
+        entryFileName: "main.cljs",
+        budgetMilliseconds: 150_000,
+    },
+    {
+        languageIdentifier: "scheme",
+        entryFileName: "main.scm",
+        budgetMilliseconds: 120_000,
+    },
+    {
+        languageIdentifier: "prolog",
+        entryFileName: "main.pro",
+        budgetMilliseconds: 120_000,
+    },
+    {
+        languageIdentifier: "ruby",
+        entryFileName: "main.rb",
+        budgetMilliseconds: 150_000,
+    },
+    {
+        languageIdentifier: "perl",
+        entryFileName: "main.pl",
+        budgetMilliseconds: 150_000,
+    },
+    {
+        languageIdentifier: "pascal",
+        entryFileName: "main.pas",
+        budgetMilliseconds: 90_000,
+    },
+    {
+        languageIdentifier: "cobol",
+        entryFileName: "main.cob",
+        budgetMilliseconds: 150_000,
+    },
+    {
+        languageIdentifier: "fortran",
+        entryFileName: "main.f90",
+        budgetMilliseconds: 90_000,
+    },
+    {
+        languageIdentifier: "lua",
+        entryFileName: "main.lua",
+        budgetMilliseconds: 90_000,
+    },
+    {
+        languageIdentifier: "scala",
+        entryFileName: "main.scala",
+        budgetMilliseconds: 150_000,
+    },
+    {
+        languageIdentifier: "fsharp",
+        entryFileName: "Main.fs",
+        budgetMilliseconds: 150_000,
+    },
+    {
+        languageIdentifier: "elm",
+        entryFileName: "Main.elm",
+        budgetMilliseconds: 120_000,
+    },
+    {
+        languageIdentifier: "php",
+        entryFileName: "main.php",
+        budgetMilliseconds: 120_000,
+    },
+    {
+        languageIdentifier: "rescript",
+        entryFileName: "Main.res",
+        budgetMilliseconds: 150_000,
+    },
+    {
+        languageIdentifier: "purescript",
+        entryFileName: "Main.purs",
+        budgetMilliseconds: 150_000,
+    },
+    {
+        languageIdentifier: "gleam",
+        entryFileName: "main.gleam",
+        budgetMilliseconds: 120_000,
+    },
+    {
+        languageIdentifier: "haxe",
+        entryFileName: "Main.hx",
+        budgetMilliseconds: 120_000,
+    },
+    {
+        languageIdentifier: "rust",
+        entryFileName: "main.rs",
+        budgetMilliseconds: 180_000,
+    },
+    {
+        languageIdentifier: "commonlisp",
+        entryFileName: "main.lisp",
+        budgetMilliseconds: 150_000,
+    },
+    {
+        languageIdentifier: "tcl",
+        entryFileName: "main.tcl",
+        budgetMilliseconds: 150_000,
+    },
+    {
+        languageIdentifier: "forth",
+        entryFileName: "main.fth",
+        budgetMilliseconds: 90_000,
+    },
+    {
+        languageIdentifier: "smalltalk",
+        entryFileName: "main.st",
+        budgetMilliseconds: 90_000,
+    },
+    {
+        languageIdentifier: "c",
+        entryFileName: "main.c",
+        budgetMilliseconds: 150_000,
+    },
+    {
+        languageIdentifier: "brainfuck",
+        entryFileName: "main.bf",
+        budgetMilliseconds: 60_000,
+    },
+    {
+        languageIdentifier: "befunge",
+        entryFileName: "main.bef",
+        budgetMilliseconds: 60_000,
+    },
+    {
+        languageIdentifier: "lolcode",
+        entryFileName: "main.lol",
+        budgetMilliseconds: 60_000,
+    },
+    {
+        languageIdentifier: "apl",
+        entryFileName: "main.apl",
+        budgetMilliseconds: 90_000,
+    },
+    {
+        languageIdentifier: "cpp",
+        entryFileName: "main.cpp",
+        budgetMilliseconds: 150_000,
+    },
+    {
+        languageIdentifier: "riscv",
+        entryFileName: "main.s",
+        budgetMilliseconds: 120_000,
+    },
+    {
+        languageIdentifier: "verilog",
+        entryFileName: "main.v",
+        budgetMilliseconds: 120_000,
+    },
+    {
+        languageIdentifier: "solidity",
+        entryFileName: "main.sol",
+        budgetMilliseconds: 180_000,
+    },
+    {
+        languageIdentifier: "vimscript",
+        entryFileName: "main.vim",
+        budgetMilliseconds: 180_000,
+    },
+    {
+        languageIdentifier: "go",
+        entryFileName: "main.go",
+        budgetMilliseconds: 90_000,
+    },
+    {
+        languageIdentifier: "logo",
+        entryFileName: "main.logo",
+        budgetMilliseconds: 60_000,
+    },
+    {
+        languageIdentifier: "gwbasic",
+        entryFileName: "main.bas",
+        budgetMilliseconds: 60_000,
+    },
+    {
+        languageIdentifier: "sml",
+        entryFileName: "main.sml",
+        budgetMilliseconds: 120_000,
+    },
+    {
+        languageIdentifier: "m6502",
+        entryFileName: "main.6502",
+        budgetMilliseconds: 60_000,
+    },
+    {
+        languageIdentifier: "zig",
+        entryFileName: "main.zig",
+        budgetMilliseconds: 90_000,
+    },
+    {
+        languageIdentifier: "swift",
+        entryFileName: "main.swift",
+        budgetMilliseconds: 120_000,
+    },
+    {
+        languageIdentifier: "kotlin",
+        entryFileName: "main.kt",
+        budgetMilliseconds: 150_000,
+    },
+    {
+        languageIdentifier: "dart",
+        entryFileName: "main.dart",
+        budgetMilliseconds: 120_000,
+    },
+    {
+        languageIdentifier: "java",
+        entryFileName: "Main.java",
+        budgetMilliseconds: 180_000,
+    },
+    {
+        languageIdentifier: "csharp",
+        entryFileName: "Program.cs",
+        budgetMilliseconds: 240_000,
+    },
+    {
+        languageIdentifier: "assemblyscript",
+        entryFileName: "main.as",
+        budgetMilliseconds: 90_000,
+    },
+    {
+        languageIdentifier: "ocaml",
+        entryFileName: "main.ml",
+        budgetMilliseconds: 150_000,
+    },
+    {
+        languageIdentifier: "haskell",
+        entryFileName: "main.hs",
+        budgetMilliseconds: 150_000,
+    },
+    {
+        languageIdentifier: "javascript",
+        entryFileName: "main.js",
+        budgetMilliseconds: 120_000,
+    },
+    {
+        languageIdentifier: "typescript",
+        entryFileName: "main.ts",
+        budgetMilliseconds: 120_000,
+    },
+    {
+        languageIdentifier: "sql",
+        entryFileName: "main.sql",
+        budgetMilliseconds: 120_000,
+    },
+    {
+        languageIdentifier: "duckdb",
+        entryFileName: "main.duckdb.sql",
+        budgetMilliseconds: 300_000,
+    },
+    {
+        languageIdentifier: "pglite",
+        entryFileName: "main.pglite.sql",
+        budgetMilliseconds: 300_000,
+    },
+    {
+        languageIdentifier: "awk",
+        entryFileName: "main.awk",
+        budgetMilliseconds: 120_000,
+    },
+    {
+        languageIdentifier: "jq",
+        entryFileName: "main.jq",
+        budgetMilliseconds: 120_000,
+    },
+    {
+        languageIdentifier: "bash",
+        entryFileName: "main.sh",
+        budgetMilliseconds: 120_000,
+    },
+];
+function isToolchainPendingMessage(message: string): boolean {
+    return TOOLCHAIN_PENDING_PATTERNS.some((pattern) => pattern.test(message));
+}
+type FeatureStatus = "pass" | "fail" | "unsupported" | "pending";
+interface CompatibilityMatrixRow {
+    languageIdentifier: string;
+    toolchain: "ready" | "pending";
+    showcase: "pass" | "fail" | "pending";
+    features: Record<string, FeatureStatus>;
+    exportBytes: number;
+    problems: Array<string>;
+}
+interface CompatibilityMatrixDocument {
+    generatedAt: string;
+    source: string;
+    languages: ReadonlyArray<CompatibilityMatrixRow>;
+}
+function probeFeatureStatuses(
+    probe: FeatureProbeDefinition,
+    terminalText: string,
+): Record<string, FeatureStatus> {
+    const featureStatuses: Record<string, FeatureStatus> = {};
+    const featureLineMarkers: ReadonlyArray<[FeatureName, string]> = [
+        ["stdin", "greet:"],
+        ["multiFile", "greet:"],
+        ["arguments", "arg0:"],
+        ["fileIo", "file:"],
+    ];
+    for (const [featureName, lineMarker] of featureLineMarkers) {
+        if (probe.unsupportedFeatures.some((entry) => entry.feature === featureName)) {
+            featureStatuses[featureName] = "unsupported";
+            continue;
+        }
+        if (!probe.exercisedFeatures.includes(featureName)) {
+            continue;
+        }
+        featureStatuses[featureName] = terminalText.includes(lineMarker) ? "pass" : "fail";
+    }
+    return featureStatuses;
+}
 /**
  * Asking for a language that has no showcase is a typo, so reject it loudly rather
  * than reporting an empty pass.
  */
 function selectShowcases(languageFilter: string): ReadonlyArray<ShowcaseUnderTest> {
     if (languageFilter.length === 0) {
-        return SHOWCASE_SPECIFICATIONS;
+        return SHOWCASES;
     }
-    const matchedShowcase = SHOWCASE_SPECIFICATIONS.find(
+    const matchedShowcase = SHOWCASES.find(
         (showcase) => showcase.languageIdentifier === languageFilter,
     );
     if (!matchedShowcase) {
         throw new Error(
-            `No showcase is defined for "${languageFilter}". Known languages: ${SHOWCASE_SPECIFICATIONS.map((showcase) => showcase.languageIdentifier).join(", ")}.`,
+            `No showcase is defined for "${languageFilter}". Known languages: ${SHOWCASES.map((showcase) => showcase.languageIdentifier).join(", ")}.`,
         );
     }
     return [matchedShowcase];
@@ -94,8 +427,9 @@ interface VerificationOutcome {
     zipBytes: number;
     finished: boolean;
     problems: Array<string>;
-    notCoveredReason: string | undefined;
+    notCoveredReason?: string;
     terminalText: string;
+    artifactKind?: "zip" | "single-file";
 }
 /**
  * Toolchains that exist for some hosts and not others. A build that stops on one
@@ -142,6 +476,7 @@ class DevToolsSession {
     private readonly requestUrls: Map<string, string> = new Map();
     private nextCallId = 1;
     readonly browserProblems: Array<string> = [];
+    readonly requestLog: Array<string> = [];
     private constructor(socket: WebSocket) {
         this.socket = socket;
     }
@@ -232,6 +567,7 @@ class DevToolsSession {
         if (method === "Network.requestWillBeSent") {
             const details = params as { requestId: string; request: { url: string } };
             this.requestUrls.set(details.requestId, details.request.url);
+            this.requestLog.push(details.request.url);
             return;
         }
         if (method === "Network.loadingFailed") {
@@ -263,7 +599,7 @@ async function waitForHealth(): Promise<void> {
         } catch {
             // The server is still binding its port.
         }
-        await Bun.sleep(500);
+        await new Promise((resolve) => setTimeout(resolve, 500));
     }
     throw new Error("The application server never became healthy.");
 }
@@ -278,14 +614,12 @@ async function waitForDebugger(): Promise<string> {
         } catch {
             // The browser is still opening its debugging port.
         }
-        await Bun.sleep(500);
+        await new Promise((resolve) => setTimeout(resolve, 500));
     }
     throw new Error("The browser never opened its debugging port.");
 }
 async function buildSessionFor(showcase: ShowcaseUnderTest): Promise<string> {
-    const templateBytes = await Bun.file(
-        `./userSourceTemplates/${showcase.entryFileName}`,
-    ).arrayBuffer();
+    const templateBytes = await readFile(`./userSourceTemplates/${showcase.entryFileName}`);
     const archiveBytes = zipSync({ [showcase.entryFileName]: new Uint8Array(templateBytes) });
     const formData = new FormData();
     formData.append(
@@ -307,6 +641,36 @@ async function buildSessionFor(showcase: ShowcaseUnderTest): Promise<string> {
     }
     return payload.sessionIdentifier;
 }
+async function buildProbeSession(probe: FeatureProbeDefinition): Promise<string> {
+    const archiveEntries: Record<string, Uint8Array> = {};
+    const textEncoder = new TextEncoder();
+    for (const [relativePath, fileContent] of Object.entries(probe.sourceFiles)) {
+        archiveEntries[relativePath] = textEncoder.encode(fileContent);
+    }
+    const archiveBytes = zipSync(archiveEntries);
+    const formData = new FormData();
+    formData.append(
+        "archive",
+        new File([archiveBytes], `${probe.entryFileName}.zip`, { type: "application/zip" }),
+    );
+    formData.append("entry", probe.entryFileName);
+    if (probe.programArguments.length > 0) {
+        formData.append("args", probe.programArguments.join("\n"));
+    }
+    const response = await fetch(`http://127.0.0.1:${APP_PORT}/api/session`, {
+        method: "POST",
+        body: formData,
+        signal: AbortSignal.timeout(600_000),
+    });
+    const payload = (await response.json()) as {
+        sessionIdentifier?: string;
+        errorMessage?: string;
+    };
+    if (!payload.sessionIdentifier) {
+        throw new Error(payload.errorMessage ?? "The probe upload failed without an identifier.");
+    }
+    return payload.sessionIdentifier;
+}
 async function fetchExportArchive(sessionIdentifier: string): Promise<Uint8Array> {
     const response = await fetch(`http://127.0.0.1:${APP_PORT}/api/export/${sessionIdentifier}`, {
         signal: AbortSignal.timeout(600_000),
@@ -317,11 +681,33 @@ async function fetchExportArchive(sessionIdentifier: string): Promise<Uint8Array
     }
     return new Uint8Array(await response.arrayBuffer());
 }
-async function stageExportArchive(
-    showcase: ShowcaseUnderTest,
-    archiveBytes: Uint8Array,
-): Promise<void> {
-    const languageDirectory = join(VERIFICATION_ROOT, showcase.languageIdentifier);
+async function fetchSingleFileExport(sessionIdentifier: string): Promise<string> {
+    const response = await fetch(
+        `http://127.0.0.1:${APP_PORT}/api/export/${sessionIdentifier}?format=html`,
+        { signal: AbortSignal.timeout(600_000) },
+    );
+    if (!response.ok) {
+        const failure = (await response.json()) as { errorMessage?: string };
+        throw new Error(
+            failure.errorMessage ?? `Single-file export request failed with ${response.status}.`,
+        );
+    }
+    const responseContentType = response.headers.get("content-type") ?? "";
+    if (!responseContentType.startsWith("text/html")) {
+        throw new Error(
+            `Single-file export returned content-type ${responseContentType || "unknown"}.`,
+        );
+    }
+    return await response.text();
+}
+async function stageSingleFileExport(directoryName: string, htmlText: string): Promise<void> {
+    const languageDirectory = join(VERIFICATION_ROOT, directoryName);
+    await rm(languageDirectory, { recursive: true, force: true });
+    await mkdir(languageDirectory, { recursive: true });
+    await writeFile(join(languageDirectory, "index.html"), htmlText);
+}
+async function stageExportArchive(directoryName: string, archiveBytes: Uint8Array): Promise<void> {
+    const languageDirectory = join(VERIFICATION_ROOT, directoryName);
     await rm(languageDirectory, { recursive: true, force: true });
     await mkdir(languageDirectory, { recursive: true });
     const entries = unzipSync(archiveBytes);
@@ -358,6 +744,8 @@ async function sendEnterKey(devTools: DevToolsSession, sessionId: string): Promi
 async function verifyShowcaseInBrowser(
     devTools: DevToolsSession,
     showcase: ShowcaseUnderTest,
+    pageUrl: string,
+    trackNetworkRequests: boolean = false,
 ): Promise<VerificationOutcome> {
     const problems: Array<string> = [];
     const targetCreation = (await devTools.call("Target.createTarget", {
@@ -373,18 +761,15 @@ async function verifyShowcaseInBrowser(
     await devTools.call("Log.enable", {}, sessionId);
     await devTools.call("Network.enable", {}, sessionId);
     const problemBaseline = devTools.browserProblems.length;
-    await devTools.call(
-        "Page.navigate",
-        { url: `http://127.0.0.1:${HOST_PORT}/${showcase.languageIdentifier}/index.html` },
-        sessionId,
-    );
+    const requestBaseline = devTools.requestLog.length;
+    await devTools.call("Page.navigate", { url: pageUrl }, sessionId);
     const deadline = Date.now() + showcase.budgetMilliseconds;
     let terminalText = "";
     let enterPresses = 0;
     let lastTerminalText = "";
     let lastChangeAt = Date.now();
     while (Date.now() < deadline) {
-        await Bun.sleep(400);
+        await new Promise((resolve) => setTimeout(resolve, 400));
         terminalText = await readTerminalText(devTools, sessionId);
         if (terminalText.includes("Showcase complete.")) {
             break;
@@ -404,6 +789,17 @@ async function verifyShowcaseInBrowser(
     }
     if (terminalText.includes("Error:")) {
         problems.push(`the terminal reported an error: ${firstMeaningfulLine(terminalText)}`);
+    }
+    if (trackNetworkRequests) {
+        for (const requestUrl of devTools.requestLog.slice(requestBaseline)) {
+            if (!requestUrl.startsWith("http:") && !requestUrl.startsWith("https:")) {
+                continue;
+            }
+            if (requestUrl === pageUrl) {
+                continue;
+            }
+            problems.push(`the single-file export requested an external asset: ${requestUrl}`);
+        }
     }
     for (const problem of devTools.browserProblems.slice(problemBaseline)) {
         problems.push(problem);
@@ -425,29 +821,146 @@ function firstMeaningfulLine(terminalText: string): string {
         .find((line) => line.startsWith("Error:"));
     return errorLine ?? "unknown error";
 }
-function startHostileStaticHost(): ReturnType<typeof Bun.serve<unknown>> {
-    return Bun.serve({
-        port: HOST_PORT,
-        async fetch(request: Request): Promise<Response> {
-            const requestUrl = new URL(request.url);
-            const relativePath = decodeURIComponent(requestUrl.pathname).replace(/^\/+/, "");
-            const resolvedPath = relativePath.length === 0 ? "index.html" : relativePath;
-            const absolutePath = join(VERIFICATION_ROOT, resolvedPath);
-            if (!absolutePath.startsWith(VERIFICATION_ROOT)) {
-                return new Response("Forbidden", { status: 403 });
+async function sendText(devTools: DevToolsSession, sessionId: string, text: string): Promise<void> {
+    for (const character of text) {
+        const virtualKeyCode = character.toUpperCase().charCodeAt(0);
+        await devTools.call(
+            "Input.dispatchKeyEvent",
+            {
+                type: "char",
+                text: character,
+                unmodifiedText: character,
+                key: character,
+                code: "",
+                windowsVirtualKeyCode: virtualKeyCode,
+                nativeVirtualKeyCode: virtualKeyCode,
+                keyCode: virtualKeyCode,
+            },
+            sessionId,
+        );
+    }
+}
+async function verifyProbeInBrowser(
+    devTools: DevToolsSession,
+    probe: FeatureProbeDefinition,
+    directoryName: string,
+    budgetMilliseconds: number,
+): Promise<{ terminalText: string; problems: Array<string> }> {
+    const problems: Array<string> = [];
+    const targetCreation = (await devTools.call("Target.createTarget", {
+        url: "about:blank",
+    })) as { targetId: string };
+    const attachment = (await devTools.call("Target.attachToTarget", {
+        targetId: targetCreation.targetId,
+        flatten: true,
+    })) as { sessionId: string };
+    const sessionId = attachment.sessionId;
+    await devTools.call("Page.enable", {}, sessionId);
+    await devTools.call("Runtime.enable", {}, sessionId);
+    await devTools.call("Log.enable", {}, sessionId);
+    await devTools.call("Network.enable", {}, sessionId);
+    const problemBaseline = devTools.browserProblems.length;
+    await devTools.call(
+        "Page.navigate",
+        { url: `http://127.0.0.1:${HOST_PORT}/${directoryName}/index.html` },
+        sessionId,
+    );
+    const deadline = Date.now() + budgetMilliseconds;
+    let terminalText = "";
+    let lastTerminalText = "";
+    let lastChangeAt = Date.now();
+    let answersSent = 0;
+    while (Date.now() < deadline) {
+        await new Promise((resolve) => setTimeout(resolve, 400));
+        terminalText = await readTerminalText(devTools, sessionId);
+        if (terminalText.includes("PROBE-DONE")) {
+            break;
+        }
+        if (terminalText !== lastTerminalText) {
+            lastTerminalText = terminalText;
+            lastChangeAt = Date.now();
+            continue;
+        }
+        if (Date.now() - lastChangeAt > 1500) {
+            if (answersSent < probe.terminalAnswers.length) {
+                const answerText = probe.terminalAnswers[answersSent] as string;
+                answersSent += 1;
+                let answerEchoed = false;
+                for (let typingAttempt = 0; typingAttempt < 3 && !answerEchoed; typingAttempt++) {
+                    await sendText(devTools, sessionId, answerText);
+                    await new Promise((resolve) => setTimeout(resolve, 350));
+                    const echoCheckText = await readTerminalText(devTools, sessionId);
+                    answerEchoed = echoCheckText.includes(answerText);
+                }
+                await sendEnterKey(devTools, sessionId);
+            } else if (answersSent < probe.terminalAnswers.length + 2) {
+                answersSent += 1;
+                await sendEnterKey(devTools, sessionId);
+            } else {
+                break;
             }
-            const assetFile = Bun.file(absolutePath);
-            if (!(await assetFile.exists())) {
-                return new Response("Not found", { status: 404 });
-            }
-            return new Response(assetFile, {
-                headers: {
-                    "content-type": contentTypeFor(resolvedPath),
-                    "x-content-type-options": "nosniff",
-                },
-            });
-        },
-    });
+            lastChangeAt = Date.now();
+        }
+    }
+    if (!terminalText.includes("PROBE-DONE")) {
+        problems.push("the probe never reached its final line");
+    }
+    if (terminalText.includes("Error:")) {
+        problems.push(`the terminal reported an error: ${firstMeaningfulLine(terminalText)}`);
+    }
+    for (const expectedLine of probe.expectedLines) {
+        if (!terminalText.includes(expectedLine)) {
+            problems.push(`missing expected line: ${expectedLine}`);
+        }
+    }
+    for (const problem of devTools.browserProblems.slice(problemBaseline)) {
+        problems.push(problem);
+    }
+    await devTools.call("Target.closeTarget", { targetId: targetCreation.targetId });
+    return { terminalText, problems };
+}
+class HostileStaticHost {
+    private readonly server: Server;
+    private constructor(server: Server) {
+        this.server = server;
+    }
+    static async start(port: number): Promise<HostileStaticHost> {
+        const staticHost = new HostileStaticHost(createServer());
+        staticHost.server.on("request", (request, response) => {
+            void staticHost.respond(request, response);
+        });
+        await new Promise<void>((resolveListening, rejectListening) => {
+            staticHost.server.once("listening", () => resolveListening());
+            staticHost.server.once("error", (listenError: Error) => rejectListening(listenError));
+            staticHost.server.listen(port);
+        });
+        return staticHost;
+    }
+    stop(): void {
+        this.server.close();
+        this.server.closeAllConnections();
+    }
+    private async respond(request: IncomingMessage, response: ServerResponse): Promise<void> {
+        const requestUrl = new URL(request.url ?? "/", "http://127.0.0.1");
+        const relativePath = decodeURIComponent(requestUrl.pathname).replace(/^\/+/, "");
+        const resolvedPath = relativePath.length === 0 ? "index.html" : relativePath;
+        const absolutePath = resolve(VERIFICATION_ROOT, resolvedPath);
+        const pathFromRoot = relative(VERIFICATION_ROOT, absolutePath);
+        if (pathFromRoot.startsWith("..") || isAbsolute(pathFromRoot)) {
+            response.writeHead(403).end("Forbidden");
+            return;
+        }
+        const assetBytes = await readFile(absolutePath).catch(() => undefined);
+        if (!assetBytes) {
+            response.writeHead(404).end("Not found");
+            return;
+        }
+        response.writeHead(200, {
+            "content-type": contentTypeFor(resolvedPath),
+            "x-content-type-options": "nosniff",
+        });
+        response.end(assetBytes);
+    }
 }
 const chromeBinary = resolveChromeBinary();
 if (!chromeBinary) {
@@ -470,35 +983,45 @@ function drainIntoLog(text: string): void {
         }
     }
 }
-async function drainProcessOutput(stream: ReadableStream<Uint8Array> | undefined): Promise<void> {
+async function drainProcessOutput(stream: Readable | null): Promise<void> {
     if (!stream) {
         return;
     }
-    drainIntoLog(await new Response(stream).text());
+    const collectedChunks: Array<Buffer> = [];
+    for await (const chunk of stream) {
+        collectedChunks.push(chunk as Buffer);
+    }
+    drainIntoLog(Buffer.concat(collectedChunks).toString("utf8"));
 }
 // Sessions live under their own directory so a run never collides with, or
 // reaps, a session belonging to a development server or another verification.
 const SESSIONS_DIRECTORY = join(VERIFICATION_ROOT, "sessions");
-const applicationServer = Bun.spawn(["bun", "dist/server/ServerEntryPoint.js"], {
-    env: {
-        ...process.env,
-        PORT: String(APP_PORT),
-        SESSIONS_DIRECTORY,
-        // Verifying every plate means one upload per language, which is more than
-        // the per client upload budget a public server allows by design.
-        UPLOADS_PER_MINUTE_PER_CLIENT: String(SHOWCASE_SPECIFICATIONS.length * 4),
-    } as Record<string, string>,
-    stdout: "pipe",
-    stderr: "pipe",
-});
+const applicationServerEntry = process.env.VERIFY_SERVER_ENTRY ?? "dist/server/ServerEntryPoint.js";
+const applicationServer = spawn(
+    process.execPath,
+    applicationServerEntry.endsWith(".ts")
+        ? ["node_modules/tsx/dist/cli.mjs", applicationServerEntry]
+        : [applicationServerEntry],
+    {
+        env: {
+            ...process.env,
+            PORT: String(APP_PORT),
+            SESSIONS_DIRECTORY,
+            // Verifying every plate means one upload per language, which is more than
+            // the per client upload budget a public server allows by design.
+            UPLOADS_PER_MINUTE_PER_CLIENT: String(SHOWCASES.length * 4),
+        } as Record<string, string>,
+        stdio: ["ignore", "pipe", "pipe"],
+    },
+);
 const serverLogPump = Promise.all([
     drainProcessOutput(applicationServer.stdout),
     drainProcessOutput(applicationServer.stderr),
 ]);
-const staticHost = startHostileStaticHost();
-const browser = Bun.spawn(
+const staticHost = await HostileStaticHost.start(HOST_PORT);
+const browser = spawn(
+    chromeBinary,
     [
-        chromeBinary,
         "--headless=new",
         "--disable-gpu",
         "--no-first-run",
@@ -508,52 +1031,178 @@ const browser = Bun.spawn(
         `--remote-debugging-port=${DEBUGGER_PORT}`,
         "about:blank",
     ],
-    { stdout: "pipe", stderr: "pipe" },
+    { stdio: ["ignore", "pipe", "pipe"] },
 );
 const outcomes: Array<VerificationOutcome> = [];
+const matrixRows: Array<CompatibilityMatrixRow> = [];
 try {
     await waitForHealth();
     const devTools = await DevToolsSession.connect(await waitForDebugger());
     for (const showcase of selectShowcases(languageFilter)) {
+        const probe = FEATURE_PROBES.find(
+            (candidate) => candidate.languageIdentifier === showcase.languageIdentifier,
+        );
+        const matrixRow: CompatibilityMatrixRow = {
+            languageIdentifier: showcase.languageIdentifier,
+            toolchain: "ready",
+            showcase: "fail",
+            features: {},
+            exportBytes: 0,
+            problems: [],
+        };
+        if (probe) {
+            for (const featureName of ["stdin", "arguments", "fileIo", "multiFile"] as const) {
+                matrixRow.features[featureName] = "pending";
+            }
+        }
         let activeStep = "upload";
         try {
             const sessionIdentifier = await buildSessionFor(showcase);
             activeStep = "export";
             const archiveBytes = await fetchExportArchive(sessionIdentifier);
+            matrixRow.exportBytes = archiveBytes.byteLength;
             activeStep = "stage";
-            await stageExportArchive(showcase, archiveBytes);
+            await stageExportArchive(showcase.languageIdentifier, archiveBytes);
             activeStep = "browser";
-            const outcome = await verifyShowcaseInBrowser(devTools, showcase);
+            const outcome = await verifyShowcaseInBrowser(
+                devTools,
+                showcase,
+                `http://127.0.0.1:${HOST_PORT}/${showcase.languageIdentifier}/index.html`,
+            );
             outcome.zipBytes = archiveBytes.byteLength;
             outcomes.push(outcome);
+            matrixRow.showcase = outcome.problems.length === 0 ? "pass" : "fail";
+            matrixRow.problems = [...outcome.problems];
+            activeStep = "single-file export";
+            const singleFileHtmlText = await fetchSingleFileExport(sessionIdentifier);
+            activeStep = "single-file stage";
+            const singleFileDirectoryName = `${showcase.languageIdentifier}-singlefile`;
+            await stageSingleFileExport(singleFileDirectoryName, singleFileHtmlText);
+            activeStep = "single-file browser";
+            const singleFileOutcome = await verifyShowcaseInBrowser(
+                devTools,
+                showcase,
+                `http://127.0.0.1:${HOST_PORT}/${singleFileDirectoryName}/index.html`,
+                true,
+            );
+            singleFileOutcome.zipBytes = Buffer.byteLength(singleFileHtmlText, "utf8");
+            singleFileOutcome.artifactKind = "single-file";
+            outcomes.push(singleFileOutcome);
+            for (const problem of singleFileOutcome.problems) {
+                matrixRow.problems.push(`single-file: ${problem}`);
+            }
+            if (probe) {
+                const probeDirectoryName = `${showcase.languageIdentifier}-probe`;
+                activeStep = "probe upload";
+                const probeSessionIdentifier = await buildProbeSession(probe);
+                activeStep = "probe export";
+                const probeArchiveBytes = await fetchExportArchive(probeSessionIdentifier);
+                activeStep = "probe stage";
+                await stageExportArchive(probeDirectoryName, probeArchiveBytes);
+                activeStep = "probe browser";
+                const probeResult = await verifyProbeInBrowser(
+                    devTools,
+                    probe,
+                    probeDirectoryName,
+                    showcase.budgetMilliseconds,
+                );
+                matrixRow.features = probeFeatureStatuses(probe, probeResult.terminalText);
+                for (const problem of probeResult.problems) {
+                    matrixRow.problems.push(`probe: ${problem}`);
+                }
+                if (probeResult.problems.length > 0) {
+                    outcomes.push({
+                        languageIdentifier: `${showcase.languageIdentifier} probe`,
+                        zipBytes: probeArchiveBytes.byteLength,
+                        finished: probeResult.terminalText.includes("PROBE-DONE"),
+                        problems: probeResult.problems,
+                        terminalText: probeResult.terminalText,
+                    });
+                }
+            }
         } catch (verificationError) {
             const failureMessage =
                 verificationError instanceof Error
                     ? verificationError.message
                     : String(verificationError);
             // A plate whose toolchain has no build for this host is not a
-            // regression, so it is reported as not covered and the run still
-            // fails on every genuine problem.
+            // regression, so it is reported as pending and not covered while the
+            // run still fails on every genuine problem.
             const missingToolchainReason = missingToolchainReasonFor(failureMessage);
-            outcomes.push({
-                languageIdentifier: showcase.languageIdentifier,
-                zipBytes: 0,
-                finished: false,
-                problems: missingToolchainReason
-                    ? []
-                    : [`${activeStep} step failed: ${failureMessage}`],
-                notCoveredReason: missingToolchainReason,
-                terminalText: "",
-            });
+            if (isToolchainPendingMessage(failureMessage) || missingToolchainReason) {
+                matrixRow.toolchain = "pending";
+                matrixRow.showcase = "pending";
+                matrixRow.features = {
+                    stdin: "pending",
+                    arguments: "pending",
+                    fileIo: "pending",
+                    multiFile: "pending",
+                };
+                outcomes.push({
+                    languageIdentifier: showcase.languageIdentifier,
+                    zipBytes: 0,
+                    finished: false,
+                    problems: [],
+                    notCoveredReason: missingToolchainReason ?? failureMessage,
+                    terminalText: "",
+                });
+                scopedLogger.logSuccess(
+                    `${showcase.languageIdentifier}: toolchain pending, skipped (${failureMessage.slice(0, 140)}).`,
+                );
+            } else {
+                matrixRow.problems.push(`${activeStep} step failed: ${failureMessage}`);
+                outcomes.push({
+                    languageIdentifier: showcase.languageIdentifier,
+                    zipBytes: 0,
+                    finished: false,
+                    problems: [...matrixRow.problems],
+                    terminalText: "",
+                });
+            }
         }
+        matrixRows.push(matrixRow);
     }
     devTools.close();
 } finally {
     applicationServer.kill();
     browser.kill();
-    staticHost.stop(true);
+    staticHost.stop();
     await serverLogPump.catch(() => undefined);
 }
+const matrixDocument: CompatibilityMatrixDocument = {
+    generatedAt: new Date().toISOString(),
+    source: "verify:export",
+    languages: matrixRows,
+};
+const matrixPath = join(process.cwd(), "compatibility-matrix.json");
+let mergedMatrixDocument = matrixDocument;
+try {
+    const existingMatrix = JSON.parse(await readFile(matrixPath, "utf8")) as {
+        languages?: ReadonlyArray<CompatibilityMatrixRow>;
+    };
+    if (existingMatrix.languages && languageFilter.length > 0) {
+        const verifiedIdentifiers = new Set(
+            matrixRows.map((matrixRow) => matrixRow.languageIdentifier),
+        );
+        mergedMatrixDocument = {
+            ...matrixDocument,
+            languages: [
+                ...matrixRows,
+                ...existingMatrix.languages.filter(
+                    (existingRow) => !verifiedIdentifiers.has(existingRow.languageIdentifier),
+                ),
+            ],
+        };
+    }
+} catch {}
+await writeFile(matrixPath, JSON.stringify(mergedMatrixDocument, null, 4) + "\n");
+await new Promise<void>((resolveFormat) => {
+    const formatterProcess = spawn(process.execPath, ["node_modules/oxfmt/bin/oxfmt", matrixPath], {
+        stdio: "ignore",
+    });
+    formatterProcess.once("close", () => resolveFormat());
+    formatterProcess.once("error", () => resolveFormat());
+});
 let failureCount = 0;
 let notCoveredCount = 0;
 for (const outcome of outcomes) {
@@ -565,15 +1214,16 @@ for (const outcome of outcomes) {
         );
         continue;
     }
+    const artifactLabel = outcome.artifactKind === "single-file" ? "single file" : "export zip";
     if (outcome.problems.length === 0) {
         scopedLogger.logSuccess(
-            `${outcome.languageIdentifier}: clean run, export zip ${sizeInKilobytes} KB`,
+            `${outcome.languageIdentifier}: clean run, ${artifactLabel} ${sizeInKilobytes} KB`,
         );
         continue;
     }
     failureCount += 1;
     scopedLogger.logError(
-        `${outcome.languageIdentifier}: ${outcome.problems.length} problem(s), export zip ${sizeInKilobytes} KB`,
+        `${outcome.languageIdentifier}: ${outcome.problems.length} problem(s), ${artifactLabel} ${sizeInKilobytes} KB`,
     );
     for (const problem of outcome.problems) {
         scopedLogger.logError(`  ${problem}`);
@@ -593,7 +1243,16 @@ if (failureCount > 0) {
     scopedLogger.logError(`${failureCount} showcase(s) failed on the hostile static host.`);
     process.exit(1);
 }
-const verifiedCount = outcomes.length - notCoveredCount;
+const verifiedCount = matrixRows.filter((matrixRow) => matrixRow.showcase === "pass").length;
 scopedLogger.logSuccess(
     `Every verified export ran clean on a hostile static host (${verifiedCount} showcase(s)).`,
 );
+for (const matrixRow of matrixRows) {
+    const featureSummary = Object.entries(matrixRow.features)
+        .map(([featureName, featureStatus]) => `${featureName}:${featureStatus}`)
+        .join(" ");
+    scopedLogger.logInformation(
+        `${matrixRow.languageIdentifier}: showcase ${matrixRow.showcase} (${Math.round(matrixRow.exportBytes / 1024)} KB) ${featureSummary}`,
+    );
+}
+scopedLogger.logSuccess("Compatibility matrix written to compatibility-matrix.json.");

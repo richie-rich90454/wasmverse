@@ -3,13 +3,17 @@ import { ScopedLogger } from "@serverAtelier/ScopedLogger.ts";
 const scopedLogger = new ScopedLogger("DevelopmentLauncherScript");
 const processRunner = new ProcessRunner();
 const serverProcess = processRunner.runDetached([
-    "bun",
-    "--watch",
+    process.execPath,
+    "node_modules/tsx/dist/cli.mjs",
+    "watch",
     "src/serverAtelier/ServerEntryPoint.ts",
 ]) as {
     kill(): void;
 };
-const viteProcess = processRunner.runDetached(["bunx", "vite"]) as { kill(): void };
+const viteProcess = processRunner.runDetached([
+    process.execPath,
+    "node_modules/vite/bin/vite.js",
+]) as { kill(): void };
 scopedLogger.logSuccess("Development server and Vite launched. Press Ctrl+C to stop.");
 const shutdownLauncher = () => {
     serverProcess.kill();

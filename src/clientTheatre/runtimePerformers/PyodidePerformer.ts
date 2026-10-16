@@ -1,6 +1,10 @@
 import type { TerminalStageController } from "@clientTheatre/services/TerminalStageController.ts";
 import type { TerminalPerformerContract } from "@clientTheatre/runtimePerformers/TerminalPerformerContract.ts";
-import { encodeUserCodePath } from "@clientTheatre/runtimePerformers/UserCodeUrl.ts";
+import { SessionUserFilesClient } from "@clientTheatre/runtimePerformers/SessionUserFilesClient.ts";
+import {
+    createRuntimeAssetLocator,
+    type RuntimeAssetLocator,
+} from "@clientTheatre/runtimePerformers/RuntimeAssetLocator.ts";
 interface PyodideInstance {
     setStdout(options: { batched(output: string): void }): void;
     setStderr(options: { batched(output: string): void }): void;
@@ -10,7 +14,11 @@ interface PyodideInstance {
     runPythonAsync(code: string): Promise<unknown>;
 }
 interface PyodideModule {
-    loadPyodide(options: { indexURL: string; packageBaseUrl: string }): Promise<PyodideInstance>;
+    loadPyodide(options: {
+        indexURL: string;
+        packageBaseUrl: string;
+        createPyodideModule?: (settings: Record<string, unknown>) => Promise<unknown>;
+    }): Promise<PyodideInstance>;
 }
 interface PythonErrorShape {
     type?: string;
@@ -51,6 +59,7 @@ for _candidate_path in reversed(_ordered_paths):
     if _candidate_path not in _sys.path:
         _sys.path.insert(0, _candidate_path)
 _os.chdir(_usercode_root)
+_sys.argv = ["main.py"] + [str(_argument) for _argument in globals().get("_program_arguments", [])]
 __file__ = _usercode_root + "/" + _entry_relative_path
 def _entry_calls_main_at_top_level(source_text):
     try:
@@ -85,18 +94,27 @@ if _entry_should_auto_call_main:
             await _entry_result
 `;
 class PyodideRuntimeLoader {
-    private readonly sessionBaseUrl: string;
+    private readonly assetLocator: RuntimeAssetLocator;
+    private readonly indexUrl: string;
     constructor(sessionBaseUrl: string) {
-        this.sessionBaseUrl = sessionBaseUrl;
+        this.assetLocator = createRuntimeAssetLocator(sessionBaseUrl);
+        this.indexUrl = `${this.assetLocator.resolveAssetUrl("runtime")}/`;
     }
     async loadRuntime(): Promise<PyodideInstance> {
-        const runtimeUrl = `${this.sessionBaseUrl}/runtime/`;
         const pyodideModule = (await import(
-            /* @vite-ignore */ `${this.sessionBaseUrl}/runtime/python-runtime.js`
+            /* @vite-ignore */ this.assetLocator.resolveAssetUrl("runtime/python-runtime.js")
         )) as PyodideModule;
         return pyodideModule.loadPyodide({
-            indexURL: runtimeUrl,
-            packageBaseUrl: runtimeUrl,
+            indexURL: this.indexUrl,
+            packageBaseUrl: this.indexUrl,
+            createPyodideModule: async (settings: Record<string, unknown>) => {
+                const asmModule = await import(
+                    /* @vite-ignore */ this.assetLocator.resolveAssetUrl("runtime/python-asm.js")
+                );
+                return (
+                    asmModule as { default: (settings: Record<string, unknown>) => unknown }
+                ).default(settings);
+            },
         });
     }
 }
@@ -143,39 +161,6 @@ class PyodideInputBridge {
     }
     fedLineCount(): number {
         return this.fedLines.length;
-    }
-}
-class PyodideUserFileFetcher {
-    private readonly sessionBaseUrl: string;
-    constructor(sessionBaseUrl: string) {
-        this.sessionBaseUrl = sessionBaseUrl;
-    }
-    async fetchUserFiles(): Promise<{ entryRelativePath: string; userFiles: Map<string, string> }> {
-        const manifestResponse = await fetch(`${this.sessionBaseUrl}/user-code/manifest.json`);
-        if (!manifestResponse.ok) {
-            throw new Error("Session manifest is missing. Rebuild the session and retry.");
-        }
-        const manifest = (await manifestResponse.json()) as {
-            entryFileRelativePath: string;
-            includedFileRelativePaths: Array<string>;
-        };
-        const userFiles = new Map<string, string>();
-        for (const relativePath of manifest.includedFileRelativePaths) {
-            if (relativePath === "manifest.json") {
-                continue;
-            }
-            const fileResponse = await fetch(
-                `${this.sessionBaseUrl}/user-code/${encodeUserCodePath(relativePath)}`,
-            );
-            if (!fileResponse.ok) {
-                throw new Error(`User file ${relativePath} is missing from the session.`);
-            }
-            userFiles.set(relativePath, await fileResponse.text());
-        }
-        if (!userFiles.has(manifest.entryFileRelativePath)) {
-            throw new Error(`Entry file ${manifest.entryFileRelativePath} is missing.`);
-        }
-        return { entryRelativePath: manifest.entryFileRelativePath, userFiles };
     }
 }
 class PyodideUserFileWriter {
@@ -259,17 +244,18 @@ class PyodidePerformer implements TerminalPerformerContract {
     private readonly runtimeLoader: PyodideRuntimeLoader;
     private readonly streamRedirector: PyodideStandardStreamRedirector;
     private readonly inputBridge: PyodideInputBridge;
-    private readonly userFileFetcher: PyodideUserFileFetcher;
+    private readonly userFileFetcher: SessionUserFilesClient;
     private readonly userFileWriter: PyodideUserFileWriter;
     private readonly entryExecutor: PyodideEntryScriptExecutor;
     private loadedRuntime: PyodideInstance | undefined;
     private entryRelativePath: string = "";
+    private programArguments: ReadonlyArray<string> = [];
     private userFiles: Map<string, string> = new Map();
     constructor(sessionBaseUrl: string) {
         this.runtimeLoader = new PyodideRuntimeLoader(sessionBaseUrl);
         this.streamRedirector = new PyodideStandardStreamRedirector();
         this.inputBridge = new PyodideInputBridge();
-        this.userFileFetcher = new PyodideUserFileFetcher(sessionBaseUrl);
+        this.userFileFetcher = new SessionUserFilesClient(sessionBaseUrl);
         this.userFileWriter = new PyodideUserFileWriter();
         this.entryExecutor = new PyodideEntryScriptExecutor(
             this.streamRedirector,
@@ -289,6 +275,7 @@ class PyodidePerformer implements TerminalPerformerContract {
         this.inputBridge.installBridge(this.loadedRuntime, stage);
         const fetchedFiles = await this.userFileFetcher.fetchUserFiles();
         this.entryRelativePath = fetchedFiles.entryRelativePath;
+        this.programArguments = fetchedFiles.programArguments;
         this.userFiles = fetchedFiles.userFiles;
         stage.writeLine("Python runtime ready.");
     }
@@ -297,6 +284,10 @@ class PyodidePerformer implements TerminalPerformerContract {
             throw new Error("Pyodide runtime not loaded. Call loadInto first.");
         }
         this.userFileWriter.writeUserFiles(this.loadedRuntime, this.userFiles);
+        this.loadedRuntime.globals.set(
+            "_program_arguments",
+            this.loadedRuntime.toPy([...this.programArguments]),
+        );
         await this.entryExecutor.executeEntry(
             this.loadedRuntime,
             this.entryRelativePath,

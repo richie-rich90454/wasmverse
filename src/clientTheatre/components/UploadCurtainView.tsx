@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import type { ClientApplicationController } from "@clientTheatre/services/ClientApplicationController.ts";
+import { SingleFilePasteView } from "@clientTheatre/components/SingleFilePasteView.tsx";
+import { GitHubImportView } from "@clientTheatre/components/GitHubImportView.tsx";
 import "@clientTheatre/styles/UploadCurtain.css";
 interface UploadCurtainViewProperties {
     applicationController: ClientApplicationController;
@@ -28,10 +30,7 @@ function UploadCurtainView(properties: UploadCurtainViewProperties): React.JSX.E
     const handleDrop = (event: React.DragEvent<HTMLLabelElement>) => {
         event.preventDefault();
         setIsDragActive(false);
-        const droppedFile = event.dataTransfer.files?.[0];
-        if (droppedFile) {
-            void curtainController.selectFile(droppedFile);
-        }
+        curtainController.selectDroppedDataTransfer(event.dataTransfer);
     };
     const handleSubmit = () => {
         if (curtainController.selectedFile && curtainController.entryFileName.trim().length > 0) {
@@ -59,7 +58,8 @@ function UploadCurtainView(properties: UploadCurtainViewProperties): React.JSX.E
                 Your Own Archive
             </h2>
             <p className="upload-section-support">
-                Upload a zip archive and name the entry file to run it in the terminal.
+                Upload a zip archive or drop a project folder, then name the entry file. Quick paths
+                below run a pasted file or a GitHub repository.
             </p>
             <div className="upload-curtain">
                 <label
@@ -70,7 +70,7 @@ function UploadCurtainView(properties: UploadCurtainViewProperties): React.JSX.E
                 >
                     {curtainController.selectedFile
                         ? `${curtainController.selectedFile.name} (${curtainController.entryFileOptions.length} files detected)`
-                        : "Drop a zip archive here, or select one from your computer."}
+                        : "Drop a zip archive or a project folder here, or select one from your computer."}
                     <input type="file" accept=".zip" onChange={handleFileSelection} hidden />
                 </label>
                 <label className="upload-entry-label" htmlFor="upload-entry-select">
@@ -99,6 +99,20 @@ function UploadCurtainView(properties: UploadCurtainViewProperties): React.JSX.E
                         onChange={(event) => curtainController.setEntryFileName(event.target.value)}
                     />
                 )}
+                <label className="upload-entry-label" htmlFor="upload-args-input">
+                    PROGRAM ARGUMENTS (ONE PER LINE)
+                </label>
+                <textarea
+                    id="upload-args-input"
+                    className="upload-entry-input upload-args-input"
+                    rows={3}
+                    spellCheck={false}
+                    placeholder={"alpha\nbeta gamma"}
+                    value={curtainController.programArgumentsText}
+                    onChange={(event) =>
+                        curtainController.setProgramArgumentsText(event.target.value)
+                    }
+                />
                 <button
                     className="upload-submit-button"
                     onClick={handleSubmit}
@@ -111,6 +125,10 @@ function UploadCurtainView(properties: UploadCurtainViewProperties): React.JSX.E
                         {curtainController.errorMessage}
                     </div>
                 )}
+            </div>
+            <div className="quick-path-grid">
+                <SingleFilePasteView applicationController={properties.applicationController} />
+                <GitHubImportView applicationController={properties.applicationController} />
             </div>
         </section>
     );

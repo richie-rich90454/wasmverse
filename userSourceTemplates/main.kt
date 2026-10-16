@@ -1,3 +1,5 @@
+external fun wasmversePrint(text: String)
+
 sealed class LedgerEvent {
     data class Deposit(val account: String, val amount: Int) : LedgerEvent()
     data class Withdrawal(val account: String, val amount: Int) : LedgerEvent()
@@ -38,8 +40,8 @@ fun sieve(limit: Int): List<Int> {
 }
 
 fun main() {
-    println("WASMVerse Kotlin showcase")
-    println("Stage one: sealed hierarchies model ledger events")
+    wasmversePrint("WASMVerse Kotlin/JS showcase")
+    wasmversePrint("Stage one: sealed hierarchies model ledger events")
     val events = listOf(
         LedgerEvent.Deposit("alpha", 120),
         LedgerEvent.Deposit("beta", 75),
@@ -50,20 +52,20 @@ fun main() {
     )
     val totals = balances(events)
     for (account in totals.keys.sorted()) {
-        println("$account balance: ${totals[account]}")
+        wasmversePrint("$account balance: ${totals[account]}")
     }
-    println("Stage two: sequence pipelines over a prime stream")
+    wasmversePrint("Stage two: sequence pipelines over a prime stream")
     val pipeline = sieve(400).asSequence()
         .filter { it % 2 == 1 }
         .map { it * it }
         .take(8)
         .toList()
-    println("odd square heads: ${pipeline.joinToString(", ")}")
-    println("Stage three: ordered windows and grouped residues")
+    wasmversePrint("odd square heads: ${pipeline.joinToString(", ")}")
+    wasmversePrint("Stage three: ordered windows and grouped residues")
     val primes = sieve(900)
     val windows = primes.windowed(6, 3).take(4).map { it.sum() }
-    println("prime count up to 900: ${primes.size}")
-    println("largest prime: ${primes.last()}")
-    println("window sums: ${windows.joinToString(", ")}")
-    println("Showcase complete.")
+    wasmversePrint("prime count up to 900: ${primes.size}")
+    wasmversePrint("largest prime: ${primes.last()}")
+    wasmversePrint("window sums: ${windows.joinToString(", ")}")
+    wasmversePrint("Showcase complete.")
 }

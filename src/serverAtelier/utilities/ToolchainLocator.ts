@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
 import { FileSystemOperations } from "@serverAtelier/utilities/FileSystemOperations.ts";
 const WINDOWS_EXECUTABLE_SUFFIXES = [".exe", ".cmd", ".bat"] as const;
@@ -32,8 +33,8 @@ class ToolchainLocator {
      * Returns the local binary when it is provisioned and the bare command name
      * otherwise, so a toolchain installed on `PATH` is used without configuration.
      *
-     * The result is an argument vector, not a single string, because `Bun.spawn`
-     * cannot launch a Windows `.bat` or `.cmd` launcher directly. Kotlin ships only
+     * The result is an argument vector, not a single string, because a Windows
+     * `.bat` or `.cmd` launcher cannot be spawned directly. Kotlin ships only
      * `kotlinc-wasm.bat`, and spawning it by path fails with ENOENT, so such a
      * launcher is invoked through the command interpreter instead.
      */
@@ -52,7 +53,7 @@ class ToolchainLocator {
             // names no toolchain. Say which toolchain is missing and where it
             // belongs instead.
             throw new Error(
-                `${toolchainName} toolchain not found. Run bun run setup, or install ${pathCommandName} on PATH, or place it at ${basePath}.`,
+                `${toolchainName} toolchain not found. Run pnpm run setup, or install ${pathCommandName} on PATH, or place it at ${basePath}.`,
             );
         }
         const lowerCasePath = resolvedPath.toLowerCase();
@@ -71,15 +72,10 @@ class ToolchainLocator {
         return IS_WINDOWS ? WINDOWS_EXECUTABLE_SUFFIXES : POSIX_EXECUTABLE_SUFFIXES;
     }
     private async isOnPath(commandName: string): Promise<boolean> {
-        try {
-            const probe = Bun.spawn([IS_WINDOWS ? "where" : "which", commandName], {
-                stdout: "pipe",
-                stderr: "pipe",
-            });
-            return (await probe.exited) === 0;
-        } catch {
-            return false;
-        }
+        const probeOutcome = spawnSync(IS_WINDOWS ? "where" : "which", [commandName], {
+            stdio: "ignore",
+        });
+        return probeOutcome.status === 0;
     }
 }
 export { ToolchainLocator };

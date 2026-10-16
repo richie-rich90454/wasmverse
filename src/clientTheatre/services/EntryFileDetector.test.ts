@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test } from "vitest";
 import { detectEntryFile, isCodeFile, stemOf } from "@clientTheatre/services/EntryFileDetector.ts";
 describe("detectEntryFile", () => {
     test("prefers main at the archive root", () => {

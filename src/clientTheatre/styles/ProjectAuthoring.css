@@ -1,0 +1,279 @@
+.project-editor-section {
+    margin-bottom: 64px;
+}
+.project-section-eyebrow {
+    color: var(--ink-muted);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    margin: 0 0 8px 0;
+    text-transform: uppercase;
+}
+.project-section-heading {
+    color: var(--ink);
+    font-family: "EB Garamond", Georgia, "Times New Roman", serif;
+    font-size: 30px;
+    font-weight: 500;
+    line-height: 1.15;
+    margin: 0 0 8px 0;
+}
+.project-section-support {
+    color: var(--ink-muted);
+    font-size: 15px;
+    line-height: 1.55;
+    margin: 0 0 24px 0;
+    max-width: 68ch;
+}
+.project-editor-frame {
+    background-color: var(--cream);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+}
+.project-editor-toolbar {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+}
+.project-editor-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.project-editor-label {
+    color: var(--ink-muted);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+}
+.project-editor-input,
+.project-editor-select {
+    background-color: var(--paper);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    font-size: 13px;
+    padding: 8px 10px;
+}
+.project-editor-input:focus,
+.project-editor-select:focus {
+    border: 1px solid var(--brand-blue);
+    outline: none;
+}
+.project-editor-actions {
+    align-items: flex-end;
+    display: flex;
+    gap: 8px;
+}
+.project-action-button {
+    background-color: var(--brand-blue);
+    border: none;
+    border-radius: 2px;
+    color: var(--paper);
+    cursor: pointer;
+    font-size: 13px;
+    min-height: 36px;
+    padding: 8px 14px;
+    transition: background-color 80ms linear;
+}
+.project-action-button:hover:not(:disabled) {
+    background-color: var(--brand-blue-deep);
+}
+.project-action-button:disabled {
+    background-color: var(--ink-muted);
+    color: var(--rule);
+    cursor: not-allowed;
+}
+.project-action-button-secondary {
+    background-color: transparent;
+    border: 1px solid var(--rule);
+    color: var(--brand-blue);
+}
+.project-action-button-secondary:hover:not(:disabled) {
+    background-color: var(--brand-blue);
+    border-color: var(--brand-blue);
+    color: var(--paper);
+}
+.project-editor-rename-row {
+    align-items: flex-end;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.project-editor-rename-row .project-editor-field {
+    flex-grow: 1;
+}
+.project-editor-error {
+    color: var(--error-red);
+    font-size: 12px;
+}
+.project-editor-workspace {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: 300px 1fr;
+}
+.project-tree {
+    background-color: var(--paper);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    max-height: 460px;
+    overflow: auto;
+}
+.project-tree-empty {
+    color: var(--ink-muted);
+    font-size: 13px;
+    margin: 0;
+    padding: 12px;
+}
+.project-tree-row {
+    align-items: center;
+    background-color: transparent;
+    border: none;
+    border-bottom: 1px solid var(--rule);
+    color: var(--ink);
+    cursor: pointer;
+    display: flex;
+    font-family: inherit;
+    font-size: 13px;
+    gap: 8px;
+    min-height: 32px;
+    padding: 4px 8px;
+    text-align: left;
+    transition: background-color 100ms linear;
+    width: 100%;
+}
+.project-tree-row:hover {
+    background-color: #f1eee5;
+}
+.project-tree-row-selected {
+    background-color: #efeadc;
+    border-left: 2px solid var(--brand-blue);
+}
+.project-tree-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.project-tree-folder-name {
+    color: var(--brand-blue);
+    font-weight: 600;
+}
+.project-tree-entry-marker {
+    border: 1px solid var(--rule-strong);
+    border-radius: 2px;
+    color: var(--ink-muted);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    padding: 1px 5px;
+}
+.project-tree-language {
+    color: var(--ink-muted);
+    font-size: 11px;
+    margin-left: auto;
+}
+.project-tree-dirty-marker {
+    color: var(--brand-blue-light);
+    font-size: 14px;
+    line-height: 1;
+}
+.project-editor-pane {
+    background-color: var(--paper);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    height: 460px;
+    overflow: hidden;
+}
+.project-editor-build-bar {
+    align-items: center;
+    border-top: 1px solid var(--rule);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: space-between;
+    padding-top: 12px;
+}
+.project-editor-build-summary {
+    color: var(--ink-muted);
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+}
+.quick-path-grid {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: 1fr 1fr;
+    margin-top: 16px;
+}
+.quick-path-panel {
+    background-color: var(--cream);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 16px;
+}
+.quick-path-heading {
+    color: var(--ink);
+    font-family: "EB Garamond", Georgia, "Times New Roman", serif;
+    font-size: 20px;
+    font-weight: 500;
+    line-height: 1.2;
+    margin: 0;
+}
+.quick-path-support {
+    color: var(--ink-muted);
+    font-size: 13px;
+    line-height: 1.5;
+    margin: 0 0 4px 0;
+}
+.quick-path-label {
+    color: var(--ink-muted);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+}
+.quick-path-input,
+.quick-path-textarea {
+    background-color: var(--paper);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    font-size: 13px;
+    padding: 8px 10px;
+}
+.quick-path-input:focus,
+.quick-path-textarea:focus {
+    border: 1px solid var(--brand-blue);
+    outline: none;
+}
+.quick-path-textarea {
+    font-family: Menlo, Consolas, "Courier New", monospace;
+    font-size: 12px;
+    line-height: 1.45;
+    resize: vertical;
+}
+.quick-path-run-button {
+    align-self: flex-start;
+    margin-top: 4px;
+}
+.quick-path-error {
+    color: var(--error-red);
+    font-size: 12px;
+}
+@media (max-width: 899px) {
+    .project-editor-workspace {
+        grid-template-columns: 1fr;
+    }
+    .project-editor-pane {
+        height: 360px;
+    }
+    .quick-path-grid {
+        grid-template-columns: 1fr;
+    }
+}
+@media (max-width: 639px) {
+    .project-editor-section {
+        margin-bottom: 40px;
+    }
+}

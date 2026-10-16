@@ -1,97 +1,108 @@
-import { dirname, resolve } from "node:path";
+import { delimiter, resolve } from "node:path";
 import type { BuildContextRecord } from "@sharedKernel/BuildContextRecord.ts";
 import type { CompilerStrategyContract } from "@serverAtelier/compilerStrategies/CompilerStrategyContract.ts";
 import { FileSystemOperations } from "@serverAtelier/utilities/FileSystemOperations.ts";
 import { ProcessRunner } from "@serverAtelier/utilities/ProcessRunner.ts";
-import { ToolchainLocator } from "@serverAtelier/utilities/ToolchainLocator.ts";
+const DEFAULT_KOTLIN_COMPILER_PATH =
+    process.platform === "win32"
+        ? "./.tools/kotlin-wasm/bin/kotlinc-js.bat"
+        : "./.tools/kotlin-wasm/bin/kotlinc-js";
+const KOTLIN_JDK_DIRECTORY = "./.tools/jdk";
+const KOTLIN_STDLIB_KLIB_RELATIVE_PATH = "lib/kotlin-stdlib-js.klib";
+const KOTLIN_INTERMEDIATE_KLIB_DIRECTORY_NAME = "kotlin-klib";
+const KOTLIN_INTERMEDIATE_KLIB_NAME = "out";
+const KOTLIN_OUTPUT_FILE_NAME = "app";
 class KotlinWasmCompilerStrategy implements CompilerStrategyContract {
     private readonly processRunner: ProcessRunner;
     private readonly fileSystemOperations: FileSystemOperations;
-    private readonly toolchainLocator: ToolchainLocator;
     private readonly kotlinCompilerPath: string;
     constructor(
         processRunner: ProcessRunner,
         fileSystemOperations: FileSystemOperations,
-        kotlinCompilerPath: string = "./.tools/kotlin-wasm/bin/kotlinc-wasm",
+        kotlinCompilerPath: string = DEFAULT_KOTLIN_COMPILER_PATH,
     ) {
         this.processRunner = processRunner;
         this.fileSystemOperations = fileSystemOperations;
-        this.toolchainLocator = new ToolchainLocator(fileSystemOperations);
         this.kotlinCompilerPath = kotlinCompilerPath;
     }
     async compileSourceInto(context: BuildContextRecord): Promise<void> {
-        const kotlinCompiler = await this.toolchainLocator.resolveCommandVector(
-            this.kotlinCompilerPath,
-            "kotlinc-wasm",
-            "Kotlin/Wasm",
-        );
-        const intermediateDirectory = `${context.sourceDirectory}/kotlin-intermediate`;
-        const linkedDirectory = `${context.sourceDirectory}/kotlin-linked`;
-        // Resolved against the compiler home rather than the session directory,
-        // because the compiler runs with that directory as its working directory.
-        const stdlibPath = resolve(
-            dirname(dirname(this.kotlinCompilerPath)),
-            "lib",
-            "kotlin-stdlib-wasm-wasi.klib",
-        );
-        // Kotlin's WASM compiler is a two pass tool. The first pass lowers sources
-        // to a `.klib`, and only the second, which takes that klib through
-        // `-Xinclude`, links the real `.wasm`. Running one pass writes a klib
-        // where a module was expected and the browser gets nothing to run.
-        const lowerOutcome = await this.processRunner.runToCompletion(
-            [
-                ...kotlinCompiler,
-                context.entryFileRelativePath,
-                "-Xwasm-target=wasm-wasi",
-                "-libraries",
-                stdlibPath,
-                "-ir-output-dir",
-                intermediateDirectory,
-                "-ir-output-name",
-                "app",
-                "-Xir-module-name",
-                "app",
-                "-main",
-                "call",
-            ],
-            { workingDirectory: context.sourceDirectory },
-        );
-        if (lowerOutcome.exitCode !== 0) {
-            throw new Error(`Kotlin/Wasm lowering failed: ${lowerOutcome.standardError}`);
+        const toolchainExists = await this.fileSystemOperations.pathExists(this.kotlinCompilerPath);
+        if (!toolchainExists) {
+            throw new Error(
+                "Kotlin/JS toolchain not found. Run pnpm run setup to provision ./.tools/kotlin-wasm/.",
+            );
         }
-        const linkOutcome = await this.processRunner.runToCompletion(
+        const sourceFilePaths = (
+            await this.fileSystemOperations.listFilesRecursively(context.sourceDirectory)
+        ).filter((relativePath) => relativePath.endsWith(".kt"));
+        if (sourceFilePaths.length === 0) {
+            throw new Error(
+                `Kotlin/JS build failed: no .kt source files found under ${context.sourceDirectory}.`,
+            );
+        }
+        const absoluteKotlinDirectory = resolve(process.cwd(), "./.tools/kotlin-wasm");
+        const stdlibKlibPath = `${absoluteKotlinDirectory}/${KOTLIN_STDLIB_KLIB_RELATIVE_PATH}`;
+        const intermediateKlibDirectory = `${context.runtimeDirectory}/${KOTLIN_INTERMEDIATE_KLIB_DIRECTORY_NAME}`;
+        await this.fileSystemOperations.removeRecursively(intermediateKlibDirectory);
+        await this.fileSystemOperations.ensureDirectoryExists(intermediateKlibDirectory);
+        const klibOutcome = await this.runKotlinCompiler(
             [
-                ...kotlinCompiler,
-                "-Xwasm-target=wasm-wasi",
-                `-Xinclude=${intermediateDirectory}/app.klib`,
+                ...sourceFilePaths,
+                "-nopack",
                 "-libraries",
-                stdlibPath,
-                "-Xir-produce-js",
+                stdlibKlibPath,
                 "-ir-output-dir",
-                linkedDirectory,
+                intermediateKlibDirectory,
                 "-ir-output-name",
-                "app",
+                KOTLIN_INTERMEDIATE_KLIB_NAME,
+            ],
+            context.sourceDirectory,
+        );
+        if (klibOutcome.exitCode !== 0) {
+            throw new Error(`Kotlin/JS build failed: ${klibOutcome.standardError}`);
+        }
+        const linkOutcome = await this.runKotlinCompiler(
+            [
+                "-Xir-produce-js",
+                "-libraries",
+                stdlibKlibPath,
+                `-Xinclude=${intermediateKlibDirectory}`,
+                "-ir-output-dir",
+                context.runtimeDirectory,
+                "-ir-output-name",
+                KOTLIN_OUTPUT_FILE_NAME,
+                "-module-kind",
+                "es",
                 "-main",
                 "call",
             ],
-            { workingDirectory: context.sourceDirectory },
+            context.sourceDirectory,
         );
         if (linkOutcome.exitCode !== 0) {
-            throw new Error(`Kotlin/Wasm linking failed: ${linkOutcome.standardError}`);
+            throw new Error(`Kotlin/JS build failed: ${linkOutcome.standardError}`);
         }
-        if (!(await this.fileSystemOperations.pathExists(`${linkedDirectory}/app.wasm`))) {
-            throw new Error("Kotlin/Wasm did not produce app.wasm.");
-        }
-        // Only the binary is shipped. The generated `app.mjs` is a Node loader
-        // that reads the module off disk with `node:fs`, which a browser cannot
-        // run, and object storage maps `.mjs` to a content type browsers reject.
-        // The client instantiates `app.wasm` itself through the WASI performer.
-        await this.fileSystemOperations.copyFileInto(
-            `${linkedDirectory}/app.wasm`,
-            `${context.runtimeDirectory}/app.wasm`,
+        await this.fileSystemOperations.moveInto(
+            `${context.runtimeDirectory}/${KOTLIN_OUTPUT_FILE_NAME}.mjs`,
+            `${context.runtimeDirectory}/${KOTLIN_OUTPUT_FILE_NAME}.js`,
         );
-        await this.fileSystemOperations.removeRecursively(intermediateDirectory);
-        await this.fileSystemOperations.removeRecursively(linkedDirectory);
+        await this.fileSystemOperations.removeRecursively(intermediateKlibDirectory);
+    }
+    private async runKotlinCompiler(
+        compilationArguments: ReadonlyArray<string>,
+        workingDirectory: string,
+    ): Promise<{ exitCode: number; standardOutput: string; standardError: string }> {
+        const absoluteCompilerPath = resolve(process.cwd(), this.kotlinCompilerPath);
+        const absoluteJdkDirectory = resolve(process.cwd(), KOTLIN_JDK_DIRECTORY);
+        const environmentOverrides = {
+            JAVA_HOME: absoluteJdkDirectory,
+            PATH: `${resolve(absoluteJdkDirectory, "bin")}${delimiter}${process.env["PATH"] ?? ""}`,
+        };
+        return await this.processRunner.runToCompletion(
+            process.platform === "win32"
+                ? ["cmd", "/c", absoluteCompilerPath, ...compilationArguments]
+                : [absoluteCompilerPath, ...compilationArguments],
+            { workingDirectory, environmentOverrides },
+        );
     }
 }
 export { KotlinWasmCompilerStrategy };

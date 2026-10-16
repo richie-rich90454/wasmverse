@@ -39,7 +39,7 @@ class DartWasmCompilerStrategy implements CompilerStrategyContract {
             );
         } catch {
             throw new Error(
-                "Dart SDK not found. Run bun run setup to provision ./.tools/dart-sdk/ or install Dart on PATH.",
+                "Dart SDK not found. Run pnpm run setup to provision ./.tools/dart-sdk/.",
             );
         }
         if (outcome.exitCode !== 0) {

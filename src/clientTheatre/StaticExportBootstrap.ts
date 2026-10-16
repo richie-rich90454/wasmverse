@@ -2,6 +2,7 @@ import type { LanguageIdentifier } from "@sharedKernel/LanguageIdentifier.ts";
 import type { TerminalPerformerContract } from "@clientTheatre/runtimePerformers/TerminalPerformerContract.ts";
 import { TerminalStageController } from "@clientTheatre/services/TerminalStageController.ts";
 import { forceBufferBasedWasmCompilation } from "@clientTheatre/runtimePerformers/PortableWasmCompilation.ts";
+import { installEmbeddedAssetRuntime } from "@clientTheatre/runtimePerformers/RuntimeAssetLocator.ts";
 import { installTerminalConsoleBridge } from "@clientTheatre/services/TerminalConsoleBridge.ts";
 type PerformerCreator = (sessionBaseUrl: string) => TerminalPerformerContract;
 let mountedStage: TerminalStageController | undefined;
@@ -30,11 +31,12 @@ async function startStaticExport(
 ): Promise<void> {
     forceBufferBasedWasmCompilation();
     installTerminalConsoleBridge();
+    const sessionBaseUrl = new URL(".", import.meta.url).href;
+    installEmbeddedAssetRuntime(sessionBaseUrl);
     const stage = mountStage();
     stage.focusStage();
     stage.writeLine(`WASMVERSE export ready: ${languageIdentifier}`);
     stage.writeLine("Type a value and press Enter when the program asks for input.");
-    const sessionBaseUrl = new URL(".", import.meta.url).href;
     const performer = createPerformer(sessionBaseUrl);
     await performer.loadInto(stage);
     await performer.performOn(stage);

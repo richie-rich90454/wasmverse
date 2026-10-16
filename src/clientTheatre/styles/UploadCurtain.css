@@ -76,6 +76,12 @@
     font-style: italic;
     font-size: 13px;
 }
+.upload-args-input {
+    font-family: Menlo, Consolas, "Courier New", monospace;
+    font-size: 12px;
+    line-height: 1.45;
+    resize: vertical;
+}
 .upload-submit-button {
     background-color: var(--brand-blue);
     border: none;

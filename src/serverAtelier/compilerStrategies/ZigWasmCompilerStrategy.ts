@@ -32,9 +32,11 @@ class ZigWasmCompilerStrategy implements CompilerStrategyContract {
                 "wasm32-wasi",
                 "-O",
                 "ReleaseSmall",
-                "--export=main",
-                context.entryFileRelativePath,
+                // No `--export=main`: a WASI command module already exports
+                // `_start`, and asking wasm-ld to also export `main` fails for
+                // programs whose main takes an initializer argument.
                 `-femit-bin=${context.runtimeDirectory}/app.wasm`,
+                context.entryFileRelativePath,
             ],
             { workingDirectory: context.sourceDirectory },
         );

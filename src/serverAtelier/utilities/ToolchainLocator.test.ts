@@ -1,4 +1,5 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test } from "vitest";
+import { writeFile } from "node:fs/promises";
 import { ToolchainLocator } from "@serverAtelier/utilities/ToolchainLocator.ts";
 import { FileSystemOperations } from "@serverAtelier/utilities/FileSystemOperations.ts";
 import { tmpdir } from "node:os";
@@ -20,7 +21,7 @@ describe("ToolchainLocator", () => {
         const directory = await createFixtureDirectory("bare");
         const toolchainLocator = new ToolchainLocator(new FileSystemOperations());
         const toolPath = `${directory}/compiler${platformSuffix()}`;
-        await Bun.write(toolPath, "");
+        await writeFile(toolPath, "");
         // `resolve` normalises separators, so compare against the normalised path.
         expect(await toolchainLocator.resolveExistingPath(`${directory}/compiler`)).toBe(
             resolve(toolPath),

@@ -81,7 +81,7 @@ class DotNetWasmConsoleCompilerStrategy implements CompilerStrategyContract {
             );
         } catch {
             throw new Error(
-                "dotnet SDK not found. Run bun run setup to provision ./.tools/dotnet/ or install dotnet on PATH.",
+                "dotnet SDK not found. Run pnpm run setup to provision ./.tools/dotnet/ or install dotnet on PATH.",
             );
         }
         if (outcome.exitCode !== 0) {

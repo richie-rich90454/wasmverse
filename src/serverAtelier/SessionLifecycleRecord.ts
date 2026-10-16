@@ -5,7 +5,8 @@ import { FileSystemOperations } from "@serverAtelier/utilities/FileSystemOperati
 class SessionLifecycleRecord {
     readonly sessionIdentifier: string;
     readonly languageIdentifier: LanguageIdentifier;
-    readonly entryFileRelativePath: string;
+    entryFileRelativePath: string;
+    readonly programArguments: ReadonlyArray<string>;
     readonly creationTimestamp: number;
     readonly sessionDirectory: string;
     readonly sourceDirectory: string;
@@ -16,18 +17,23 @@ class SessionLifecycleRecord {
         sessionIdentifier: string,
         languageIdentifier: LanguageIdentifier,
         entryFileRelativePath: string,
+        programArguments: ReadonlyArray<string>,
         sessionsDirectory: string,
         fileSystemOperations: FileSystemOperations,
     ) {
         this.sessionIdentifier = sessionIdentifier;
         this.languageIdentifier = languageIdentifier;
         this.entryFileRelativePath = entryFileRelativePath;
+        this.programArguments = programArguments;
         this.creationTimestamp = Date.now();
         this.sessionDirectory = `${resolve(sessionsDirectory)}/${sessionIdentifier}`;
         this.sourceDirectory = `${this.sessionDirectory}/source`;
         this.runtimeDirectory = `${this.sessionDirectory}/dist/runtime`;
         this.userCodeDirectory = `${this.sessionDirectory}/dist/user-code`;
         this.fileSystemOperations = fileSystemOperations;
+    }
+    assignEntryFile(entryFileRelativePath: string): void {
+        this.entryFileRelativePath = entryFileRelativePath;
     }
     isExpiredAfter(timeToLiveMilliseconds: number): boolean {
         return Date.now() - this.creationTimestamp > timeToLiveMilliseconds;
@@ -37,6 +43,7 @@ class SessionLifecycleRecord {
             sessionIdentifier: this.sessionIdentifier,
             languageIdentifier: this.languageIdentifier,
             entryFileRelativePath: this.entryFileRelativePath,
+            programArguments: this.programArguments,
             creationTimestamp: this.creationTimestamp,
         };
     }
