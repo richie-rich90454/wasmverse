@@ -115,6 +115,7 @@ class ReScriptCompilerStrategy implements CompilerStrategyContract {
             throw new Error(`ReScript bundling failed: ${compilationMessage}`);
         } finally {
             await this.fileSystemOperations.removeRecursively(sessionNodeModulesDirectory);
+            await this.fileSystemOperations.removeRecursively(`${context.sourceDirectory}/lib`);
         }
     }
 }
