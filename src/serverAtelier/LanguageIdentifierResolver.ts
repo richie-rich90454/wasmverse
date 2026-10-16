@@ -7,7 +7,7 @@ class LanguageIdentifierResolver {
             [".r", "r"],
             [".cljs", "clojurescript"],
             [".scm", "scheme"],
-            [".pl", "prolog"],
+            [".pro", "prolog"],
             [".rb", "ruby"],
             [".pl", "perl"],
             [".pm", "perl"],
