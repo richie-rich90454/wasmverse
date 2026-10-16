@@ -3,7 +3,10 @@ import { existsSync } from "node:fs";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { splitDuckDbStatements } from "@clientTheatre/runtimePerformers/DuckDbWasmPerformer.ts";
+import {
+    DuckDbWasmPerformer,
+    splitDuckDbStatements,
+} from "@clientTheatre/runtimePerformers/DuckDbWasmPerformer.ts";
 import { DuckDbWasmRuntimeAssembler } from "@serverAtelier/runtimeAssemblers/DuckDbWasmRuntimeAssembler.ts";
 import { FileSystemOperations } from "@serverAtelier/utilities/FileSystemOperations.ts";
 describe("splitDuckDbStatements", () => {
@@ -30,7 +33,7 @@ const packageAvailable = existsSync(
     join(process.cwd(), "node_modules/@duckdb/duckdb-wasm/dist/duckdb-browser.mjs"),
 );
 describe.skipIf(!packageAvailable)("DuckDbWasmRuntimeAssembler", () => {
-    test("copies the browser module, worker, wasm, and the arrow module graph", async () => {
+    test("bundles the browser module and copies the worker and wasm", async () => {
         const fixtureDirectory = await mkdtemp(join(tmpdir(), "wasmverse-duckdb-"));
         try {
             const runtimeDirectory = join(fixtureDirectory, "runtime");
@@ -49,36 +52,20 @@ describe.skipIf(!packageAvailable)("DuckDbWasmRuntimeAssembler", () => {
                 join(runtimeDirectory, "duckdb/duckdb-runtime.js"),
                 "utf8",
             );
-            expect(browserModuleText).toContain("./apache-arrow/Arrow.dom.js");
             expect(browserModuleText).not.toContain('from"apache-arrow"');
+            expect(browserModuleText).not.toContain("./apache-arrow/Arrow.dom.js");
             expect(browserModuleText).not.toContain("cdn.jsdelivr.net");
+            expect(browserModuleText).toContain("AsyncDuckDB");
             const workerText = await readFile(
                 join(runtimeDirectory, "duckdb/duckdb-browser-eh.worker.js"),
                 "utf8",
             );
             expect(workerText.startsWith("WebAssembly.instantiateStreaming")).toBe(true);
-            const arrowEntryText = await readFile(
-                join(runtimeDirectory, "duckdb/apache-arrow/Arrow.dom.js"),
-                "utf8",
-            );
-            expect(arrowEntryText).not.toMatch(/\.mjs['"]/);
-            const arrowAdaptersText = await readFile(
-                join(runtimeDirectory, "duckdb/apache-arrow/io/adapters.js"),
-                "utf8",
-            );
-            expect(arrowAdaptersText).toContain('"../../tslib.js"');
-            const arrowMessageText = await readFile(
-                join(runtimeDirectory, "duckdb/apache-arrow/ipc/message.js"),
-                "utf8",
-            );
-            expect(arrowMessageText).toContain("'../../flatbuffers/flatbuffers.js'");
-            await expect(
-                readFile(join(runtimeDirectory, "duckdb/flatbuffers/flatbuffers.js")),
-            ).resolves.toBeTruthy();
-            await expect(readFile(join(runtimeDirectory, "duckdb/tslib.js"))).resolves.toBeTruthy();
+            expect(workerText).toContain("arrayBuffer");
             await expect(
                 readFile(join(runtimeDirectory, "duckdb/duckdb-eh.wasm")),
             ).resolves.toBeTruthy();
+            expect(existsSync(join(runtimeDirectory, "duckdb/apache-arrow"))).toBe(false);
         } finally {
             await rm(fixtureDirectory, { recursive: true, force: true });
         }
