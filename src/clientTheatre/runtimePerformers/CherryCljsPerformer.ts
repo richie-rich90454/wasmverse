@@ -35,8 +35,10 @@ class CherryCompilerLoader {
     constructor(sessionBaseUrl: string) {
         this.assetLocator = createRuntimeAssetLocator(sessionBaseUrl.replace(/\/+$/, ""));
     }
-    get runtimeBaseUrl(): string {
-        return this.assetLocator.resolveAssetUrl(`runtime/${CLOJURESCRIPT_RUNTIME_DIRECTORY_NAME}`);
+    resolveRuntimeAssetUrl(runtimeRelativePath: string): string {
+        return this.assetLocator.resolveAssetUrl(
+            `runtime/${CLOJURESCRIPT_RUNTIME_DIRECTORY_NAME}/${runtimeRelativePath}`,
+        );
     }
     async loadCompilerModule(stage: TerminalStageController): Promise<void> {
         stage.writeLine("Loading ClojureScript compiler.");
@@ -135,10 +137,8 @@ class CherryCljsPerformer implements TerminalPerformerContract {
         if (existingBlobUrl !== undefined) {
             return existingBlobUrl;
         }
-        const linker = new CherryModuleLinker(
-            this.compiledModules,
-            this.entryRelativePath,
-            this.compilerLoader.runtimeBaseUrl,
+        const linker = new CherryModuleLinker(this.compiledModules, (runtimeRelativePath) =>
+            this.compilerLoader.resolveRuntimeAssetUrl(runtimeRelativePath),
         );
         const rewrittenSource = linker.rewriteModule(relativePath, (specifier) => {
             if (linker.isRuntimeSpecifier(specifier)) {
