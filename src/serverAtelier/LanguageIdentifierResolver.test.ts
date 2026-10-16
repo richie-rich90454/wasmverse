@@ -9,6 +9,7 @@ describe("LanguageIdentifierResolver", () => {
             ["main.rb", "ruby"],
             ["main.pl", "perl"],
             ["helper.pm", "perl"],
+            ["main.pro", "prolog"],
             ["main.pas", "pascal"],
             ["main.cob", "cobol"],
             ["main.f90", "fortran"],
