@@ -3,6 +3,7 @@ import {
     joinRelativePath,
 } from "@clientTheatre/runtimePerformers/UserFilePathResolver.ts";
 type SpecifierReplacer = (specifier: string) => string;
+type RuntimeAssetResolver = (runtimeRelativePath: string) => string;
 const MODULE_SPECIFIER_PATTERNS: ReadonlyArray<RegExp> = [
     /(import\s+\*\s+as\s+[\w$]+\s+from\s+)"([^"]+)"/g,
     /(import\s+\*\s+as\s+[\w$]+\s+from\s+)'([^']+)'/g,
@@ -11,16 +12,13 @@ const MODULE_SPECIFIER_PATTERNS: ReadonlyArray<RegExp> = [
 ];
 class CherryModuleLinker {
     private readonly moduleSources: ReadonlyMap<string, string>;
-    private readonly entryRelativePath: string;
-    private readonly coreBaseUrl: string;
+    private readonly resolveRuntimeAsset: RuntimeAssetResolver;
     constructor(
         moduleSources: ReadonlyMap<string, string>,
-        entryRelativePath: string,
-        coreBaseUrl: string,
+        resolveRuntimeAsset: RuntimeAssetResolver,
     ) {
         this.moduleSources = moduleSources;
-        this.entryRelativePath = entryRelativePath;
-        this.coreBaseUrl = coreBaseUrl;
+        this.resolveRuntimeAsset = resolveRuntimeAsset;
     }
     resolveLocalModule(specifier: string, requiringRelativePath: string): string {
         const requiringDirectory = directoryOf(requiringRelativePath);
@@ -53,7 +51,7 @@ class CherryModuleLinker {
         return rewrittenText;
     }
     runtimeSpecifierFor(specifier: string): string {
-        return `${this.coreBaseUrl}/${specifier.slice("cherry-cljs/".length)}`;
+        return this.resolveRuntimeAsset(specifier.slice("cherry-cljs/".length));
     }
     isRuntimeSpecifier(specifier: string): boolean {
         return specifier.startsWith("cherry-cljs/");
@@ -65,9 +63,6 @@ class CherryModuleLinker {
             !specifier.startsWith("../") &&
             !specifier.includes(":")
         );
-    }
-    get entryPath(): string {
-        return this.entryRelativePath;
     }
 }
 export { CherryModuleLinker };
