@@ -11,6 +11,7 @@ const SCALA_CLI_HOME_DIRECTORY = "./.tools/scala-cli-home";
 const COURSIER_CACHE_DIRECTORY = "./.tools/coursier-cache";
 const COURSIER_ARCHIVE_CACHE_DIRECTORY = "./.tools/coursier-archive-cache";
 const JDK_DIRECTORY = "./.tools/jdk";
+const SCALA_BUILD_DIRECTORY_NAME = ".scala-build";
 class ScalaJsCompilerStrategy implements CompilerStrategyContract {
     private readonly processRunner: ProcessRunner;
     private readonly fileSystemOperations: FileSystemOperations;
@@ -81,6 +82,9 @@ class ScalaJsCompilerStrategy implements CompilerStrategyContract {
         if (!(await this.fileSystemOperations.pathExists(`${context.runtimeDirectory}/app.js`))) {
             throw new Error("Scala.js compilation produced no app.js output.");
         }
+        await this.fileSystemOperations.removeRecursively(
+            resolve(context.sourceDirectory, SCALA_BUILD_DIRECTORY_NAME),
+        );
     }
 }
 export { ScalaJsCompilerStrategy };
