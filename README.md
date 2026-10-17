@@ -1,10 +1,82 @@
 # WASMVerse
 
-Fifty-six languages. One terminal. Compiled to WebAssembly.
+### 56 programming languages. One terminal. Zero runtime dependencies after export.
 
-Upload a zip archive of source code in any of fifty-six languages, name the entry file, and run the program in an in-browser terminal — or write it in the built-in editor, paste a single file, drop a folder, or import a public GitHub repository. The Language Index on the home page runs a one-click showcase program per language with no upload required, and the compatibility matrix reports exactly which features each language supports.
+**Run Python, Rust, C++, Go, Java, COBOL, Solidity, Brainfuck, and 48 other languages in your browser. Then export the result as a standalone website or a single HTML file.**
+
+WASMVerse is an open-source, multi-language development environment that brings 56 programming languages into one interface.
+
+Write code directly in the browser, upload a project, or import a GitHub repository. WASMVerse handles language detection, compilation, runtime preparation, terminal execution, and static export.
+
+**The result is a program you can run, share, and host without keeping the WASMVerse server running.**
+
+[Get Started](#quick-start) · [Explore 56 Languages](#56-languages-one-playground) · [How It Works](#how-it-works) · [CLI](#command-line-interface) · [MCP](#ai-agent-integration-mcp)
+
+---
+
+## Your code. Any language. Anywhere.
+
+Most online code playgrounds support a few languages and require their own infrastructure to keep programs running.
+
+WASMVerse takes a different approach.
+
+**One interface for 56 languages. One build pipeline. Portable outputs that work independently of the platform.**
+
+| | WASMVerse |
+|---|---|
+| **Languages** | 56 registered language environments |
+| **Source input** | Editor, pasted code, ZIP, folder, GitHub repository |
+| **Execution** | Browser-based WebAssembly, JavaScript runtimes, and interpreters |
+| **Interaction** | Terminal input, output, arguments, and supported file I/O |
+| **Export** | Static-site ZIP or self-contained HTML |
+| **Deployment** | GitHub Pages, Cloudflare Pages, Netlify, S3, and other static hosts |
+| **Automation** | CLI and Model Context Protocol server |
+| **Verification** | Real Chrome execution against restrictive static hosting conditions |
+
+No language-specific IDE to install for visitors. No persistent application backend for exported programs. No CDN dependencies in generated artifacts.
+
+### See it in action
+
+WASMVerse's home page includes a Language Index with runnable examples for every registered language.
+
+Pick a language. Click **Run plate**. Watch it execute.
+
+Want to run something else? Open the editor, paste code, upload an archive, drop a folder, or import a public GitHub repository.
+
+When you're done, download the program as a website.
+
+> **A showcase screenshot or 15–25 second demo GIF belongs here.** Show the Language Index, running a Python program, switching to Rust or COBOL, and exporting a single HTML file. A real demonstration will communicate more than several paragraphs of feature descriptions.
+
+---
+
+## Why this exists
+
+A programming language is more than its syntax. It's also a compiler, a runtime, an execution model, and an ecosystem of assumptions about the machine it runs on.
+
+That makes building a universal programming playground surprisingly difficult.
+
+Python needs an interpreter. Rust needs compilation. SQL needs a database engine. Solidity needs an EVM. Verilog needs a simulator. Brainfuck needs an interpreter that understands eight instructions.
+
+WASMVerse provides a shared interface without requiring those languages to share an implementation.
+
+Underneath the interface, each language has its own compilation strategy, runtime assembler, and browser performer.
+
+**The goal isn't to make 56 languages identical. It's to make them equally approachable.**
+
+And once a program is built, WASMVerse packages its execution environment into an artifact that can leave the platform entirely.
+
+---
 
 ## Quick Start
+
+Clone the repository:
+
+```bash
+git clone https://github.com/richie-rich90454/wasmverse.git
+cd wasmverse
+```
+
+Install dependencies and provision the toolchains:
 
 ```bash
 pnpm install
@@ -12,132 +84,606 @@ pnpm setup
 pnpm dev
 ```
 
-`pnpm setup` provisions every toolchain into `./.tools/` and `./.emsdk/` — nothing is installed system-wide, and a missing toolchain never fails the run; languages without one report a clear error until it is provisioned.
+Open **http://localhost:5173**.
 
-Open `http://localhost:5173`, press Run plate on the Python plate, and answer the sieve prompt in the terminal. To run your own code, drop a zip archive onto Plate Two, use the code editor, or import a GitHub repository, name the entry file, and press Build and Run.
+That's it. The application is ready to explore.
 
-## Scripts
+The frontend runs on port `5173`, while the Node.js backend runs on port `3000`.
 
-1. `pnpm dev` starts the server with watch mode on port 3000 plus Vite on port 5173.
-2. `pnpm build` produces the production build in `dist/client/` plus `dist/server/`.
-3. `pnpm start` serves the production build.
-4. `pnpm setup` provisions local toolchains into `./.tools/` plus `./.emsdk/`.
-5. `pnpm format` formats the repository with oxfmt.
-6. `pnpm format:check` verifies formatting without writing.
-7. `pnpm typecheck` runs `tsc --noEmit`.
-8. `pnpm test` runs the unit test suite with vitest.
-9. `pnpm verify:export` builds every showcase, exports it as a zip and as a single-file HTML page, then serves each bundle from a deliberately hostile static host (`.wasm` as `application/octet-stream`, `nosniff`, subdirectory paths) and drives real headless Chrome over the DevTools protocol. It fails on any console error, uncaught exception, failed request, or missing output line, and it writes `compatibility-matrix.json`. Pass a language name to check one plate. Each run claims its own ports and staging directory, so several verifications can run side by side. A plate whose toolchain has no build for the current host is reported as not covered, with the reason, rather than counted as a failure.
+### Your first 30 seconds
 
-### Command Line Builds
+1. Open the Language Index.
+2. Select Python.
+3. Click **Run plate**.
+4. Answer the interactive sieve prompt.
+5. Try another language.
+6. Export a completed program as a ZIP or single HTML file.
 
-`pnpm cli build ./my-project --entry main.py` compiles a local project directory through the same pipeline the web app uses and writes a static-site export zip to `<entry-base>.zip` in the working directory. `--out exports/my-app.zip` picks the output path, `--out exports/my-app.html` writes the single-file HTML artifact instead, and `--args "first\nsecond"` passes newline-separated program arguments. `pnpm cli --list-languages` prints every registered language identifier. Once the package is linked (`pnpm link --global`), the same commands are available as the installed `wasmverse` binary.
+You can explore the built-in examples without creating a project.
 
-`pnpm install` does not download toolchains by itself; `pnpm setup` does, and it never fails the install when an optional toolchain is unavailable.
+**A note about setup:** `pnpm setup` provisions compilers and SDKs into `.tools/` and `.emsdk/`. It does not install them system-wide. Some toolchains are platform-dependent or unavailable on certain hosts; missing optional toolchains are reported clearly rather than silently failing.
 
-## Supported Languages
+---
 
-Python, Ruby, Lua, PHP, Rust, C, C++, Go, Zig, Swift, Kotlin, Dart, Java, C#, AssemblyScript, OCaml, Haskell, R, JavaScript, TypeScript, SQL, ClojureScript, Scheme, Prolog, Perl, Pascal, COBOL, Fortran, DuckDB, PGlite, AWK, jq, Bash, Scala, F#, Elm, ReScript, PureScript, Gleam, Haxe, Common Lisp, Tcl, Forth, Smalltalk, Brainfuck, Befunge, LOLCODE, APL, RISC-V assembly, Verilog, Solidity, Vimscript, Logo, GW-BASIC, Standard ML, 6502 assembly.
+## 56 languages. One playground.
 
-`userSourceTemplates/` holds one showcase program per language. Interactive programs end with a prompt; every other showcase runs print-and-compute style from start to finish. `compatibility-matrix.json` records, per language, the verified status of stdin, arguments, file I/O, and multi-file support — it is regenerated by `pnpm verify:export` and rendered on the home page.
+From languages used to build operating systems to languages invented as programming jokes, WASMVerse supports a deliberately broad catalog.
 
-## Toolchains
+### Modern development
 
-Everything runs in the browser; nothing is installed system-wide. `pnpm setup` provisions into the repository:
+| | | | |
+|---|---|---|---|
+| Python | JavaScript | TypeScript | Rust |
+| C | C++ | Go | Zig |
+| Java | C# | Kotlin | Swift |
+| Dart | PHP | Ruby | Lua |
 
-1. Client-side runtimes (no server compiler): Python (Pyodide), Ruby (ruby-wasm-wasi), Lua (wasmoon), PHP (php-wasm), SQL (SQLite WASM), DuckDB, PGlite, jq, Perl (zeroperl), Common Lisp (JSCL), Scheme (BiwaScheme), ClojureScript (cherry-cljs), Prolog (tau-prolog), APL (ngn/apl), plus JavaScript, TypeScript (esbuild-bundled), and the hand-written interpreters (Forth, Smalltalk, GW-BASIC, Logo, Brainfuck, Befunge, LOLCODE, RISC-V, 6502).
-2. Server-compiled WebAssembly: C and C++ (Emscripten), Go, Zig, Rust (wasm-pack from `./.tools/`, falling back to a `wasm-pack` on PATH), AssemblyScript, Java (TeaVM via Maven), C# (dotnet browser-wasm), Dart (`./.tools/dart-sdk/`, falling back to a `dart` on PATH), Kotlin (compiled to JavaScript with `kotlinc-js`), Swift, OCaml, Haskell, Fortran (LFortran), Pascal (Free Pascal WASM), COBOL (GnuCOBOL through emcc), Verilog (Icarus WASM), Solidity (solc + an in-memory EVM), Vimscript (vim.wasm), Bash and AWK (busybox WASI), Tcl (WACL).
-3. Server-compiled JavaScript: Scala.js, F#, Elm, ReScript, PureScript, Gleam, Haxe — compiled to ES modules and run like TypeScript.
-4. Swift, OCaml, Haskell, Fortran, Pascal, and COBOL have no fully working prebuilt Windows toolchain; their plates report a readable toolchain-pending line with the reason until a suitable SDK is placed under `./.tools/`. Swift's showcase is written against the WASI target alone, with no Foundation, because the WASI SDK does not ship it.
+### Functional, compiled, and transpiled
 
-A plate whose toolchain is absent fails fast with a readable terminal line that names the missing toolchain. First Rust, Java, and C# builds fetch their dependencies once, so they take longer than later builds.
+| | | | |
+|---|---|---|---|
+| Haskell | OCaml | F# | Scala |
+| Elm | ReScript | PureScript | Gleam |
+| Haxe | ClojureScript | Standard ML | AssemblyScript |
 
-## Interactive Input
+### Databases, scripting, and specialized languages
 
-Interactive stdin works across the whole catalog through a replay contract: the runtime re-runs the program with the answers collected so far, so synchronous reads behave like a real terminal. Output is deduplicated across replays, and a session that asks for input more than a thousand times is stopped with a readable line. The compatibility matrix marks the few runtimes where stdin cannot exist (for example SQL scripts and R without cross-origin isolation) with the exact reason.
+| | | | |
+|---|---|---|---|
+| SQL | DuckDB | PGlite | Solidity |
+| Verilog | R | Perl | Bash |
+| AWK | jq | Tcl | Vimscript |
+| Prolog | Scheme | Common Lisp | APL |
 
-The terminal also mirrors every `console` call, so runtime output that a language sends to the JavaScript console appears alongside the program's own output instead of disappearing into browser developer tools.
+### Retro, low-level, and esoteric
 
-## Terminal Copy
+| | | | |
+|---|---|---|---|
+| COBOL | Fortran | Pascal | GW-BASIC |
+| Forth | Smalltalk | Logo | Brainfuck |
+| Befunge | LOLCODE | RISC-V assembly | 6502 assembly |
 
-Drag to select terminal text. Copy with right-click, Ctrl+C while text is selected, or Ctrl+Shift+C. Ctrl+C with no selection keeps its usual line-cancel meaning. Zoom the terminal font like a native console with Ctrl+Plus, Ctrl+Minus, Ctrl+0, or Ctrl+mouse wheel.
+Every language has a dedicated showcase in `userSourceTemplates/`.
 
-## Static Site Export
+Some examples are interactive. Others demonstrate computation and output. All are accessible from the home page without requiring you to upload source code.
 
-After a program finishes, the Download static site link fetches a self-contained bundle: `index.html`, one per-language bundled `app.js`, the terminal stylesheet, `session.json`, a `.nojekyll` marker, and the session `runtime/` plus `user-code/` folders. Every path is relative, so the bundle works from a domain root or from any subdirectory. The Download single file link beside it produces the same artifact as ONE `.html` file: every asset is embedded as base64-of-gzip and resolved through blob URLs at load time, so the single page makes no network request beyond itself. The API serves the same artifact through `GET /api/export/<id>?format=html`.
+**Important:** Registration does not mean every compiler or runtime feature is available on every operating system. WASMVerse tracks actual feature support and toolchain coverage in `compatibility-matrix.json`.
 
-The bundle is fully local. There is no CDN, no import map, and no remote origin anywhere in it, and the production build refuses to emit one. WebAssembly is always compiled from an `ArrayBuffer` rather than a streamed response, so the host does not need `Content-Type: application/wasm`. Every script is a `.js` file because object storage maps unknown extensions to `application/octet-stream`, which browsers reject under `nosniff`. Only what a replay needs is shipped: type declarations, source maps, package manifests, and compiler build output such as Rust `target/` are left out.
+---
 
-Unzip it behind any static host (GitHub Pages, Netlify, Vercel, Cloudflare Pages, Firebase, S3, Nginx, Apache) and the program runs with full WebAssembly abilities and no application server. Interactive Python and Ruby programs keep working, and the terminal is focused so a prompt can be answered immediately.
+## Not just a playground. A way to distribute programs.
 
-Approximate export sizes: AssemblyScript 105 KB, Rust 113 KB, Dart 120 KB, Java 124 KB, Lua 248 KB, Go 897 KB, PHP 3.8 MB, Python 6.4 MB, Ruby 9.1 MB. The larger bundles are the runtimes themselves, which no host can compress away.
+Running code in a browser is useful.
 
-PHP needs an HTTPS origin because php-wasm serialises file writes with the Web Locks API; over plain HTTP the export says so instead of hanging. php-wasm also has no fiber support, and `run()` cannot honour a leading `declare(strict_types=1)`, so the performer drops that declaration before running.
+**Exporting the entire execution environment is what makes WASMVerse different.**
 
-## Architecture
+Once your program has been built, you can download it in two formats.
 
-Composition only: no `extends`, no abstract classes. Contracts are interfaces. Behaviour is conferred by holding collaborators.
+### Static-site ZIP
 
-1. `src/sharedKernel/` holds plain interfaces and union aliases. No classes.
-2. `src/serverAtelier/` holds the Node HTTP server. `ServerComposition` wires every collaborator: fifty-six language plugins (each composing a compiler strategy, a runtime assembler, a source file copier, and a manifest writer), a `BuildOrchestrator`, a `SessionRegistry`, and an `HttpRequestRouter`. The CLI and the MCP server reuse the same composition.
-3. `src/clientTheatre/` holds the React presentation skin. All logic lives in OOP service classes (`ClientApplicationController`, `TerminalStageController`, and friends). Components only wire inputs to services and render outputs from them.
-4. `scripts/` holds toolchain setup, the development launcher, the production build, the CLI, the MCP server, and the export verifier.
+A portable website containing the terminal, your program, its runtime, and the assets required to execute it.
 
-## Adding a Language
+```text
+my-program/
+├── index.html
+├── app.js
+├── terminal.css
+├── session.json
+├── .nojekyll
+├── runtime/
+└── user-code/
+```
 
-1. Add the identifier to the `LanguageIdentifier` union.
-2. Write a compiler strategy implementing `CompilerStrategyContract`.
-3. Write a runtime assembler implementing `RuntimeAssetAssemblerContract`.
-4. Write a language plugin composing the two plus the shared `UserSourceFileCopier` and `UserManifestWriter`.
-5. Register the plugin in `ServerComposition` and map its extensions in `LanguageIdentifierResolver`.
-6. Write a client performer and add it to `TerminalPerformerFactory`.
-7. Add a showcase template in `userSourceTemplates/` and a plate in `SamplesCatalog.ts`.
-8. Add the language to `PERFORMER_CLASS_BY_LANGUAGE` in `StaticSiteExporter.ts` so static exports bundle only that performer.
-9. Add the language to `SHOWCASES` in `scripts/VerifyStaticExportsScript.ts` so the export verifier covers it. The verifier attempts every entry, so a language added here cannot silently fall out of coverage.
+Upload the directory to a static host and run the program directly in the browser.
 
-## API
+Supported deployment targets include:
 
-1. `POST /api/session` takes multipart `archive` (zip) plus `entry` (file name). It returns `{ sessionIdentifier, languageIdentifier, entryFileRelativePath, creationTimestamp }`.
-2. `GET /api/health` returns `{ status, registeredLanguages }`.
-3. `GET /session/<id>/dist/*` serves runtime and user-code assets for a session.
-4. `GET /api/export/<id>` downloads the static site bundle for a session; add `?format=html` for the single-file HTML artifact.
+- GitHub Pages
+- Cloudflare Pages
+- Netlify
+- Vercel
+- Firebase Hosting
+- Amazon S3
+- Nginx and Apache
 
-Uploads are rate limited per client. Security headers apply to every response. Asset paths that escape the session directory are rejected.
+No WASMVerse server is required after export.
 
-## Configuration
+### Single-file HTML
 
-| Variable                        | Default         | Purpose                                |
-| ------------------------------- | --------------- | -------------------------------------- |
-| `PORT`                          | `3000`          | Port the server listens on.            |
-| `HOST`                          | `0.0.0.0`       | Address the server binds.              |
-| `SESSIONS_DIRECTORY`            | `./sessions`    | Where session directories are created. |
-| `CLIENT_BUILD_DIRECTORY`        | `./dist/client` | Client assets served in production.    |
-| `SESSION_TTL_MILLISECONDS`      | `1800000`       | How long an idle session survives.     |
-| `MAX_UPLOAD_BYTES`              | `26214400`      | Largest accepted archive.              |
-| `REQUEST_IDLE_TIMEOUT_SECONDS`  | `255`           | Request idle timeout.                  |
-| `UPLOADS_PER_MINUTE_PER_CLIENT` | `10`            | Upload budget per client per minute.   |
+The same application, packaged into **one `.html` file**.
 
-## Design
+Runtime assets are compressed with gzip, encoded as base64, embedded into the document, and reconstructed using blob URLs.
 
-Flat drafting-table aesthetic: warm paper background, deep-blue actions, 1px rules, EB Garamond display type with Noto Sans body, platform monospace terminal. No shadows, no gradients, no animation beyond 100ms hover transitions, and no transitions at all under `prefers-reduced-motion`. Tokens live in `src/clientTheatre/styles/UniversalBlueprint.css`. Fonts ship locally through Fontsource with no CDN calls, and `pnpm build` fails if any remote asset origin survives into `dist/`.
+The page requires no external runtime asset requests.
 
-## Agent Access (MCP)
+This is useful for sharing interactive demos, preserving runnable examples, distributing educational programs, and archiving experiments.
 
-External agents can drive WASMVerse through a stdio MCP server. It reuses the exact server pipeline (`ServerComposition`, `BuildOrchestrator.produceBuildOutcome`, `StaticSiteExporter.exportSessionToZip`) and is built on the official `@modelcontextprotocol/sdk`, using its low-level `Server` API because zod is not a direct project dependency.
+### How portable is portable?
 
-Run it with `pnpm exec tsx scripts/WasmverseMcpServer.ts`, or through `node bin/wasmverse-mcp.mjs`, which spawns the same script with the working directory pinned to the repository root. Register it in opencode:
+WASMVerse exports are designed to survive hosting environments that break many WebAssembly applications.
+
+They do not rely on:
+
+- A CDN or remotely hosted runtime.
+- A persistent WASMVerse backend.
+- Import maps or remote asset origins.
+- `application/wasm` MIME configuration.
+- Absolute asset paths tied to a domain root.
+
+WebAssembly modules are compiled from `ArrayBuffer` data rather than streamed responses. JavaScript assets use conventional `.js` extensions, and all asset references are relative.
+
+That allows exports to work under restrictive MIME handling and subdirectory hosting.
+
+The production build also rejects remote asset origins that survive into the generated distribution.
+
+### How large are exports?
+
+Actual sizes depend on the language and runtime.
+
+| Language | Approximate export size |
+|---|---:|
+| AssemblyScript | 105 KB |
+| Rust | 113 KB |
+| Dart | 120 KB |
+| Java | 124 KB |
+| Lua | 248 KB |
+| Go | 897 KB |
+| PHP | 3.8 MB |
+| Python | 6.4 MB |
+| Ruby | 9.1 MB |
+
+These are representative measurements, not guaranteed artifact sizes.
+
+For interpreted languages, much of the bundle is the runtime itself. WASMVerse excludes unnecessary compiler outputs, source maps, type declarations, and build directories from exported artifacts.
+
+---
+
+## How it works
+
+WASMVerse separates compilation from execution.
+
+**Source code enters a language-specific build pipeline. The resulting artifact executes in the browser.**
+
+```text
+                     SOURCE CODE
+                          |
+          +---------------+---------------+
+          |               |               |
+       Editor           ZIP /          GitHub
+                       Folder
+          |               |               |
+          +---------------+---------------+
+                          |
+                   Language Resolver
+                          |
+                    Language Plugin
+                          |
+             +------------+------------+
+             |                         |
+       Compiler Strategy        Runtime Assembler
+             |                         |
+             +------------+------------+
+                          |
+                     Build Session
+                          |
+                   Browser Performer
+                          |
+                  Interactive Terminal
+                          |
+             +------------+------------+
+             |                         |
+         ZIP Export              HTML Export
+```
+
+Different languages use different execution strategies.
+
+| Execution model | Examples |
+|---|---|
+| Browser-side runtimes | Python through Pyodide, Ruby through ruby-wasm-wasi, Lua through wasmoon |
+| WebAssembly compilation | C/C++ through Emscripten, Rust through wasm-pack, Go, Zig |
+| JavaScript compilation | TypeScript, Scala.js, Elm, ReScript, Gleam |
+| Dedicated engines | Solidity with an in-memory EVM, SQL through SQLite WASM, Verilog through Icarus WASM |
+| Custom interpreters | Brainfuck, Befunge, Forth, GW-BASIC, RISC-V, 6502 |
+
+The same build pipeline powers the browser application, command-line interface, and MCP server.
+
+**Compilation may require the server. Running the exported program does not.**
+
+---
+
+## A real interactive terminal
+
+WASMVerse is not limited to programs that print a fixed result.
+
+The terminal supports interactive input through a replay-based execution model.
+
+When a program requests input, the runtime can re-execute it using the answers already collected. Previously displayed output is deduplicated, so the user experiences a continuous conversation with the program.
+
+The terminal also captures JavaScript `console` output from runtimes, making diagnostics visible without opening developer tools.
+
+### Terminal shortcuts
+
+| Action | Shortcut |
+|---|---|
+| Copy selection | Ctrl+C |
+| Alternative copy | Ctrl+Shift+C |
+| Cancel current line | Ctrl+C with nothing selected |
+| Increase font size | Ctrl+Plus |
+| Decrease font size | Ctrl+Minus |
+| Reset font size | Ctrl+0 |
+| Adjust font size | Ctrl+mouse wheel |
+
+Interactive replay has limits: it is not the same as preserving a continuously running native process, and some languages cannot support stdin under their browser runtime constraints.
+
+WASMVerse documents those limitations in the compatibility matrix rather than claiming universal support.
+
+---
+
+## We test the exported website, not just the build
+
+A compiler reporting success does not guarantee that a website will run.
+
+An export can fail because of an incorrect MIME type, a broken relative path, a missing runtime asset, an uncaught browser exception, or an unexpected network request.
+
+WASMVerse includes a verification system built specifically to catch those failures.
+
+```bash
+pnpm verify:export
+```
+
+For every covered showcase, the verifier:
+
+1. Builds the program.
+2. Exports it as a ZIP.
+3. Exports it as a single HTML file.
+4. Serves the artifacts from a deliberately restrictive static host.
+5. Opens them in real headless Chrome through the DevTools protocol.
+6. Checks for console errors, uncaught exceptions, failed requests, and missing expected output.
+7. Regenerates `compatibility-matrix.json`.
+
+### Deliberately hostile hosting
+
+The test environment includes conditions such as:
+
+```text
+.wasm -> application/octet-stream
+X-Content-Type-Options: nosniff
+Deployment under a subdirectory
+```
+
+These conditions expose portability bugs that ordinary development servers can hide.
+
+You can also verify an individual language:
+
+```bash
+pnpm verify:export python
+```
+
+Verification runs use independent ports and staging directories, so multiple runs can execute concurrently.
+
+If a compiler is unavailable on the current host, the language is reported as **not covered**, with an explanation. It is not incorrectly counted as a successful test.
+
+The result is a compatibility matrix based on observed browser behavior rather than assumptions about language support.
+
+---
+
+## Command-line interface
+
+The browser isn't required to use WASMVerse's build pipeline.
+
+Compile a local project:
+
+```bash
+pnpm cli build ./my-project --entry main.py
+```
+
+Export a static-site ZIP:
+
+```bash
+pnpm cli build ./my-project \
+  --entry main.py \
+  --out exports/my-app.zip
+```
+
+Export a single HTML file:
+
+```bash
+pnpm cli build ./my-project \
+  --entry main.py \
+  --out exports/my-app.html
+```
+
+Pass newline-separated program arguments:
+
+```bash
+pnpm cli build ./my-project \
+  --entry main.py \
+  --args "first\nsecond"
+```
+
+List registered languages:
+
+```bash
+pnpm cli --list-languages
+```
+
+To make the `wasmverse` binary available through a global pnpm link:
+
+```bash
+pnpm link --global
+```
+
+The CLI uses the same compiler strategies, runtime assemblers, and export pipeline as the web application.
+
+---
+
+## AI agent integration (MCP)
+
+WASMVerse exposes its capabilities through a stdio Model Context Protocol server.
+
+This allows compatible coding agents to build and export programs through structured tool calls instead of manually controlling the browser.
+
+Start the server:
+
+```bash
+pnpm exec tsx scripts/WasmverseMcpServer.ts
+```
+
+Or use the provided launcher:
+
+```bash
+node bin/wasmverse-mcp.mjs
+```
+
+### Available tools
+
+| Tool | What it does |
+|---|---|
+| `list_languages` | Discover registered languages and entry extensions |
+| `build_session` | Compile inline source files or a project directory |
+| `export_artifact` | Export a session as ZIP or HTML |
+| `export_project` | Build and export in a single call |
+
+For example, an agent can call `export_project` with:
 
 ```json
 {
-    "mcp": {
-        "wasmverse": {
-            "type": "local",
-            "command": ["node", "bin/wasmverse-mcp.mjs"],
-            "enabled": true
-        }
-    }
+  "directoryPath": "userSourceTemplates",
+  "entry": "main.py"
 }
 ```
 
-Tools: `list_languages` returns every registered language with its entry extensions; `build_session` compiles inline `files` or a `directoryPath` into a live session under `sessions/<id>`; `export_artifact` writes a session to a `zip` or single-file `html` artifact (default: system temp, override with `outputPath`) and answers with the absolute path and byte size; `export_project` builds and exports in one call and returns `{ artifactPath, byteSize, languageIdentifier, entryFileRelativePath }`. Sessions are released after export unless `keepSession` is true. Example: call `export_project` with `directoryPath: "userSourceTemplates"` and `entry: "main.py"`; the returned zip holds `index.html`, `app.js`, `terminal.css`, `session.json`, `.nojekyll`, and the `runtime/` plus `user-code/` folders.
+The response includes the generated artifact's absolute path, byte size, language identifier, and entry file.
 
-The matching agent skill lives at `.opencode/skills/wasmverse/SKILL.md`: when to use, the tool list, the CLI equivalents, and the full language table.
+By default, build sessions are released after export. Set `keepSession` to retain them.
+
+### opencode configuration
+
+```json
+{
+  "mcp": {
+    "wasmverse": {
+      "type": "local",
+      "command": [
+        "node",
+        "bin/wasmverse-mcp.mjs"
+      ],
+      "enabled": true
+    }
+  }
+}
+```
+
+Run the command from the repository root or configure an absolute launcher path.
+
+The MCP server uses the official `@modelcontextprotocol/sdk` and shares the existing `ServerComposition` and `BuildOrchestrator` implementation.
+
+An accompanying agent skill is available at:
+
+```text
+.opencode/skills/wasmverse/SKILL.md
+```
+
+It documents tool usage, CLI equivalents, and the supported language catalog.
+
+---
+
+## Built for extension, not special cases
+
+Supporting 56 languages requires more than a large switch statement.
+
+WASMVerse uses a composition-first architecture with interfaces for language-specific behavior.
+
+No inheritance hierarchies. No abstract base classes. Language integrations are assembled from collaborators.
+
+### Repository layout
+
+```text
+wasmverse/
+├── src/
+│   ├── sharedKernel/       Shared contracts and types
+│   ├── serverAtelier/      Builds, sessions, language plugins, API
+│   └── clientTheatre/      React UI, controllers, performers
+├── scripts/                Setup, CLI, MCP, verification
+├── userSourceTemplates/    One showcase per language
+├── bin/                    MCP launcher
+├── .opencode/skills/       Agent integration skill
+└── compatibility-matrix.json
+```
+
+The main components include:
+
+| Component | Responsibility |
+|---|---|
+| `ServerComposition` | Assembles the server's collaborators and language plugins |
+| `BuildOrchestrator` | Coordinates source compilation and runtime preparation |
+| `SessionRegistry` | Manages build sessions |
+| `HttpRequestRouter` | Routes API and asset requests |
+| `TerminalPerformerFactory` | Creates language-specific browser performers |
+| `StaticSiteExporter` | Generates portable export artifacts |
+| `ClientApplicationController` | Coordinates client application behavior |
+| `TerminalStageController` | Manages terminal behavior |
+
+React components primarily render state and connect interactions to controller services.
+
+### Adding another language
+
+A new language requires:
+
+1. A `LanguageIdentifier` entry.
+2. A compiler strategy implementing `CompilerStrategyContract`.
+3. A runtime assembler implementing `RuntimeAssetAssemblerContract`.
+4. A language plugin composing the strategy, assembler, source copier, and manifest writer.
+5. Registration in `ServerComposition` and `LanguageIdentifierResolver`.
+6. A browser performer registered in `TerminalPerformerFactory`.
+7. A showcase under `userSourceTemplates/` and an entry in `SamplesCatalog.ts`.
+8. Export registration in `StaticSiteExporter.ts`.
+9. Verification registration in `VerifyStaticExportsScript.ts`.
+
+The shared build system handles the rest of the workflow.
+
+A good integration includes a meaningful showcase, readable errors, explicit feature limitations, and export verification coverage.
+
+---
+
+## HTTP API
+
+WASMVerse provides an HTTP API for creating sessions, retrieving assets, and downloading exports.
+
+| Endpoint | Purpose |
+|---|---|
+| `POST /api/session` | Build a ZIP archive using an `entry` file |
+| `GET /api/health` | Retrieve server status and registered languages |
+| `GET /session/<id>/dist/*` | Serve assets belonging to a build session |
+| `GET /api/export/<id>` | Download a static-site ZIP |
+| `GET /api/export/<id>?format=html` | Download a single-file HTML export |
+
+Create a session using multipart form data with the fields `archive` and `entry`.
+
+The response contains:
+
+```json
+{
+  "sessionIdentifier": "<session-id>",
+  "languageIdentifier": "python",
+  "entryFileRelativePath": "main.py",
+  "creationTimestamp": "<timestamp>"
+}
+```
+
+The server applies upload rate limits, response security headers, and checks that asset paths cannot escape their session directories.
+
+---
+
+## Configuration
+
+| Environment variable | Default | Purpose |
+|---|---|---|
+| `PORT` | `3000` | Backend port |
+| `HOST` | `0.0.0.0` | Bind address |
+| `SESSIONS_DIRECTORY` | `./sessions` | Session storage |
+| `CLIENT_BUILD_DIRECTORY` | `./dist/client` | Production frontend assets |
+| `SESSION_TTL_MILLISECONDS` | `1800000` | Idle session lifetime |
+| `MAX_UPLOAD_BYTES` | `26214400` | Maximum archive size (25 MiB) |
+| `REQUEST_IDLE_TIMEOUT_SECONDS` | `255` | Request idle timeout |
+| `UPLOADS_PER_MINUTE_PER_CLIENT` | `10` | Per-client upload limit |
+
+Public deployments should review resource limits and isolation before accepting untrusted projects.
+
+---
+
+## Development
+
+| Command | Purpose |
+|---|---|
+| `pnpm install` | Install project dependencies |
+| `pnpm setup` | Provision local language toolchains |
+| `pnpm dev` | Start the development environment |
+| `pnpm build` | Build frontend and backend distributions |
+| `pnpm start` | Serve the production application |
+| `pnpm format` | Format with oxfmt |
+| `pnpm format:check` | Check formatting |
+| `pnpm typecheck` | Run TypeScript type checking |
+| `pnpm test` | Run Vitest |
+| `pnpm verify:export` | Verify exported showcases in Chrome |
+
+Before submitting a change:
+
+```bash
+pnpm format:check
+pnpm typecheck
+pnpm test
+pnpm build
+```
+
+For runtime, language, or export changes, also run:
+
+```bash
+pnpm verify:export
+```
+
+### Platform compatibility
+
+Toolchain availability depends on the host operating system.
+
+Swift, OCaml, Haskell, Fortran, Pascal, and COBOL do not currently have fully working prebuilt Windows toolchains in the repository's provisioning process.
+
+When a required compiler is unavailable, WASMVerse displays a readable toolchain-pending message rather than silently failing.
+
+Some runtimes also have browser-specific constraints:
+
+- PHP requires HTTPS for Web Locks-based file-write serialization.
+- PHP's runtime lacks fiber support and removes a leading `declare(strict_types=1)` before execution.
+- Some language environments require cross-origin isolation for interactive input.
+- Replay-based stdin cannot perfectly reproduce every native-process behavior.
+
+These limitations are tracked explicitly instead of hidden behind a generic claim of universal compatibility.
+
+---
+
+## Contributing
+
+WASMVerse sits at the intersection of compilers, interpreters, WebAssembly, browser runtimes, developer tooling, and static-site infrastructure.
+
+There are several useful ways to contribute:
+
+- Add a new language or improve an existing integration.
+- Improve compatibility with additional operating systems.
+- Fix browser-runtime or terminal edge cases.
+- Reduce exported artifact sizes.
+- Expand end-to-end verification coverage.
+- Improve the editor, language discovery, or documentation.
+
+If you're interested in how programming languages work under the hood, this project provides a practical place to explore that question.
+
+See the [language integration guide](#adding-another-language) to understand the extension process.
+
+[Open an issue](https://github.com/richie-rich90454/wasmverse/issues) · [View the source](https://github.com/richie-rich90454/wasmverse) · [Contribute a pull request](https://github.com/richie-rich90454/wasmverse/pulls)
+
+---
+
+## One more thing
+
+WASMVerse started from a simple idea:
+
+**What if you could run almost any kind of programming language in the same place, then take the resulting program with you?**
+
+Not just mainstream languages.
+
+Not just languages that already have a convenient browser compiler.
+
+And not just programs that work while a particular server stays online.
+
+Fifty-six languages later, WASMVerse brings modern compilers, classic languages, virtual machines, interpreters, and esoteric experiments into a shared environment.
+
+The source can be different. The runtime can be different. The compiler can be different.
+
+The experience stays familiar.
+
+**Write it. Run it. Export it.**
+
+If you find WASMVerse useful or interesting, consider [starring the repository](https://github.com/richie-rich90454/wasmverse). It helps other developers discover the project.
+
+---
+
+**WASMVerse** — 56 languages. One terminal. Programs that travel.
